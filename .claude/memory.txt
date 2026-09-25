@@ -2,7 +2,7 @@
 
 ## Recent Changes
 - Initial build (2026-09-25)
-  - Infra: docker-compose with postgres:16 (5434), minio pinned to RELEASE.2025-04-22T22-12-26Z because minio/minio:latest and minio/mc are no longer pullable from Docker Hub; minio-init reuses the same image to run `mc mb easyhost-deploys`
+  - Infra: docker-compose with postgres:16 (5434), MinIO official images (Docker Hub minio/minio, minio/mc, quay.io/minio) are no longer public. Using community builds pgsty/minio:RELEASE.2026-08-04T00-00-00Z and pgsty/mc:RELEASE.2026-09-16T00-00-00Z in both compose files; no MinIO healthcheck (image contents unknown), minio-init retries `mc alias set` until MinIO is up, then `mc mb easyhost-deploys`
   - Caddy runs from JSON config (`infra/caddy/caddy.json`) with `--resume`, server name `apps`, automatic HTTPS disabled for local `*.localhost`
   - Prisma models: User, ApiKey, Bucket, SqliteDatabase, EmailLog, App, Deployment. Migration `init` applied
   - Storage buckets map to MinIO buckets `eh-<bucketId>`; public buckets get an anonymous GetObject policy, private ones use presigned URLs
