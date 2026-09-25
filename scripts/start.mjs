@@ -32,6 +32,7 @@ const REQUIRED = [
   "DOCKER_NETWORK",
   "BUILD_CONCURRENCY",
   "VITE_PUBLIC_API_URL",
+  "PROXY_NETWORK",
 ];
 
 const checkEnv = () => {

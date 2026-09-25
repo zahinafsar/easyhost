@@ -23,9 +23,9 @@ Hosting platform: Next.js app hosting (containers + Caddy), object storage (MinI
 - `cd server && npm run prisma -- studio` - Database GUI
 
 ## Production (VPS)
-- DNS: `easyhost.fun`, `www`, `app`, `api`, `storage` and wildcard `*.easyhost.fun` point to the VPS. Only ports 22/80/443 open
-- `easyhost.fun` = static site in `/marketing`, `app.easyhost.fun` = built dashboard (its `/api/*` proxied to API, same origin), `api.easyhost.fun` = API for CLI and service API, `storage.easyhost.fun` = MinIO (presigned/public links), `<slug>.easyhost.fun` = customer apps
-- Caddy prod config `infra/caddy/caddy.prod.json`, image `infra/caddy/Dockerfile` bundles marketing + dashboard. Admin API is a unix socket shared with the API container (customer containers cannot reach it)
+- The VPS already runs Nginx Proxy Manager (NPM) on 80/443 for other sites. EasyHost does not publish host ports: its Caddy joins NPM's docker network (`PROXY_NETWORK` in `.env.production`) with alias `easyhost-caddy` and listens on plain HTTP :80
+- NPM (configured once by hand) terminates TLS for `easyhost.fun`, `www`, `app`, `api`, `storage` and `*.easyhost.fun` (wildcard cert via DNS challenge) and forwards all of them to `easyhost-caddy:80`. EasyHost never calls NPM
+- Caddy routes by Host: `easyhost.fun` = static site in `/marketing`, `app.` = built dashboard (its `/api/*` proxied to API, same origin), `api.` = API, `storage.` = MinIO, `<slug>.` = customer apps (routes added via Caddy admin unix socket shared only with the API container)
 - API container mounts the Docker socket and re-syncs app routes into Caddy on start and every 60s
 - Reserved app names (api, app, www, storage, ...) live in `server/src/lib/validations.ts`
 

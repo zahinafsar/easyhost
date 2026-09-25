@@ -49,17 +49,17 @@ Create an API key in the dashboard and send it as `Authorization: Bearer <key>`.
 
 ## Production
 
-On the VPS (Docker installed, ports 80 and 443 open, DNS for `easyhost.fun`, `www`, `app`, `api`, `storage` and `*.easyhost.fun` pointing at it):
+The VPS runs Nginx Proxy Manager (NPM) on ports 80/443. EasyHost runs behind it and publishes no host ports.
+
+1. DNS: `easyhost.fun`, `www`, `app`, `api`, `storage` and `*.easyhost.fun` point at the VPS.
+2. Copy `.env.production` to the server and set `PROXY_NETWORK` to NPM's docker network.
+3. Start:
 
 ```bash
 git clone <repo> easyhost && cd easyhost
-cp .env.production.example .env.production
 npm start
 ```
 
-Fill in every value in `.env.production` first (secrets, and the passwords inside `DATABASE_URL` and `MINIO_SECRET_KEY`). `npm start` refuses to run while anything is empty or still a `<PLACEHOLDER>`. Caddy gets HTTPS certificates automatically.
+4. In NPM, forward `easyhost.fun`, `www.easyhost.fun`, `app.easyhost.fun`, `api.easyhost.fun`, `storage.easyhost.fun` and `*.easyhost.fun` to `easyhost-caddy` port `80` over HTTP, with SSL enabled (wildcard certificate via DNS challenge for `*.easyhost.fun`).
 
-- https://easyhost.fun marketing site
-- https://app.easyhost.fun dashboard
-- https://api.easyhost.fun API (CLI default)
-- https://<app>.easyhost.fun deployed apps
+`npm start` refuses to run while any value in `.env.production` is empty or still a `<PLACEHOLDER>`.

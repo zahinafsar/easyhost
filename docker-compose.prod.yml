@@ -46,17 +46,16 @@ services:
       args:
         VITE_PUBLIC_API_URL: ${VITE_PUBLIC_API_URL:?Set VITE_PUBLIC_API_URL in .env.production}
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
       - caddy_admin:/run/caddy
     networks:
-      - default
-      - apps
+      default: {}
+      apps: {}
+      proxy:
+        aliases:
+          - easyhost-caddy
 
   api:
     build: ./server
@@ -86,3 +85,6 @@ volumes:
 networks:
   apps:
     name: easyhost
+  proxy:
+    name: ${PROXY_NETWORK:?Set PROXY_NETWORK in .env.production}
+    external: true

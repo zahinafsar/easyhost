@@ -6,7 +6,8 @@
     "http": {
       "servers": {
         "apps": {
-          "listen": [":443"],
+          "listen": [":80"],
+          "automatic_https": { "disable": true },
           "routes": [
             {
               "match": [{ "host": ["www.easyhost.fun"] }],
