@@ -1,0 +1,186 @@
+import { Hono } from "hono";
+import { prisma } from "../lib/prisma.js";
+import { minio, DEPLOY_BUCKET } from "../lib/minio.js";
+import { containerLogs, containerName, removeContainer, removeImage, startContainer, stopContainer } from "../lib/docker.js";
+import { appUrl, removeAppRoute, upsertAppRoute } from "../lib/caddy.js";
+import { enqueueDeployment, queuePosition } from "../lib/build-queue.js";
+import { validate } from "../lib/validator.js";
+import { createAppSchema, logsQuerySchema, updateEnvSchema } from "../lib/validations.js";
+import { requireUser } from "../middleware/require-user.js";
+import { APP_PORT } from "../lib/docker.js";
+import type { UserEnv } from "../lib/types.js";
+
+const MAX_ARTIFACT_BYTES = 500 * 1024 * 1024;
+
+const findApp = (userId: string, idOrSlug: string) => {
+  return prisma.app.findFirst({
+    where: { userId, OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
+  });
+};
+
+const withUrl = <T extends { slug: string }>(app: T) => ({ ...app, url: appUrl(app.slug) });
+
+const deploymentSummary = {
+  id: true,
+  status: true,
+  step: true,
+  imageTag: true,
+  createdAt: true,
+  finishedAt: true,
+};
+
+export const appRoutes = new Hono<UserEnv>()
+  .use(requireUser)
+  .get("/", async (c) => {
+    const apps = await prisma.app.findMany({
+      where: { userId: c.get("user").id },
+      orderBy: { createdAt: "desc" },
+      include: { deployments: { select: deploymentSummary, orderBy: { createdAt: "desc" }, take: 1 } },
+    });
+    return c.json({ apps: apps.map(withUrl) });
+  })
+  .post("/", validate("json", createAppSchema), async (c) => {
+    const { name } = c.req.valid("json");
+
+    const existing = await prisma.app.findUnique({ where: { slug: name } });
+    if (existing) {
+      return c.json({ error: "This app name is taken" }, 400);
+    }
+
+    const app = await prisma.app.create({ data: { userId: c.get("user").id, name, slug: name } });
+    return c.json({ app: withUrl(app) }, 201);
+  })
+  .get("/:id", async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    const deployments = await prisma.deployment.findMany({
+      where: { appId: app.id },
+      select: deploymentSummary,
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+    return c.json({ app: withUrl(app), deployments });
+  })
+  .put("/:id/env", validate("json", updateEnvSchema), async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    const updated = await prisma.app.update({ where: { id: app.id }, data: { env: c.req.valid("json").env } });
+    return c.json({ app: withUrl(updated), message: "Environment saved. Redeploy to apply changes." });
+  })
+  .post("/:id/deploy", async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    const body = await c.req.parseBody();
+    const file = body.file;
+    if (!(file instanceof File)) {
+      return c.json({ error: "Build artifact is required" }, 400);
+    }
+    if (file.size > MAX_ARTIFACT_BYTES) {
+      return c.json({ error: "Build artifact is larger than 500 MB" }, 400);
+    }
+
+    const artifactKey = `${app.id}/${Date.now()}.tgz`;
+    await minio.putObject(DEPLOY_BUCKET, artifactKey, Buffer.from(await file.arrayBuffer()), file.size, {
+      "Content-Type": "application/gzip",
+    });
+
+    const deployment = await enqueueDeployment(app.id, artifactKey);
+    return c.json({ deployment, url: appUrl(app.slug) }, 201);
+  })
+  .post("/:id/redeploy", async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    const latest = await prisma.deployment.findFirst({
+      where: { appId: app.id, status: { in: ["RUNNING", "SUPERSEDED"] } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!latest) {
+      return c.json({ error: "No successful deployment to redeploy" }, 400);
+    }
+
+    const deployment = await enqueueDeployment(app.id, latest.artifactKey);
+    return c.json({ deployment, url: appUrl(app.slug) }, 201);
+  })
+  .get("/:id/deployments/:deploymentId", async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    const deployment = await prisma.deployment.findFirst({
+      where: { id: c.req.param("deploymentId"), appId: app.id },
+    });
+    if (!deployment) {
+      return c.json({ error: "Deployment not found" }, 404);
+    }
+    return c.json({ deployment: { ...deployment, queuePosition: await queuePosition(deployment) } });
+  })
+  .get("/:id/logs", validate("query", logsQuerySchema), async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    const logs = await containerLogs(containerName(app.slug), c.req.valid("query").tail);
+    return c.json({ logs });
+  })
+  .post("/:id/stop", async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    await stopContainer(containerName(app.slug));
+    await removeAppRoute(app.slug);
+    const updated = await prisma.app.update({ where: { id: app.id }, data: { status: "STOPPED" } });
+    return c.json({ app: withUrl(updated) });
+  })
+  .post("/:id/start", async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+    if (!app.containerId) {
+      return c.json({ error: "Deploy the app first" }, 400);
+    }
+
+    const name = containerName(app.slug);
+    await startContainer(name);
+    await upsertAppRoute(app.slug, `${name}:${APP_PORT}`);
+    const updated = await prisma.app.update({ where: { id: app.id }, data: { status: "RUNNING" } });
+    return c.json({ app: withUrl(updated) });
+  })
+  .delete("/:id", async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    const deployments = await prisma.deployment.findMany({ where: { appId: app.id } });
+    await removeAppRoute(app.slug).catch(() => undefined);
+    await removeContainer(containerName(app.slug));
+    for (const deployment of deployments) {
+      if (deployment.imageTag) {
+        await removeImage(deployment.imageTag);
+      }
+    }
+    const artifactKeys = [...new Set(deployments.map((deployment) => deployment.artifactKey))];
+    if (artifactKeys.length) {
+      await minio.removeObjects(DEPLOY_BUCKET, artifactKeys);
+    }
+
+    await prisma.app.delete({ where: { id: app.id } });
+    return c.json({ message: "App deleted" });
+  });

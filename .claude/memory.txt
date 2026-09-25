@@ -1,0 +1,20 @@
+# EasyHost Project Memory
+
+## Recent Changes
+- Initial build (2026-09-25)
+  - Infra: docker-compose with postgres:16 (5434), minio pinned to RELEASE.2025-04-22T22-12-26Z because minio/minio:latest and minio/mc are no longer pullable from Docker Hub; minio-init reuses the same image to run `mc mb easyhost-deploys`
+  - Caddy runs from JSON config (`infra/caddy/caddy.json`) with `--resume`, server name `apps`, automatic HTTPS disabled for local `*.localhost`
+  - Prisma models: User, ApiKey, Bucket, SqliteDatabase, EmailLog, App, Deployment. Migration `init` applied
+  - Storage buckets map to MinIO buckets `eh-<bucketId>`; public buckets get an anonymous GetObject policy, private ones use presigned URLs
+  - SQLite databases live at `server/data/sqlite/<id>.db` (gitignored), queried via better-sqlite3, results capped at 1000 rows
+  - Email API sends from shared `EMAIL_FROM` via Resend, logs every attempt to EmailLog, `EMAIL_DAILY_LIMIT` per user per 24h
+  - Env var changes require a redeploy (`POST /api/apps/:id/redeploy` reuses the latest successful artifact)
+  - Client imports `AppType` directly from `../../../../server/src/index.ts` for the typed Hono client
+- Deploys switched to server-side source builds (no `output: "standalone"` needed): CLI uploads source, Dockerfile installs by lockfile, runs build, `next start`. App env vars are Docker build args (so NEXT_PUBLIC_* work) and runtime env. `.env*` files are excluded from the upload
+- Deployment.step (QUEUED, PREPARING, INSTALLING, BUILDING, STARTING, ROUTING, DONE) is set by the pipeline; INSTALLING/BUILDING are detected from Docker "Step N/M : RUN" lines of our generated Dockerfile. CLI shows ora spinners per step, prints a filtered log tail on failure, `--verbose` streams the full log. Migration `add_deployment_step` applied
+- CLI npm package and bin renamed to `ezhst`. Config paths (`~/.easyhost/config.json`, `.easyhost.json`) intentionally unchanged. `EASYHOST_API_URL` env was removed; API URL comes from `ezhst login --api` saved config, else `PRODUCTION_API_URL`. With asdf, run `asdf reshim nodejs` after `npm link`
+- Ports moved off defaults (2026-09-25): API 48710, dashboard dev 51730, postgres 127.0.0.1:54329, minio 127.0.0.1:19000/19001, caddy admin 127.0.0.1:20190 (dev). Caddy no longer uses --resume; API re-syncs RUNNING app routes on start and every 60s
+- Production: `npm start` at repo root runs scripts/start.mjs (creates root .env secrets) then `docker compose -f docker-compose.prod.yml up -d --build`. Domains: easyhost.fun (marketing/ static HTML+CSS), app.easyhost.fun (dashboard, /api proxied same-origin), api.easyhost.fun, storage.easyhost.fun (MinIO, presigned URLs signed for this host via MINIO_PUBLIC_*), <slug>.easyhost.fun apps. CLI default API URL is https://api.easyhost.fun
+- No env fallbacks anywhere (global rule). server/src/lib/env.ts throws listing all missing vars on boot; client/src/lib/env.ts requires VITE_PUBLIC_API_URL (client/.env for dev, compose build arg for prod); .env parser for the dashboard lives in client/src/lib/dotenv.ts; scripts/start.mjs exits if required root .env values are empty
+- Build queue added: `server/src/lib/build-queue.ts`, required env `BUILD_CONCURRENCY` (1 for now, also in prod compose). Deployment detail returns `queuePosition`; CLI shows "Waiting in queue (N ahead)" and exits cleanly when its deploy is SUPERSEDED. Single API process assumed for the in-memory active counter
+- Open questions: production Resend sender domain, quotas, billing

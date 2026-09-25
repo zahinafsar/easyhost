@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum EmailStatus {
+  SENT
+  FAILED
+}
+
+enum AppStatus {
+  IDLE
+  DEPLOYING
+  RUNNING
+  STOPPED
+  FAILED
+}
+
+enum DeploymentStep {
+  QUEUED
+  PREPARING
+  INSTALLING
+  BUILDING
+  STARTING
+  ROUTING
+  DONE
+}
+
+enum DeploymentStatus {
+  QUEUED
+  BUILDING
+  RUNNING
+  FAILED
+  SUPERSEDED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String
+  name         String
+  role         Role      @default(USER)
+  verified     Boolean   @default(false)
+  blocked      Boolean   @default(false)
+  verifyToken  String?
+  resetToken   String?
+  resetExpires DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  apiKeys   ApiKey[]
+  buckets   Bucket[]
+  databases SqliteDatabase[]
+  emailLogs EmailLog[]
+  apps      App[]
+
+  @@map("users")
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  prefix     String
+  hash       String    @unique
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("api_keys")
+}
+
+model Bucket {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  minioName String   @unique
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name])
+  @@map("buckets")
+}
+
+model SqliteDatabase {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@map("sqlite_databases")
+}
+
+model EmailLog {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  from      String
+  to        String[]
+  subject   String
+  status    EmailStatus
+  resendId  String?
+  error     String?
+  createdAt DateTime    @default(now())
+
+  @@index([userId, createdAt])
+  @@map("email_logs")
+}
+
+model App {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String       @unique
+  env         Json         @default("{}")
+  status      AppStatus    @default(IDLE)
+  containerId String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deployments Deployment[]
+
+  @@map("apps")
+}
+
+model Deployment {
+  id          String           @id @default(cuid())
+  appId       String
+  app         App              @relation(fields: [appId], references: [id], onDelete: Cascade)
+  status      DeploymentStatus @default(QUEUED)
+  step        DeploymentStep   @default(QUEUED)
+  artifactKey String
+  imageTag    String?
+  log         String           @default("")
+  createdAt   DateTime         @default(now())
+  finishedAt  DateTime?
+
+  @@index([appId, createdAt])
+  @@map("deployments")
+}

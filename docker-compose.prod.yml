@@ -1,0 +1,114 @@
+name: easyhost
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: easyhost
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: easyhost
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easyhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: unless-stopped
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: easyhost
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio-init:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 easyhost $${MINIO_ROOT_PASSWORD} &&
+      mc mb --ignore-existing local/easyhost-deploys
+      "
+    environment:
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+
+  caddy:
+    build:
+      context: .
+      dockerfile: infra/caddy/Dockerfile
+      args:
+        VITE_PUBLIC_API_URL: https://api.easyhost.fun
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+      - caddy_admin:/run/caddy
+    networks:
+      - default
+      - apps
+
+  api:
+    build: ./server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      caddy:
+        condition: service_started
+    environment:
+      PORT: 48710
+      DATABASE_URL: postgresql://easyhost:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/easyhost
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      APP_URL: https://app.easyhost.fun
+      RESEND_API_KEY: ${RESEND_API_KEY:?Set RESEND_API_KEY in .env}
+      EMAIL_FROM: ${EMAIL_FROM:?Set EMAIL_FROM in .env}
+      EMAIL_DAILY_LIMIT: ${EMAIL_DAILY_LIMIT:?Set EMAIL_DAILY_LIMIT in .env}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: easyhost
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+      MINIO_DEPLOY_BUCKET: easyhost-deploys
+      MINIO_PUBLIC_ENDPOINT: storage.easyhost.fun
+      MINIO_PUBLIC_PORT: 443
+      MINIO_PUBLIC_USE_SSL: "true"
+      SQLITE_DIR: /data/sqlite
+      CADDY_ADMIN_URL: unix:/run/caddy/admin.sock
+      APPS_DOMAIN: easyhost.fun
+      APPS_PROTOCOL: https
+      DOCKER_NETWORK: easyhost
+      BUILD_CONCURRENCY: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - sqlite_data:/data
+      - caddy_admin:/run/caddy
+
+volumes:
+  postgres_data:
+  minio_data:
+  sqlite_data:
+  caddy_data:
+  caddy_config:
+  caddy_admin:
+
+networks:
+  apps:
+    name: easyhost

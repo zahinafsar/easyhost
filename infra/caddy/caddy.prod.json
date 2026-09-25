@@ -1,0 +1,75 @@
+{
+  "admin": {
+    "listen": "unix//run/caddy/admin.sock"
+  },
+  "apps": {
+    "http": {
+      "servers": {
+        "apps": {
+          "listen": [":443"],
+          "routes": [
+            {
+              "match": [{ "host": ["www.easyhost.fun"] }],
+              "handle": [
+                {
+                  "handler": "static_response",
+                  "status_code": 301,
+                  "headers": { "Location": ["https://easyhost.fun{http.request.uri}"] }
+                }
+              ],
+              "terminal": true
+            },
+            {
+              "match": [{ "host": ["easyhost.fun"] }],
+              "handle": [
+                { "handler": "vars", "root": "/srv/marketing" },
+                { "handler": "encode", "encodings": { "gzip": {} } },
+                { "handler": "file_server" }
+              ],
+              "terminal": true
+            },
+            {
+              "match": [{ "host": ["app.easyhost.fun"] }],
+              "handle": [
+                {
+                  "handler": "subroute",
+                  "routes": [
+                    {
+                      "match": [{ "path": ["/api/*"] }],
+                      "handle": [{ "handler": "reverse_proxy", "upstreams": [{ "dial": "api:48710" }] }],
+                      "terminal": true
+                    },
+                    {
+                      "handle": [
+                        { "handler": "vars", "root": "/srv/app" },
+                        { "handler": "encode", "encodings": { "gzip": {} } }
+                      ]
+                    },
+                    {
+                      "match": [{ "file": { "try_files": ["{http.request.uri.path}", "/index.html"] } }],
+                      "handle": [{ "handler": "rewrite", "uri": "{http.matchers.file.relative}" }]
+                    },
+                    {
+                      "handle": [{ "handler": "file_server" }]
+                    }
+                  ]
+                }
+              ],
+              "terminal": true
+            },
+            {
+              "match": [{ "host": ["api.easyhost.fun"] }],
+              "handle": [{ "handler": "reverse_proxy", "upstreams": [{ "dial": "api:48710" }] }],
+              "terminal": true
+            },
+            {
+              "match": [{ "host": ["storage.easyhost.fun"] }],
+              "handle": [{ "handler": "reverse_proxy", "upstreams": [{ "dial": "minio:9000" }] }],
+              "terminal": true
+            }
+          ]
+        }
+      }
+    }
+  }
+}

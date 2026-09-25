@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EasyHost | Deploy Next.js apps with one command</title>
+    <meta name="description" content="Host your Next.js apps and get storage, SQLite databases and transactional email in one place. Deploy with a single command." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a href="/" class="logo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          EasyHost
+        </a>
+        <nav class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="#pricing">Pricing</a>
+        </nav>
+        <div class="nav-actions">
+          <a href="https://app.easyhost.fun/login" class="btn btn-ghost">Sign in</a>
+          <a href="https://app.easyhost.fun/register" class="btn btn-primary">Get started</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-inner">
+          <p class="eyebrow">Now in public beta</p>
+          <h1>Deploy your Next.js app with one command.</h1>
+          <p class="lead">
+            EasyHost builds and runs your app, and gives you file storage, SQLite databases and transactional email behind one API key.
+          </p>
+          <div class="hero-actions">
+            <a href="https://app.easyhost.fun/register" class="btn btn-primary btn-lg">Start for free</a>
+            <a href="#how" class="btn btn-outline btn-lg">See how it works</a>
+          </div>
+
+          <div class="terminal">
+            <div class="terminal-bar"><span></span><span></span><span></span></div>
+            <pre><span class="muted">$</span> npx ezhst deploy
+
+Deploying <b>my-app</b>
+
+<span class="ok">done</span>  Packaged source         <span class="muted">1s</span>
+<span class="ok">done</span>  Uploaded 4.2 MB        <span class="muted">2s</span>
+<span class="ok">done</span>  Installed dependencies <span class="muted">38s</span>
+<span class="ok">done</span>  Built app              <span class="muted">51s</span>
+<span class="ok">done</span>  Started app            <span class="muted">2s</span>
+
+Live at <b>https://my-app.easyhost.fun</b></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="section">
+        <div class="container">
+          <p class="eyebrow">Everything in one place</p>
+          <h2>The backend pieces you need, without the setup.</h2>
+          <div class="grid">
+            <article class="card">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+              <h3>Hosting</h3>
+              <p>Push any Next.js project from your terminal. No config files, no Dockerfile. HTTPS and a subdomain included.</p>
+            </article>
+            <article class="card">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg>
+              <h3>Storage</h3>
+              <p>S3 compatible buckets for uploads and assets. Public or private, with signed links when you need them.</p>
+            </article>
+            <article class="card">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+              <h3>Databases</h3>
+              <p>SQLite databases you can query over HTTP from anywhere, plus a SQL console in the dashboard.</p>
+            </article>
+            <article class="card">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <h3>Email</h3>
+              <p>Send transactional email with a single POST request. Every message is logged so you can see what went out.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="how" class="section section-muted">
+        <div class="container">
+          <p class="eyebrow">How it works</p>
+          <h2>From folder to live URL in three steps.</h2>
+          <ol class="steps">
+            <li>
+              <span class="step-number">1</span>
+              <h3>Create an account</h3>
+              <p>Sign up in the dashboard. It takes less than a minute.</p>
+            </li>
+            <li>
+              <span class="step-number">2</span>
+              <h3>Log in from your terminal</h3>
+              <p>Run <code>npx ezhst login</code> inside your Next.js project.</p>
+            </li>
+            <li>
+              <span class="step-number">3</span>
+              <h3>Deploy</h3>
+              <p>Run <code>npx ezhst deploy</code>. We install, build and start your app, then hand you the URL.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="pricing" class="section">
+        <div class="container pricing">
+          <div>
+            <p class="eyebrow">Pricing</p>
+            <h2>Free while we are in beta.</h2>
+            <p class="lead">Use every feature at no cost during the beta. We will give plenty of notice before paid plans arrive.</p>
+          </div>
+          <div class="card price-card">
+            <p class="price">$0 <span>/ month</span></p>
+            <ul>
+              <li>Next.js app hosting with HTTPS</li>
+              <li>Object storage buckets</li>
+              <li>SQLite databases over HTTP</li>
+              <li>100 emails per day</li>
+            </ul>
+            <a href="https://app.easyhost.fun/register" class="btn btn-primary btn-block">Create your account</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section cta">
+        <div class="container cta-inner">
+          <h2>Ship your next project today.</h2>
+          <a href="https://app.easyhost.fun/register" class="btn btn-light btn-lg">Get started for free</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span>&copy; <span id="year">2026</span> EasyHost</span>
+        <nav>
+          <a href="https://app.easyhost.fun/login">Sign in</a>
+          <a href="mailto:hello@easyhost.fun">Contact</a>
+        </nav>
+      </div>
+    </footer>
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>
