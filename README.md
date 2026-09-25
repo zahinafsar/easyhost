@@ -43,7 +43,7 @@ The app is served at `http://<app-name>.localhost`.
 
 Create an API key in the dashboard and send it as `Authorization: Bearer <key>`.
 
-- `PUT/GET/DELETE /api/v1/storage/:bucket/:key` and `GET /api/v1/storage/:bucket?prefix=`
+- `PUT/DELETE /api/v1/storage/:bucket/:key` and `GET /api/v1/storage/:bucket?prefix=` (upload responses include the file's public `url`; files are read directly from that public URL, no auth)
 - `POST /api/v1/databases/:name/query` with `{ "sql": "...", "params": [] }`
 - `POST /api/v1/email/send` with `{ "to", "subject", "html" | "text" }`
 

@@ -1,13 +1,11 @@
 import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, File, Folder, Link2, Trash2, Upload } from "lucide-react";
+import { ChevronLeft, ExternalLink, File, Folder, Link2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmButton } from "@/components/confirm-button";
@@ -45,12 +43,6 @@ export const BucketPage = () => {
     success: "File deleted",
   });
 
-  const togglePublic = useApiMutation({
-    mutationFn: (isPublic: boolean) => unwrap(api.storage.buckets[":id"].$patch({ param: { id }, json: { isPublic } })),
-    invalidate,
-    success: "Access updated",
-  });
-
   const removeBucket = useApiMutation({
     mutationFn: () => unwrap(api.storage.buckets[":id"].$delete({ param: { id } })),
     invalidate: [storageQuery().all, userQuery().all],
@@ -58,14 +50,9 @@ export const BucketPage = () => {
     onSuccess: () => navigate("/storage"),
   });
 
-  const copyLink = async (key: string) => {
-    try {
-      const { url } = await unwrap(api.storage.buckets[":id"].objects.url.$get({ param: { id }, query: { key } }));
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied");
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
+  const copyLink = async (url: string) => {
+    await navigator.clipboard.writeText(url);
+    toast.success("Link copied");
   };
 
   if (isLoading || !data) {
@@ -82,10 +69,6 @@ export const BucketPage = () => {
         description={prefix || "Root"}
         action={
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Switch id="public" checked={bucket.isPublic} onCheckedChange={(value) => togglePublic.mutate(value)} />
-              <Label htmlFor="public">Public</Label>
-            </div>
             <input
               ref={fileInput}
               type="file"
@@ -121,7 +104,7 @@ export const BucketPage = () => {
               <TableHead>Name</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Modified</TableHead>
-              <TableHead className="w-24" />
+              <TableHead className="w-32" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -168,9 +151,18 @@ export const BucketPage = () => {
                   <TableCell className="text-sm text-muted-foreground">{formatDate(object.lastModified)}</TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => copyLink(object.key)}>
-                        <Link2 className="size-4" />
-                      </Button>
+                      {object.url && (
+                        <>
+                          <Button variant="ghost" size="icon" asChild>
+                            <a href={object.url} target="_blank" rel="noreferrer">
+                              <ExternalLink className="size-4" />
+                            </a>
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => copyLink(object.url as string)}>
+                            <Link2 className="size-4" />
+                          </Button>
+                        </>
+                      )}
                       <ConfirmButton
                         title="Delete file?"
                         description={object.key}
@@ -199,8 +191,7 @@ export const BucketPage = () => {
   -H "Content-Type: image/png" \\
   --data-binary @me.png
 
-curl ${API_ORIGIN}/api/v1/storage/${bucket.name}/avatars/me.png \\
-  -H "Authorization: Bearer $EASYHOST_API_KEY" -o me.png`}
+curl ${bucket.baseUrl}/avatars/me.png -o me.png`}
           />
         </CardContent>
       </Card>

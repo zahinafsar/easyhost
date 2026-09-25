@@ -86,7 +86,6 @@ model Bucket {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   minioName String   @unique
-  isPublic  Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@unique([userId, name])

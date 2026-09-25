@@ -40,7 +40,6 @@ export const createApiKeySchema = z.object({
 
 export const createBucketSchema = z.object({
   name: resourceName,
-  isPublic: z.boolean().default(false),
 });
 
 export const listObjectsSchema = z.object({

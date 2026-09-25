@@ -5,7 +5,7 @@
   - Infra: docker-compose with postgres:16 (5434), MinIO official images (Docker Hub minio/minio, minio/mc, quay.io/minio) are no longer public. Using community builds pgsty/minio:RELEASE.2026-08-04T00-00-00Z and pgsty/mc:RELEASE.2026-09-16T00-00-00Z in both compose files; no MinIO healthcheck (image contents unknown), minio-init retries `mc alias set` until MinIO is up, then `mc mb easyhost-deploys`
   - Caddy runs from JSON config (`infra/caddy/caddy.json`) with `--resume`, server name `apps`, automatic HTTPS disabled for local `*.localhost`
   - Prisma models: User, ApiKey, Bucket, SqliteDatabase, EmailLog, App, Deployment. Migration `init` applied
-  - Storage buckets map to MinIO buckets `eh-<bucketId>`; public buckets get an anonymous GetObject policy, private ones use presigned URLs
+  - Storage buckets map to MinIO buckets `eh-<bucketId>`
   - SQLite databases live at `server/data/sqlite/<id>.db` (gitignored), queried via better-sqlite3, results capped at 1000 rows
   - Email API sends from shared `EMAIL_FROM` via Resend, logs every attempt to EmailLog, `EMAIL_DAILY_LIMIT` per user per 24h
   - Env var changes require a redeploy (`POST /api/apps/:id/redeploy` reuses the latest successful artifact)
@@ -20,4 +20,5 @@
 - Production env consolidated into root `.env.production` (all 25 vars, gitignored via `.env.*` with `!.env*.example` exceptions) plus `.env.production.example`. scripts/start.mjs no longer generates secrets; it validates the file and runs compose with `--env-file .env.production`. Old root `.env`/`.env.example` removed
 - Env consolidated: root `.env` (local, 25 vars incl. POSTGRES_PASSWORD/MINIO_ROOT_PASSWORD used by dev compose) + root `.env.production` (VPS). server/.env and client/.env removed. Server scripts use `--env-file=../.env`; Prisma CLI via `npm run prisma -- <cmd>` because Prisma only auto-loads .env next to the schema
 - VPS (luggora) already runs Nginx Proxy Manager on 80/443 plus other projects (gluesale, keepmymotivation). Decision: Caddy stays but sits behind NPM. Prod Caddy listens HTTP :80 only, automatic_https off, no host ports; joins external network `${PROXY_NETWORK}` (default guess nginx-proxy-manager_default) with alias `easyhost-caddy`. NPM terminates TLS (wildcard *.easyhost.fun via DNS challenge) and forwards all easyhost hosts to easyhost-caddy:80. User rejected letting the API drive NPM's API
+- All storage is public by product decision (2026-09-25): every bucket gets an anonymous GetObject policy on creation, Bucket.isPublic removed (migration `make_storage_public`), no presigned URLs, no private toggle, v1 key-protected GET removed. Listings/uploads return each file's public `url`; buckets return `baseUrl`. Uploads/deletes/listing still require API key or dashboard login
 - Open questions: production Resend sender domain, quotas, billing

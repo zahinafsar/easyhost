@@ -13,29 +13,12 @@ const publicUseSSL = env.minio.publicUseSSL;
 const publicEndpoint = env.minio.publicEndpoint;
 const publicPort = env.minio.publicPort;
 
-const publicMinio = new Client({
-  endPoint: publicEndpoint,
-  port: publicPort,
-  useSSL: publicUseSSL,
-  accessKey: env.minio.accessKey,
-  secretKey: env.minio.secretKey,
-  region: "us-east-1",
-});
-
-export const presignedObjectUrl = (minioName: string, key: string, expirySeconds: number) => {
-  return publicMinio.presignedGetObject(minioName, key, expirySeconds);
-};
-
 export const DEPLOY_BUCKET = env.minio.deployBucket;
 
 export const minioBucketName = (bucketId: string) => `eh-${bucketId.toLowerCase()}`;
 
-export const setBucketPublic = async (minioName: string, isPublic: boolean) => {
-  if (!isPublic) {
-    await minio.setBucketPolicy(minioName, "");
-    return;
-  }
-  const policy = {
+const publicReadPolicy = (minioName: string) => {
+  return JSON.stringify({
     Version: "2012-10-17",
     Statement: [
       {
@@ -45,21 +28,49 @@ export const setBucketPublic = async (minioName: string, isPublic: boolean) => {
         Resource: [`arn:aws:s3:::${minioName}/*`],
       },
     ],
-  };
-  await minio.setBucketPolicy(minioName, JSON.stringify(policy));
+  });
 };
 
+export const createPublicBucket = async (minioName: string) => {
+  await minio.makeBucket(minioName);
+  await minio.setBucketPolicy(minioName, publicReadPolicy(minioName));
+};
+
+export const publicBaseUrl = (minioName: string) => {
+  let protocol = "http";
+  let defaultPort = 80;
+  if (publicUseSSL) {
+    protocol = "https";
+    defaultPort = 443;
+  }
+  let host = publicEndpoint;
+  if (publicPort !== defaultPort) {
+    host = `${publicEndpoint}:${publicPort}`;
+  }
+  return `${protocol}://${host}/${minioName}`;
+};
+
+export const publicObjectUrl = (minioName: string, key: string) => `${publicBaseUrl(minioName)}/${encodeURI(key)}`;
+
+type StorageObject = { key: string; size: number; lastModified: Date | null; isFolder: boolean; url: string | null };
+
 export const listAllObjects = (minioName: string, prefix = "") => {
-  return new Promise<{ key: string; size: number; lastModified: Date | null; isFolder: boolean }[]>((resolve, reject) => {
-    const items: { key: string; size: number; lastModified: Date | null; isFolder: boolean }[] = [];
+  return new Promise<StorageObject[]>((resolve, reject) => {
+    const items: StorageObject[] = [];
     const stream = minio.listObjectsV2(minioName, prefix, false);
     stream.on("data", (item) => {
       if (item.prefix) {
-        items.push({ key: item.prefix, size: 0, lastModified: null, isFolder: true });
+        items.push({ key: item.prefix, size: 0, lastModified: null, isFolder: true, url: null });
         return;
       }
       if (item.name) {
-        items.push({ key: item.name, size: item.size, lastModified: item.lastModified ?? null, isFolder: false });
+        items.push({
+          key: item.name,
+          size: item.size,
+          lastModified: item.lastModified ?? null,
+          isFolder: false,
+          url: publicObjectUrl(minioName, item.name),
+        });
       }
     });
     stream.on("error", reject);
@@ -83,18 +94,4 @@ export const emptyAndRemoveBucket = async (minioName: string) => {
     await minio.removeObjects(minioName, keys);
   }
   await minio.removeBucket(minioName);
-};
-
-export const publicObjectUrl = (minioName: string, key: string) => {
-  let protocol = "http";
-  let defaultPort = 80;
-  if (publicUseSSL) {
-    protocol = "https";
-    defaultPort = 443;
-  }
-  let host = publicEndpoint;
-  if (publicPort !== defaultPort) {
-    host = `${publicEndpoint}:${publicPort}`;
-  }
-  return `${protocol}://${host}/${minioName}/${encodeURI(key)}`;
 };
