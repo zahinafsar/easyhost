@@ -4,13 +4,15 @@ Hosting platform for Next.js apps with object storage, SQLite databases and tran
 
 ## Getting started
 
+All local config lives in one root `.env` (production uses `.env.production`).
+
 ```bash
+cp .env.example .env
 docker compose up -d
 
 cd server
-cp .env.example .env
 npm install
-npx prisma migrate dev
+npm run prisma -- migrate dev
 npm run dev
 
 cd ../client
@@ -51,10 +53,11 @@ On the VPS (Docker installed, ports 80 and 443 open, DNS for `easyhost.fun`, `ww
 
 ```bash
 git clone <repo> easyhost && cd easyhost
+cp .env.production.example .env.production
 npm start
 ```
 
-The first run creates `.env` with random database, storage and JWT secrets. Add `RESEND_API_KEY` to it and run `npm start` again to enable email. Caddy gets HTTPS certificates automatically.
+Fill in every value in `.env.production` first (secrets, and the passwords inside `DATABASE_URL` and `MINIO_SECRET_KEY`). `npm start` refuses to run while anything is empty or still a `<PLACEHOLDER>`. Caddy gets HTTPS certificates automatically.
 
 - https://easyhost.fun marketing site
 - https://app.easyhost.fun dashboard

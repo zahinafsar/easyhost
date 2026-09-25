@@ -1,55 +1,55 @@
 import { spawnSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const envFile = path.join(root, ".env");
-const secret = (bytes) => randomBytes(bytes).toString("hex");
+const envFile = path.join(root, ".env.production");
 
-const GENERATED = {
-  POSTGRES_PASSWORD: () => secret(24),
-  MINIO_ROOT_PASSWORD: () => secret(24),
-  JWT_SECRET: () => secret(32),
-};
+const REQUIRED = [
+  "POSTGRES_PASSWORD",
+  "MINIO_ROOT_PASSWORD",
+  "JWT_SECRET",
+  "RESEND_API_KEY",
+  "PORT",
+  "DATABASE_URL",
+  "APP_URL",
+  "EMAIL_FROM",
+  "EMAIL_DAILY_LIMIT",
+  "MINIO_ENDPOINT",
+  "MINIO_PORT",
+  "MINIO_USE_SSL",
+  "MINIO_ACCESS_KEY",
+  "MINIO_SECRET_KEY",
+  "MINIO_DEPLOY_BUCKET",
+  "MINIO_PUBLIC_ENDPOINT",
+  "MINIO_PUBLIC_PORT",
+  "MINIO_PUBLIC_USE_SSL",
+  "SQLITE_DIR",
+  "CADDY_ADMIN_URL",
+  "APPS_DOMAIN",
+  "APPS_PROTOCOL",
+  "DOCKER_NETWORK",
+  "BUILD_CONCURRENCY",
+  "VITE_PUBLIC_API_URL",
+];
 
-const REQUIRED = ["POSTGRES_PASSWORD", "MINIO_ROOT_PASSWORD", "JWT_SECRET", "RESEND_API_KEY", "EMAIL_FROM", "EMAIL_DAILY_LIMIT"];
-
-const readEnv = () => {
+const checkEnv = () => {
   if (!existsSync(envFile)) {
-    return readFileSync(path.join(root, ".env.example"), "utf8");
-  }
-  return readFileSync(envFile, "utf8");
-};
-
-const ensureEnv = () => {
-  let content = readEnv();
-  const created = [];
-
-  for (const [key, generate] of Object.entries(GENERATED)) {
-    const pattern = new RegExp(`^${key}=(.*)$`, "m");
-    const match = content.match(pattern);
-    if (match && match[1].trim()) {
-      continue;
-    }
-    const line = `${key}=${generate()}`;
-    if (match) {
-      content = content.replace(pattern, line);
-    } else {
-      content = `${content.trimEnd()}\n${line}\n`;
-    }
-    created.push(key);
+    console.error("Missing .env.production. Copy .env.production.example to .env.production and fill in every value.");
+    process.exit(1);
   }
 
-  writeFileSync(envFile, content, { mode: 0o600 });
-  if (created.length) {
-    console.log(`Generated ${created.join(", ")} in .env`);
-  }
+  const content = readFileSync(envFile, "utf8");
   const missing = REQUIRED.filter((key) => !new RegExp(`^${key}=\\S+`, "m").test(content));
   if (missing.length) {
-    console.error(`Missing required values in .env: ${missing.join(", ")}`);
-    console.error("Fill them in and run npm start again.");
+    console.error(`Missing required values in .env.production: ${missing.join(", ")}`);
+    process.exit(1);
+  }
+
+  const placeholders = REQUIRED.filter((key) => new RegExp(`^${key}=.*<[A-Z_]+>`, "m").test(content));
+  if (placeholders.length) {
+    console.error(`Replace the <PLACEHOLDER> values in .env.production: ${placeholders.join(", ")}`);
     process.exit(1);
   }
 };
@@ -65,8 +65,8 @@ const run = (args) => {
   }
 };
 
-ensureEnv();
-run(["compose", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "--remove-orphans"]);
+checkEnv();
+run(["compose", "-f", "docker-compose.prod.yml", "--env-file", ".env.production", "up", "-d", "--build", "--remove-orphans"]);
 
 console.log(`
 EasyHost is running.

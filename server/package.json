@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file=.env src/index.ts",
+    "dev": "tsx watch --env-file=../.env src/index.ts",
     "build": "prisma generate && tsc",
-    "start": "node --env-file=.env dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "start": "node --env-file=../.env dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "prisma": "node --env-file=../.env node_modules/prisma/build/index.js"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",

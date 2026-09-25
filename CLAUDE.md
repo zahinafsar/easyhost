@@ -13,14 +13,14 @@ Hosting platform: Next.js app hosting (containers + Caddy), object storage (MinI
 - infra: docker-compose (postgres, minio, minio-init, caddy)
 
 ## Commands
-- `npm start` (repo root) - Production: generates `.env` secrets if missing, builds and starts everything via `docker-compose.prod.yml`
+- `npm start` (repo root) - Production: validates `.env.production`, builds and starts everything via `docker-compose.prod.yml`
 - `npm stop` / `npm run logs` - Stop / tail production stack
 - `docker compose up -d` - Dev infra: postgres 127.0.0.1:54329, minio 127.0.0.1:19000 (console 19001), caddy :80 (admin 127.0.0.1:20190)
 - `cd server && npm run dev` - API on :48710
 - `cd client && npm run dev` - Dashboard on :51730 (proxies /api to :48710)
 - `cd cli && npm run dev -- <command>` - Run CLI (`ezhst`) from source
-- `cd server && npx prisma migrate dev --name <name>` - Create/apply migration
-- `cd server && npx prisma studio` - Database GUI
+- `cd server && npm run prisma -- migrate dev --name <name>` - Create/apply migration (Prisma reads root `.env`)
+- `cd server && npm run prisma -- studio` - Database GUI
 
 ## Production (VPS)
 - DNS: `easyhost.fun`, `www`, `app`, `api`, `storage` and wildcard `*.easyhost.fun` point to the VPS. Only ports 22/80/443 open
@@ -46,7 +46,8 @@ Hosting platform: Next.js app hosting (containers + Caddy), object storage (MinI
 
 ## Key Patterns
 - Named exports only
-- Env vars: never use fallbacks. Server reads env only through `server/src/lib/env.ts` (validates all required vars at startup), client through `client/src/lib/env.ts`, prod compose uses `${VAR:?}`
+- Env files: one root `.env` for local (API, dashboard via Vite `envDir`, dev compose) and one root `.env.production` for the VPS. No per-package env files
+- Env vars: never use fallbacks. Server reads env only through `server/src/lib/env.ts` (validates all required vars at startup), client through `client/src/lib/env.ts`, prod env lives in `.env.production` (template `.env.production.example`), passed to the api container via `env_file` and to compose interpolation via `--env-file`
 - kebab-case file names
 - Zod for all validation, `validate()` from `server/src/lib/validator.ts` returns `{ error }` with the first issue
 - API errors are `{ error: string }` with proper status
