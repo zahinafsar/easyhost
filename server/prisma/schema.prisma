@@ -25,6 +25,12 @@ enum AppStatus {
   FAILED
 }
 
+enum DomainStatus {
+  PENDING
+  ACTIVE
+  FAILED
+}
+
 enum DeploymentStep {
   QUEUED
   PREPARING
@@ -59,8 +65,9 @@ model User {
 
   apiKeys   ApiKey[]
   buckets   Bucket[]
-  databases SqliteDatabase[]
-  emailLogs EmailLog[]
+  databases Database[]
+  emailLogs    EmailLog[]
+  emailSenders EmailSender[]
   apps      App[]
 
   @@map("users")
@@ -92,16 +99,30 @@ model Bucket {
   @@map("buckets")
 }
 
-model SqliteDatabase {
+model Database {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
+  dbName    String   @unique
+  roleName  String   @unique
+  password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, name])
-  @@map("sqlite_databases")
+  @@map("databases")
+}
+
+model EmailSender {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  username  String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("email_senders")
 }
 
 model EmailLog {
@@ -132,8 +153,25 @@ model App {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deployments Deployment[]
+  domains     AppDomain[]
 
   @@map("apps")
+}
+
+model AppDomain {
+  id               String       @id @default(cuid())
+  appId            String
+  app              App          @relation(fields: [appId], references: [id], onDelete: Cascade)
+  hostname         String       @unique
+  status           DomainStatus @default(PENDING)
+  error            String?
+  npmProxyHostId   Int?
+  npmCertificateId Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([appId])
+  @@map("app_domains")
 }
 
 model Deployment {

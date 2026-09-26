@@ -24,15 +24,16 @@ export const DatabasesPage = () => {
     <>
       <PageHeader
         title="Databases"
-        description="Serverless SQLite databases over HTTP."
+        description="Postgres databases with a standard connection string for Prisma, Drizzle or any client."
         action={
           <CreateResourceDialog
             title="Create database"
-            description="A new empty SQLite database."
+            description="A new empty Postgres database with its own user and password."
             triggerLabel="New database"
             placeholder="main"
             isPending={createDatabase.isPending}
             onSubmit={(name) => createDatabase.mutateAsync(name)}
+            usage={data && { count: data.databases.length, limit: data.limit }}
           />
         }
       />
@@ -42,7 +43,7 @@ export const DatabasesPage = () => {
           <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
             <Database className="size-8 text-muted-foreground" />
             <p className="font-medium">No databases yet</p>
-            <p className="text-sm text-muted-foreground">Create a database and query it from anywhere with an API key.</p>
+            <p className="text-sm text-muted-foreground">Create a database and connect to it from your app with its connection string.</p>
           </CardContent>
         </Card>
       )}
@@ -53,7 +54,7 @@ export const DatabasesPage = () => {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Size</TableHead>
-                <TableHead>Last activity</TableHead>
+                <TableHead>Created</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -65,7 +66,7 @@ export const DatabasesPage = () => {
                     </Link>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatBytes(database.sizeBytes)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDate(database.updatedAt)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDate(database.createdAt)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

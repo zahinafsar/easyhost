@@ -2,13 +2,16 @@ import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
 import { minio, DEPLOY_BUCKET } from "../lib/minio.js";
 import { containerLogs, containerName, removeContainer, removeImage, startContainer, stopContainer } from "../lib/docker.js";
-import { appUrl, removeAppRoute, upsertAppRoute } from "../lib/caddy.js";
+import { appHost, appUrl, removeAppRoute } from "../lib/caddy.js";
+import { routeApp } from "../lib/routing.js";
+import { isPlatformHostname, markDomainFailed, provisionDomain, releaseDomain, resolvesToServer } from "../lib/domains.js";
+import { env } from "../lib/env.js";
 import { enqueueDeployment, queuePosition } from "../lib/build-queue.js";
 import { validate } from "../lib/validator.js";
-import { createAppSchema, logsQuerySchema, updateEnvSchema } from "../lib/validations.js";
+import { addDomainSchema, createAppSchema, logsQuerySchema, updateEnvSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
-import { APP_PORT } from "../lib/docker.js";
 import type { UserEnv } from "../lib/types.js";
+import { LIMITS } from "../lib/limits.js";
 
 const MAX_ARTIFACT_BYTES = 500 * 1024 * 1024;
 
@@ -37,10 +40,15 @@ export const appRoutes = new Hono<UserEnv>()
       orderBy: { createdAt: "desc" },
       include: { deployments: { select: deploymentSummary, orderBy: { createdAt: "desc" }, take: 1 } },
     });
-    return c.json({ apps: apps.map(withUrl) });
+    return c.json({ apps: apps.map(withUrl), limit: LIMITS.apps });
   })
   .post("/", validate("json", createAppSchema), async (c) => {
     const { name } = c.req.valid("json");
+
+    const count = await prisma.app.count({ where: { userId: c.get("user").id } });
+    if (count >= LIMITS.apps) {
+      return c.json({ error: `You can have at most ${LIMITS.apps} apps. Delete one to create another.` }, 400);
+    }
 
     const existing = await prisma.app.findUnique({ where: { slug: name } });
     if (existing) {
@@ -62,7 +70,91 @@ export const appRoutes = new Hono<UserEnv>()
       orderBy: { createdAt: "desc" },
       take: 20,
     });
-    return c.json({ app: withUrl(app), deployments });
+    const domains = await prisma.appDomain.findMany({ where: { appId: app.id }, orderBy: { createdAt: "asc" } });
+    return c.json({
+      app: withUrl(app),
+      deployments,
+      domains,
+      dnsTarget: { cname: appHost(app.slug), ip: env.publicIp },
+    });
+  })
+  .post("/:id/domains", validate("json", addDomainSchema), async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    const { hostname } = c.req.valid("json");
+    if (isPlatformHostname(hostname)) {
+      return c.json({ error: `${hostname} is an EasyHost domain and can't be added` }, 400);
+    }
+    const existing = await prisma.appDomain.findUnique({ where: { hostname } });
+    if (existing) {
+      return c.json({ error: `${hostname} is already connected to an app` }, 400);
+    }
+
+    const domain = await prisma.appDomain.create({ data: { appId: app.id, hostname } });
+    return c.json({ domain }, 201);
+  })
+  .post("/:id/domains/:domainId/verify", async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+    const domain = await prisma.appDomain.findFirst({ where: { id: c.req.param("domainId"), appId: app.id } });
+    if (!domain) {
+      return c.json({ error: "Domain not found" }, 404);
+    }
+    if (domain.status === "ACTIVE") {
+      return c.json({ domain });
+    }
+
+    const dns = await resolvesToServer(domain.hostname);
+    if (!dns.ok) {
+      let found = "no address";
+      if (dns.ips.length) {
+        found = dns.ips.join(", ");
+      }
+      const error = `${domain.hostname} resolves to ${found}, expected ${env.publicIp}. DNS changes can take a few minutes.`;
+      await markDomainFailed(domain.id, error);
+      return c.json({ error }, 400);
+    }
+
+    try {
+      const ids = await provisionDomain(domain);
+      const updated = await prisma.appDomain.update({
+        where: { id: domain.id },
+        data: { ...ids, status: "ACTIVE", error: null },
+      });
+      if (app.status === "RUNNING") {
+        await routeApp(app.id);
+      }
+      return c.json({ domain: updated });
+    } catch (error) {
+      let message = "Could not set up HTTPS for this domain";
+      if (error instanceof Error) {
+        message = `Could not set up HTTPS: ${error.message}`;
+      }
+      await markDomainFailed(domain.id, message);
+      return c.json({ error: message }, 400);
+    }
+  })
+  .delete("/:id/domains/:domainId", async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+    const domain = await prisma.appDomain.findFirst({ where: { id: c.req.param("domainId"), appId: app.id } });
+    if (!domain) {
+      return c.json({ error: "Domain not found" }, 404);
+    }
+
+    await releaseDomain(domain);
+    await prisma.appDomain.delete({ where: { id: domain.id } });
+    if (app.status === "RUNNING") {
+      await routeApp(app.id);
+    }
+    return c.json({ message: "Domain removed" });
   })
   .put("/:id/env", validate("json", updateEnvSchema), async (c) => {
     const app = await findApp(c.get("user").id, c.req.param("id"));
@@ -156,9 +248,8 @@ export const appRoutes = new Hono<UserEnv>()
       return c.json({ error: "Deploy the app first" }, 400);
     }
 
-    const name = containerName(app.slug);
-    await startContainer(name);
-    await upsertAppRoute(app.slug, `${name}:${APP_PORT}`);
+    await startContainer(containerName(app.slug));
+    await routeApp(app.id);
     const updated = await prisma.app.update({ where: { id: app.id }, data: { status: "RUNNING" } });
     return c.json({ app: withUrl(updated) });
   })
@@ -169,6 +260,10 @@ export const appRoutes = new Hono<UserEnv>()
     }
 
     const deployments = await prisma.deployment.findMany({ where: { appId: app.id } });
+    const domains = await prisma.appDomain.findMany({ where: { appId: app.id } });
+    for (const domain of domains) {
+      await releaseDomain(domain);
+    }
     await removeAppRoute(app.slug).catch(() => undefined);
     await removeContainer(containerName(app.slug));
     for (const deployment of deployments) {

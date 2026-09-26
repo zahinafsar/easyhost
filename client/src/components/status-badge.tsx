@@ -11,6 +11,8 @@ const styles: Record<string, string> = {
   STOPPED: "bg-amber-100 text-amber-800",
   SUPERSEDED: "bg-slate-100 text-slate-500",
   IDLE: "bg-slate-100 text-slate-700",
+  ACTIVE: "bg-emerald-100 text-emerald-800",
+  PENDING: "bg-amber-100 text-amber-800",
 };
 
 export const StatusBadge = ({ status }: { status: string }) => {

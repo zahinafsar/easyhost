@@ -13,6 +13,7 @@ export const CreateResourceDialog = ({
   isPending,
   onSubmit,
   children,
+  usage,
 }: {
   title: string;
   description: string;
@@ -21,6 +22,7 @@ export const CreateResourceDialog = ({
   isPending: boolean;
   onSubmit: (name: string) => Promise<unknown>;
   children?: React.ReactNode;
+  usage?: { count: number; limit: number };
 }) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -32,14 +34,23 @@ export const CreateResourceDialog = ({
     setOpen(false);
   };
 
+  const atLimit = !!usage && usage.count >= usage.limit;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="size-4" />
-          {triggerLabel}
-        </Button>
-      </DialogTrigger>
+      <div className="flex items-center gap-3">
+        {usage && (
+          <span className="text-sm text-muted-foreground">
+            {usage.count} / {usage.limit}
+          </span>
+        )}
+        <DialogTrigger asChild>
+          <Button disabled={atLimit} title={atLimit ? `Limit of ${usage?.limit} reached` : undefined}>
+            <Plus className="size-4" />
+            {triggerLabel}
+          </Button>
+        </DialogTrigger>
+      </div>
       <DialogContent>
         <form onSubmit={submit} className="space-y-4">
           <DialogHeader>

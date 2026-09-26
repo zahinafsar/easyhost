@@ -12,6 +12,20 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  userdb:
+    build: ./infra/userdb
+    container_name: easyhost-userdb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${USERDB_PASSWORD:?Set USERDB_PASSWORD in .env}
+      POSTGRES_DB: postgres
+      USERDB_TLS_MODE: self-signed
+    ports:
+      - "127.0.0.1:54330:5432"
+    volumes:
+      - userdb_data:/var/lib/postgresql/data
+
   minio:
     image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
     container_name: easyhost-minio
@@ -60,6 +74,7 @@ services:
 
 volumes:
   postgres_data:
+  userdb_data:
   minio_data:
   caddy_data:
   caddy_config:

@@ -33,6 +33,7 @@ export const StoragePage = () => {
             placeholder="uploads"
             isPending={createBucket.isPending}
             onSubmit={(name) => createBucket.mutateAsync(name)}
+            usage={data && { count: data.buckets.length, limit: data.limit }}
           />
         }
       />

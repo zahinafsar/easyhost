@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, FileText, List, Play, Plus, RefreshCw, Square, Trash2, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileText, List, Play, Plus, RefreshCw, Square, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -157,6 +157,130 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
   );
 };
 
+type Domain = { id: string; hostname: string; status: string; error: string | null };
+
+const DomainsPanel = ({
+  appId,
+  domains,
+  dnsTarget,
+}: {
+  appId: string;
+  domains: Domain[];
+  dnsTarget: { cname: string; ip: string };
+}) => {
+  const [hostname, setHostname] = useState("");
+  const invalidate = [appsQuery().all];
+
+  const add = useApiMutation({
+    mutationFn: () => unwrap(api.apps[":id"].domains.$post({ param: { id: appId }, json: { hostname: hostname.trim() } })),
+    invalidate,
+    success: "Domain added. Create the DNS record, then click Verify.",
+    onSuccess: () => setHostname(""),
+  });
+
+  const verify = useApiMutation({
+    mutationFn: (domainId: string) =>
+      unwrap(api.apps[":id"].domains[":domainId"].verify.$post({ param: { id: appId, domainId } })),
+    invalidate,
+    success: "Domain is live",
+  });
+
+  const remove = useApiMutation({
+    mutationFn: (domainId: string) => unwrap(api.apps[":id"].domains[":domainId"].$delete({ param: { id: appId, domainId } })),
+    invalidate,
+    success: "Domain removed",
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Custom domains</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              add.mutate(undefined);
+            }}
+          >
+            <Input
+              value={hostname}
+              onChange={(event) => setHostname(event.target.value.toLowerCase())}
+              placeholder="www.example.com"
+              className="font-mono"
+            />
+            <Button type="submit" disabled={add.isPending || !hostname.trim()}>
+              <Plus className="size-4" />
+              Add domain
+            </Button>
+          </form>
+          {!domains.length && <p className="text-sm text-muted-foreground">No custom domains yet.</p>}
+          {domains.map((domain) => (
+            <div key={domain.id} className="space-y-3 border p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  {domain.status === "ACTIVE" && <CheckCircle2 className="size-4 text-emerald-600" />}
+                  <a
+                    href={`https://${domain.hostname}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-sm font-medium hover:underline"
+                  >
+                    {domain.hostname}
+                  </a>
+                  <StatusBadge status={domain.status} />
+                </div>
+                <div className="flex gap-2">
+                  {domain.status !== "ACTIVE" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => verify.mutate(domain.id)}
+                      disabled={verify.isPending && verify.variables === domain.id}
+                    >
+                      <RefreshCw className="size-4" />
+                      Verify
+                    </Button>
+                  )}
+                  <ConfirmButton
+                    title={`Remove ${domain.hostname}?`}
+                    description="The domain stops serving this app and its HTTPS certificate is deleted."
+                    confirmLabel="Remove"
+                    onConfirm={() => remove.mutate(domain.id)}
+                  >
+                    <Button variant="ghost" size="sm">
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </ConfirmButton>
+                </div>
+              </div>
+              {domain.error && <p className="text-sm text-destructive">{domain.error}</p>}
+              {domain.status !== "ACTIVE" && (
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>Add one of these records at your DNS provider, then click Verify:</p>
+                  <div className="grid gap-2 font-mono text-xs sm:grid-cols-3">
+                    <span className="border bg-muted/40 px-3 py-2">Type: CNAME</span>
+                    <span className="border bg-muted/40 px-3 py-2">Name: {domain.hostname}</span>
+                    <span className="border bg-muted/40 px-3 py-2">Value: {dnsTarget.cname}</span>
+                  </div>
+                  <p>For a root domain (example.com) use an A record instead:</p>
+                  <div className="grid gap-2 font-mono text-xs sm:grid-cols-3">
+                    <span className="border bg-muted/40 px-3 py-2">Type: A</span>
+                    <span className="border bg-muted/40 px-3 py-2">Name: {domain.hostname}</span>
+                    <span className="border bg-muted/40 px-3 py-2">Value: {dnsTarget.ip}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 export const AppDetailPage = () => {
   const { id = "" } = useParams();
   const navigate = useNavigate();
@@ -249,6 +373,7 @@ export const AppDetailPage = () => {
             Runtime logs
           </TabsTrigger>
           <TabsTrigger value="env">Environment</TabsTrigger>
+          <TabsTrigger value="domains">Domains</TabsTrigger>
         </TabsList>
         <TabsContent value="deployments" className="mt-4">
           {!deployments.length && (
@@ -291,6 +416,9 @@ export const AppDetailPage = () => {
         </TabsContent>
         <TabsContent value="env" className="mt-4">
           <EnvEditor appId={app.id} initial={app.env as Record<string, string>} />
+        </TabsContent>
+        <TabsContent value="domains" className="mt-4">
+          <DomainsPanel appId={app.id} domains={data.domains} dnsTarget={data.dnsTarget} />
         </TabsContent>
       </Tabs>
     </>

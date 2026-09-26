@@ -55,12 +55,12 @@ export const removeAppRoute = async (slug: string) => {
   }
 };
 
-export const upsertAppRoute = async (slug: string, upstream: string) => {
+export const upsertAppRoute = async (slug: string, upstream: string, customHosts: string[]) => {
   await removeAppRoute(slug).catch(() => undefined);
 
   const route = {
     "@id": routeId(slug),
-    match: [{ host: [appHost(slug)] }],
+    match: [{ host: [appHost(slug), ...customHosts] }],
     handle: [
       {
         handler: "reverse_proxy",

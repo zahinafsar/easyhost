@@ -1,35 +1,69 @@
 import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
-import { createSqliteFile, listTables, removeSqliteFile, runQuery, sqliteSize } from "../lib/sqlite.js";
+import {
+  connectionString,
+  createUserDatabase,
+  databaseSizes,
+  dropUserDatabase,
+  generateCredentials,
+  listTables,
+  readTableRows,
+  rotatePassword,
+  runQuery,
+  shadowConnectionString,
+  updateTableCell,
+} from "../lib/userdb.js";
 import { validate } from "../lib/validator.js";
-import { createDatabaseSchema, runQuerySchema } from "../lib/validations.js";
+import { createDatabaseSchema, runQuerySchema, tableRowsQuerySchema, updateCellSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
 import type { UserEnv } from "../lib/types.js";
+import { LIMITS } from "../lib/limits.js";
 
-const findDatabase = (userId: string, id: string) => prisma.sqliteDatabase.findFirst({ where: { id, userId } });
+const publicFields = { id: true, name: true, dbName: true, createdAt: true, updatedAt: true };
+
+const findDatabase = (userId: string, id: string) => prisma.database.findFirst({ where: { id, userId } });
+
+const errorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Query failed";
+};
 
 export const databaseRoutes = new Hono<UserEnv>()
   .use(requireUser)
   .get("/", async (c) => {
-    const databases = await prisma.sqliteDatabase.findMany({
+    const databases = await prisma.database.findMany({
       where: { userId: c.get("user").id },
       orderBy: { createdAt: "desc" },
+      select: publicFields,
     });
+    const sizes = await databaseSizes(databases.map((database) => database.dbName));
     return c.json({
-      databases: databases.map((database) => ({ ...database, sizeBytes: sqliteSize(database.id) })),
+      databases: databases.map((database) => ({ ...database, sizeBytes: sizes.get(database.dbName) ?? 0 })),
+      limit: LIMITS.databases,
     });
   })
   .post("/", validate("json", createDatabaseSchema), async (c) => {
     const userId = c.get("user").id;
     const { name } = c.req.valid("json");
 
-    const existing = await prisma.sqliteDatabase.findUnique({ where: { userId_name: { userId, name } } });
+    const count = await prisma.database.count({ where: { userId } });
+    if (count >= LIMITS.databases) {
+      return c.json({ error: `You can have at most ${LIMITS.databases} databases. Delete one to create another.` }, 400);
+    }
+
+    const existing = await prisma.database.findUnique({ where: { userId_name: { userId, name } } });
     if (existing) {
       return c.json({ error: "A database with this name already exists" }, 400);
     }
 
-    const database = await prisma.sqliteDatabase.create({ data: { userId, name } });
-    createSqliteFile(database.id);
+    const credentials = generateCredentials();
+    await createUserDatabase(credentials);
+    const database = await prisma.database.create({
+      data: { userId, name, ...credentials },
+      select: publicFields,
+    });
     return c.json({ database }, 201);
   })
   .get("/:id", async (c) => {
@@ -37,9 +71,20 @@ export const databaseRoutes = new Hono<UserEnv>()
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
     }
+
+    const [sizes, tables] = await Promise.all([databaseSizes([database.dbName]), listTables(database)]);
     return c.json({
-      database: { ...database, sizeBytes: sqliteSize(database.id) },
-      tables: listTables(database.id),
+      database: {
+        id: database.id,
+        name: database.name,
+        dbName: database.dbName,
+        createdAt: database.createdAt,
+        updatedAt: database.updatedAt,
+        sizeBytes: sizes.get(database.dbName) ?? 0,
+        connectionString: connectionString(database),
+        shadowConnectionString: shadowConnectionString(database),
+      },
+      tables,
     });
   })
   .post("/:id/query", validate("json", runQuerySchema), async (c) => {
@@ -48,14 +93,49 @@ export const databaseRoutes = new Hono<UserEnv>()
       return c.json({ error: "Database not found" }, 404);
     }
 
-    const { sql, params } = c.req.valid("json");
     try {
-      const result = runQuery(database.id, sql, params);
-      await prisma.sqliteDatabase.update({ where: { id: database.id }, data: { updatedAt: new Date() } });
+      const result = await runQuery(database, c.req.valid("json").sql);
       return c.json({ result });
     } catch (error) {
-      return c.json({ error: error instanceof Error ? error.message : "Query failed" }, 400);
+      return c.json({ error: errorMessage(error) }, 400);
     }
+  })
+  .get("/:id/tables/:table/rows", validate("query", tableRowsQuerySchema), async (c) => {
+    const database = await findDatabase(c.get("user").id, c.req.param("id"));
+    if (!database) {
+      return c.json({ error: "Database not found" }, 404);
+    }
+
+    try {
+      const data = await readTableRows(database, c.req.param("table"), c.req.valid("query").page);
+      return c.json(data);
+    } catch (error) {
+      return c.json({ error: errorMessage(error) }, 400);
+    }
+  })
+  .patch("/:id/tables/:table/rows", validate("json", updateCellSchema), async (c) => {
+    const database = await findDatabase(c.get("user").id, c.req.param("id"));
+    if (!database) {
+      return c.json({ error: "Database not found" }, 404);
+    }
+
+    const { key, column, value } = c.req.valid("json");
+    try {
+      await updateTableCell(database, c.req.param("table"), key, column, value);
+      return c.json({ message: "Saved" });
+    } catch (error) {
+      return c.json({ error: errorMessage(error) }, 400);
+    }
+  })
+  .post("/:id/reset-password", async (c) => {
+    const database = await findDatabase(c.get("user").id, c.req.param("id"));
+    if (!database) {
+      return c.json({ error: "Database not found" }, 404);
+    }
+
+    const password = await rotatePassword(database.roleName);
+    const updated = await prisma.database.update({ where: { id: database.id }, data: { password } });
+    return c.json({ connectionString: connectionString(updated) });
   })
   .delete("/:id", async (c) => {
     const database = await findDatabase(c.get("user").id, c.req.param("id"));
@@ -63,7 +143,7 @@ export const databaseRoutes = new Hono<UserEnv>()
       return c.json({ error: "Database not found" }, 404);
     }
 
-    await prisma.sqliteDatabase.delete({ where: { id: database.id } });
-    removeSqliteFile(database.id);
+    await dropUserDatabase(database);
+    await prisma.database.delete({ where: { id: database.id } });
     return c.json({ message: "Database deleted" });
   });

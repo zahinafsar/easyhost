@@ -35,6 +35,7 @@ export const AppsPage = () => {
             placeholder="my-app"
             isPending={createApp.isPending}
             onSubmit={(name) => createApp.mutateAsync(name)}
+            usage={data && { count: data.apps.length, limit: data.limit }}
           />
         }
       />

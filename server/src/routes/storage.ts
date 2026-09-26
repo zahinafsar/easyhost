@@ -5,6 +5,7 @@ import { validate } from "../lib/validator.js";
 import { createBucketSchema, listObjectsSchema, objectKeySchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
 import type { UserEnv } from "../lib/types.js";
+import { LIMITS } from "../lib/limits.js";
 
 const findBucket = (userId: string, id: string) => prisma.bucket.findFirst({ where: { id, userId } });
 
@@ -17,11 +18,16 @@ export const storageRoutes = new Hono<UserEnv>()
       where: { userId: c.get("user").id },
       orderBy: { createdAt: "desc" },
     });
-    return c.json({ buckets: buckets.map(withBaseUrl) });
+    return c.json({ buckets: buckets.map(withBaseUrl), limit: LIMITS.buckets });
   })
   .post("/buckets", validate("json", createBucketSchema), async (c) => {
     const userId = c.get("user").id;
     const { name } = c.req.valid("json");
+
+    const count = await prisma.bucket.count({ where: { userId } });
+    if (count >= LIMITS.buckets) {
+      return c.json({ error: `You can have at most ${LIMITS.buckets} buckets. Delete one to create another.` }, 400);
+    }
 
     const existing = await prisma.bucket.findUnique({ where: { userId_name: { userId, name } } });
     if (existing) {

@@ -56,10 +56,26 @@ export const createDatabaseSchema = z.object({
 
 export const runQuerySchema = z.object({
   sql: z.string().min(1, "SQL is required").max(100_000, "SQL too long"),
-  params: z.array(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+});
+
+const RESERVED_EMAIL_USERNAMES = [
+  "hello", "support", "admin", "administrator", "noreply", "no-reply", "postmaster", "abuse", "security",
+  "billing", "root", "webmaster", "hostmaster", "info", "team", "mail", "mailer-daemon", "easyhost", "help",
+];
+
+export const emailUsernameSchema = z
+  .string()
+  .min(2, "Username must be at least 2 characters")
+  .max(32, "Username must be at most 32 characters")
+  .regex(/^[a-z0-9]+([._-][a-z0-9]+)*$/, "Use lowercase letters, numbers, dots, dashes or underscores")
+  .refine((username) => !RESERVED_EMAIL_USERNAMES.includes(username), "This email username is reserved");
+
+export const createEmailSenderSchema = z.object({
+  username: emailUsernameSchema,
 });
 
 export const sendEmailSchema = z.object({
+  from: z.email("from must be one of your sender addresses, e.g. you@easyhost.fun"),
   to: z.union([z.email(), z.array(z.email()).min(1).max(50)]),
   subject: z.string().min(1, "Subject is required").max(300, "Subject too long"),
   html: z.string().optional(),
@@ -74,6 +90,25 @@ const RESERVED_APP_NAMES = [
   "api", "app", "www", "storage", "admin", "dashboard", "mail", "email", "smtp", "docs", "blog", "status",
   "help", "support", "cdn", "static", "assets", "auth", "login", "console", "caddy", "minio", "db", "root",
 ];
+
+export const tableRowsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+});
+
+export const updateCellSchema = z.object({
+  key: z.record(z.string(), z.string().nullable()),
+  column: z.string().min(1, "Column is required"),
+  value: z.string().nullable(),
+});
+
+export const addDomainSchema = z.object({
+  hostname: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(253, "Domain is too long")
+    .regex(/^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/, "Enter a domain like www.example.com"),
+});
 
 export const createAppSchema = z.object({
   name: resourceName.refine((name) => !RESERVED_APP_NAMES.includes(name), "This app name is reserved"),

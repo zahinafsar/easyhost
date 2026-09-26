@@ -16,6 +16,27 @@ services:
       timeout: 5s
       retries: 10
 
+  userdb:
+    build: ./infra/userdb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${USERDB_PASSWORD:?Set USERDB_PASSWORD in .env.production}
+      POSTGRES_DB: postgres
+      USERDB_TLS_MODE: files
+      USERDB_TLS_CERT_FILE: /etc/npm-letsencrypt/live/${USERDB_CERT_NAME:?Set USERDB_CERT_NAME in .env.production}/fullchain.pem
+      USERDB_TLS_KEY_FILE: /etc/npm-letsencrypt/live/${USERDB_CERT_NAME:?Set USERDB_CERT_NAME in .env.production}/privkey.pem
+    ports:
+      - "5432:5432"
+    volumes:
+      - userdb_data:/var/lib/postgresql/data
+      - ${NPM_LETSENCRYPT_DIR:?Set NPM_LETSENCRYPT_DIR in .env.production}:/etc/npm-letsencrypt:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   minio:
     image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
     restart: unless-stopped
@@ -63,6 +84,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      userdb:
+        condition: service_healthy
       minio-init:
         condition: service_completed_successfully
       caddy:
@@ -71,13 +94,15 @@ services:
       - .env.production
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - sqlite_data:/data
       - caddy_admin:/run/caddy
+    networks:
+      - default
+      - proxy
 
 volumes:
   postgres_data:
   minio_data:
-  sqlite_data:
+  userdb_data:
   caddy_data:
   caddy_config:
   caddy_admin:

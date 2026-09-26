@@ -25,8 +25,8 @@ export const BucketPage = () => {
   const invalidate = [storageQuery().all];
 
   const uploadFiles = useApiMutation({
-    mutationFn: async (files: FileList) => {
-      for (const file of Array.from(files)) {
+    mutationFn: async (files: File[]) => {
+      for (const file of files) {
         const form = new FormData();
         form.append("file", file);
         form.append("prefix", prefix);
@@ -75,10 +75,11 @@ export const BucketPage = () => {
               multiple
               className="hidden"
               onChange={(event) => {
-                if (event.target.files?.length) {
-                  uploadFiles.mutate(event.target.files);
-                }
+                const files = Array.from(event.target.files ?? []);
                 event.target.value = "";
+                if (files.length) {
+                  uploadFiles.mutate(files);
+                }
               }}
             />
             <Button onClick={() => fileInput.current?.click()} disabled={uploadFiles.isPending}>

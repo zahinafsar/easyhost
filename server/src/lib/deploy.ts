@@ -2,7 +2,7 @@ import type { DeploymentStep } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { minio, DEPLOY_BUCKET } from "./minio.js";
 import { buildImage, containerName, imageTag, runContainer, removeImage, APP_PORT } from "./docker.js";
-import { hasAppRoute, upsertAppRoute } from "./caddy.js";
+import { routeApp } from "./routing.js";
 
 const readObject = async (key: string) => {
   const stream = await minio.getObject(DEPLOY_BUCKET, key);
@@ -105,7 +105,7 @@ export const runDeployment = async (deploymentId: string) => {
 
     await setStep("ROUTING");
     logger.log("Updating router");
-    await upsertAppRoute(app.slug, `${name}:${APP_PORT}`);
+    await routeApp(app.id);
 
     const previous = await prisma.deployment.findMany({
       where: { appId: app.id, status: "RUNNING", id: { not: deploymentId } },
@@ -132,14 +132,5 @@ export const runDeployment = async (deploymentId: string) => {
     await prisma.deployment.update({ where: { id: deploymentId }, data: { status: "FAILED", finishedAt: new Date() } });
     const running = await prisma.deployment.count({ where: { appId: app.id, status: "RUNNING" } });
     await prisma.app.update({ where: { id: app.id }, data: { status: running ? "RUNNING" : "FAILED" } });
-  }
-};
-
-export const syncAppRoutes = async () => {
-  const apps = await prisma.app.findMany({ where: { status: "RUNNING" }, select: { slug: true } });
-  for (const app of apps) {
-    if (!(await hasAppRoute(app.slug))) {
-      await upsertAppRoute(app.slug, `${containerName(app.slug)}:${APP_PORT}`);
-    }
   }
 };

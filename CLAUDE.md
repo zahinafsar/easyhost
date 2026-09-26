@@ -4,13 +4,13 @@ After work update .claude/memory.txt with new contexts.
 # EasyHost - Developer Hosting Platform
 
 ## Project Overview
-Hosting platform: Next.js app hosting (containers + Caddy), object storage (MinIO), SQLite databases over HTTP, and transactional email (Resend under the hood).
+Hosting platform: Next.js app hosting (containers + Caddy), public object storage (MinIO), Postgres databases (shared `userdb` instance, one database + role each), and transactional email (Resend under the hood).
 
 ## Tech Stack
 - client: Vite + React 19, React Router, React Query, shadcn/ui + Tailwind v4, sonner
-- server: Hono on Node, Prisma + PostgreSQL, Zod, JWT (httpOnly cookie + Bearer), MinIO, better-sqlite3, dockerode, Resend
+- server: Hono on Node, Prisma + PostgreSQL, Zod, JWT (httpOnly cookie + Bearer), MinIO, pg (customer databases), dockerode, Resend
 - cli: commander, tar, @inquirer/prompts
-- infra: docker-compose (postgres, minio, minio-init, caddy)
+- infra: docker-compose (postgres, userdb, minio, minio-init, caddy)
 
 ## Commands
 - `npm start` (repo root) - Production: validates `.env.production`, builds and starts everything via `docker-compose.prod.yml`
@@ -33,8 +33,8 @@ Hosting platform: Next.js app hosting (containers + Caddy), object storage (MinI
 - `/docker-compose.yml`, `/infra/caddy/caddy.json` - Local infra
 - `/server/src/index.ts` - Hono app, exports `AppType` for the typed client
 - `/server/src/routes/*` - Dashboard routes (JWT user)
-- `/server/src/routes/v1/*` - Public service API (API key: storage, databases, email)
-- `/server/src/lib/*` - prisma, auth, email, minio, sqlite, docker, caddy, deploy, validations
+- `/server/src/routes/v1/*` - Public service API (API key: storage, email)
+- `/server/src/lib/*` - prisma, auth, email, minio, userdb (customer Postgres), docker, caddy, deploy, build-queue, validations
 - `/server/src/middleware/*` - require-user, require-api-key
 - `/client/src/pages/*` - Route pages
 - `/client/src/components/ui/*` - shadcn components

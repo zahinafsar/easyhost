@@ -78,20 +78,24 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
   });
 };
 
+export const senderAddress = (username: string) => `${username}@${env.emailDomain}`;
+
 export const sendCustomerEmail = async ({
+  from,
   to,
   subject,
   html,
   text,
   replyTo,
 }: {
+  from: string;
   to: string[];
   subject: string;
   html?: string;
   text?: string;
   replyTo?: string;
 }) => {
-  const base = { from: FROM_EMAIL, to, subject, replyTo };
+  const base = { from, to, subject, replyTo };
   let result;
   if (html) {
     result = await resend.emails.send({ ...base, html, text });
@@ -103,7 +107,5 @@ export const sendCustomerEmail = async ({
     throw new Error(result.error.message);
   }
 
-  return { id: result.data?.id ?? null, from: FROM_EMAIL };
+  return { id: result.data?.id ?? null };
 };
-
-export const emailFrom = () => FROM_EMAIL;

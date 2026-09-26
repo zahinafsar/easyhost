@@ -13,7 +13,7 @@ export const overviewRoutes = new Hono<UserEnv>()
       prisma.app.count({ where: { userId } }),
       prisma.app.count({ where: { userId, status: "RUNNING" } }),
       prisma.bucket.count({ where: { userId } }),
-      prisma.sqliteDatabase.count({ where: { userId } }),
+      prisma.database.count({ where: { userId } }),
       prisma.emailLog.count({ where: { userId, status: "SENT", createdAt: { gte: since } } }),
       prisma.apiKey.count({ where: { userId } }),
     ]);
