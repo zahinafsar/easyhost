@@ -5,9 +5,6 @@
   "scripts": {
     "start": "node scripts/start.mjs",
     "stop": "docker compose -f docker-compose.prod.yml --env-file .env.production down",
-    "logs": "docker compose -f docker-compose.prod.yml --env-file .env.production logs -f --tail 100",
-    "dev:infra": "docker compose up -d",
-    "dev:server": "npm --prefix server run dev",
-    "dev:client": "npm --prefix client run dev"
+    "logs": "docker compose -f docker-compose.prod.yml --env-file .env.production logs -f --tail 100"
   }
 }

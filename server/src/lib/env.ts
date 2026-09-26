@@ -1,21 +1,12 @@
 const REQUIRED = [
-  "PORT",
   "DATABASE_URL",
   "JWT_SECRET",
   "APP_URL",
   "RESEND_API_KEY",
   "EMAIL_FROM",
-  "EMAIL_DOMAIN",
-  "EMAIL_DAILY_LIMIT",
-  "MINIO_ENDPOINT",
-  "MINIO_PORT",
-  "MINIO_USE_SSL",
-  "MINIO_ACCESS_KEY",
-  "MINIO_SECRET_KEY",
-  "MINIO_DEPLOY_BUCKET",
-  "MINIO_PUBLIC_ENDPOINT",
-  "MINIO_PUBLIC_PORT",
-  "MINIO_PUBLIC_USE_SSL",
+  "MINIO_URL",
+  "MINIO_ROOT_PASSWORD",
+  "STORAGE_PUBLIC_URL",
   "USERDB_URL",
   "USERDB_PUBLIC_HOST",
   "USERDB_PUBLIC_PORT",
@@ -23,8 +14,6 @@ const REQUIRED = [
   "CADDY_ADMIN_URL",
   "APPS_DOMAIN",
   "APPS_PROTOCOL",
-  "DOCKER_NETWORK",
-  "BUILD_CONCURRENCY",
   "PUBLIC_IP",
   "EDGE_PROXY",
 ] as const;
@@ -48,12 +37,12 @@ const integer = (name: EnvName) => {
   return value;
 };
 
-const boolean = (name: EnvName) => {
-  const value = raw(name);
-  if (value !== "true" && value !== "false") {
-    throw new Error(`Environment variable ${name} must be "true" or "false", got "${value}"`);
+const url = (name: EnvName) => {
+  try {
+    return new URL(raw(name));
+  } catch {
+    throw new Error(`Environment variable ${name} must be a URL, got "${raw(name)}"`);
   }
-  return value === "true";
 };
 
 const oneOf = <T extends string>(name: EnvName, options: readonly T[]) => {
@@ -80,23 +69,14 @@ const readNpm = (edgeProxy: "npm" | "none") => {
 };
 
 export const env = {
-  port: integer("PORT"),
   jwtSecret: raw("JWT_SECRET"),
   appUrl: raw("APP_URL"),
   resendApiKey: raw("RESEND_API_KEY"),
   emailFrom: raw("EMAIL_FROM"),
-  emailDomain: raw("EMAIL_DOMAIN"),
-  emailDailyLimit: integer("EMAIL_DAILY_LIMIT"),
   minio: {
-    endpoint: raw("MINIO_ENDPOINT"),
-    port: integer("MINIO_PORT"),
-    useSSL: boolean("MINIO_USE_SSL"),
-    accessKey: raw("MINIO_ACCESS_KEY"),
-    secretKey: raw("MINIO_SECRET_KEY"),
-    deployBucket: raw("MINIO_DEPLOY_BUCKET"),
-    publicEndpoint: raw("MINIO_PUBLIC_ENDPOINT"),
-    publicPort: integer("MINIO_PUBLIC_PORT"),
-    publicUseSSL: boolean("MINIO_PUBLIC_USE_SSL"),
+    url: url("MINIO_URL"),
+    password: raw("MINIO_ROOT_PASSWORD"),
+    publicUrl: url("STORAGE_PUBLIC_URL").origin,
   },
   userdb: {
     url: raw("USERDB_URL"),
@@ -107,8 +87,6 @@ export const env = {
   caddyAdminUrl: raw("CADDY_ADMIN_URL"),
   appsDomain: raw("APPS_DOMAIN"),
   appsProtocol: oneOf("APPS_PROTOCOL", ["http", "https"] as const),
-  dockerNetwork: raw("DOCKER_NETWORK"),
-  buildConcurrency: integer("BUILD_CONCURRENCY"),
   publicIp: raw("PUBLIC_IP"),
   npm: readNpm(oneOf("EDGE_PROXY", ["npm", "none"] as const)),
 };

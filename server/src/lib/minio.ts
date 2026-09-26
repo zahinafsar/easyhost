@@ -1,19 +1,22 @@
 import { Client } from "minio";
 import { env } from "./env.js";
 
+const minioUrl = env.minio.url;
+const useSSL = minioUrl.protocol === "https:";
+let defaultPort = 80;
+if (useSSL) {
+  defaultPort = 443;
+}
+
 export const minio = new Client({
-  endPoint: env.minio.endpoint,
-  port: env.minio.port,
-  useSSL: env.minio.useSSL,
-  accessKey: env.minio.accessKey,
-  secretKey: env.minio.secretKey,
+  endPoint: minioUrl.hostname,
+  port: Number(minioUrl.port || defaultPort),
+  useSSL,
+  accessKey: "easyhost",
+  secretKey: env.minio.password,
 });
 
-const publicUseSSL = env.minio.publicUseSSL;
-const publicEndpoint = env.minio.publicEndpoint;
-const publicPort = env.minio.publicPort;
-
-export const DEPLOY_BUCKET = env.minio.deployBucket;
+export const DEPLOY_BUCKET = "easyhost-deploys";
 
 export const minioBucketName = (bucketId: string) => `eh-${bucketId.toLowerCase()}`;
 
@@ -36,19 +39,7 @@ export const createPublicBucket = async (minioName: string) => {
   await minio.setBucketPolicy(minioName, publicReadPolicy(minioName));
 };
 
-export const publicBaseUrl = (minioName: string) => {
-  let protocol = "http";
-  let defaultPort = 80;
-  if (publicUseSSL) {
-    protocol = "https";
-    defaultPort = 443;
-  }
-  let host = publicEndpoint;
-  if (publicPort !== defaultPort) {
-    host = `${publicEndpoint}:${publicPort}`;
-  }
-  return `${protocol}://${host}/${minioName}`;
-};
+export const publicBaseUrl = (minioName: string) => `${env.minio.publicUrl}/${minioName}`;
 
 export const publicObjectUrl = (minioName: string, key: string) => `${publicBaseUrl(minioName)}/${encodeURI(key)}`;
 

@@ -3,10 +3,9 @@ import { prisma } from "../lib/prisma.js";
 import { validate } from "../lib/validator.js";
 import { createEmailSenderSchema, paginationSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
-import { senderAddress } from "../lib/email.js";
+import { EMAIL_DOMAIN, senderAddress } from "../lib/email.js";
 import { LIMITS } from "../lib/limits.js";
 import type { UserEnv } from "../lib/types.js";
-import { env } from "../lib/env.js";
 
 const listSenders = async (userId: string) => {
   const senders = await prisma.emailSender.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
@@ -43,10 +42,10 @@ export const emailRoutes = new Hono<UserEnv>()
       page,
       limit,
       sentToday,
-      dailyLimit: env.emailDailyLimit,
+      dailyLimit: LIMITS.emailsPerDay,
       senders,
       maxSenders: LIMITS.emailSenders,
-      domain: env.emailDomain,
+      domain: EMAIL_DOMAIN,
     });
   })
   .post("/senders", validate("json", createEmailSenderSchema), async (c) => {

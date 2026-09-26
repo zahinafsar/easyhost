@@ -49,7 +49,7 @@ export const removeAuthCookie = (c: Context) => {
   deleteCookie(c, AUTH_COOKIE, { path: "/" });
 };
 
-export const getAuthToken = (c: Context) => {
+const getAuthToken = (c: Context) => {
   const cookieToken = getCookie(c, AUTH_COOKIE);
   if (cookieToken) {
     return cookieToken;

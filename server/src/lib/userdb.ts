@@ -9,7 +9,7 @@ const STATEMENT_TIMEOUT_MS = 15_000;
 const adminUrl = new URL(env.userdb.url);
 const ssl = { rejectUnauthorized: false };
 
-export type DatabaseCredentials = {
+type DatabaseCredentials = {
   dbName: string;
   roleName: string;
   password: string;
@@ -114,7 +114,7 @@ export const runQuery = (credentials: DatabaseCredentials, sql: string) => {
   });
 };
 
-export const ROWS_PAGE_SIZE = 50;
+const ROWS_PAGE_SIZE = 50;
 
 const quoteIdent = (value: string) => `"${value.replace(/"/g, '""')}"`;
 

@@ -1,11 +1,10 @@
 import Docker from "dockerode";
 import { pack } from "tar-stream";
 import type { Readable } from "node:stream";
-import { env } from "./env.js";
 
 export const docker = new Docker();
 
-export const DOCKER_NETWORK = env.dockerNetwork;
+const DOCKER_NETWORK = "easyhost";
 export const APP_PORT = 3000;
 
 const INSTALL = `if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm install --frozen-lockfile; \\
@@ -87,7 +86,7 @@ export const buildImage = async (
   });
 };
 
-export const ensureNetwork = async () => {
+const ensureNetwork = async () => {
   const networks = await docker.listNetworks({ filters: { name: [DOCKER_NETWORK] } });
   if (!networks.some((network) => network.Name === DOCKER_NETWORK)) {
     await docker.createNetwork({ Name: DOCKER_NETWORK });

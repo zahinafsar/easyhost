@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { prisma } from "../../lib/prisma.js";
-import { senderAddress, sendCustomerEmail } from "../../lib/email.js";
+import { EMAIL_DOMAIN, senderAddress, sendCustomerEmail } from "../../lib/email.js";
+import { LIMITS } from "../../lib/limits.js";
 import { validate } from "../../lib/validator.js";
 import { sendEmailSchema } from "../../lib/validations.js";
 import { requireApiKey } from "../../middleware/require-api-key.js";
 import type { ApiKeyEnv } from "../../lib/types.js";
-import { env } from "../../lib/env.js";
 
 
 export const v1EmailRoutes = new Hono<ApiKeyEnv>()
@@ -20,7 +20,7 @@ export const v1EmailRoutes = new Hono<ApiKeyEnv>()
 
     const [username, domain] = payload.from.toLowerCase().split("@");
     let sender = null;
-    if (domain === env.emailDomain) {
+    if (domain === EMAIL_DOMAIN) {
       sender = await prisma.emailSender.findFirst({ where: { userId, username } });
     }
     if (!sender) {
@@ -28,7 +28,7 @@ export const v1EmailRoutes = new Hono<ApiKeyEnv>()
     }
     const from = senderAddress(sender.username);
 
-    const dailyLimit = env.emailDailyLimit;
+    const dailyLimit = LIMITS.emailsPerDay;
     const sentToday = await prisma.emailLog.count({
       where: { userId, status: "SENT", createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
     });

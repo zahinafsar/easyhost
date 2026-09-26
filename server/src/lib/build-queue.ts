@@ -1,5 +1,5 @@
 import { prisma } from "./prisma.js";
-import { env } from "./env.js";
+import { LIMITS } from "./limits.js";
 import { runDeployment } from "./deploy.js";
 
 let active = 0;
@@ -24,14 +24,14 @@ const claimNext = async () => {
   return rows[0].id;
 };
 
-export const processQueue = async () => {
+const processQueue = async () => {
   if (draining) {
     return;
   }
   draining = true;
 
   try {
-    while (active < env.buildConcurrency) {
+    while (active < LIMITS.concurrentBuilds) {
       const id = await claimNext();
       if (!id) {
         break;

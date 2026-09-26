@@ -29,7 +29,7 @@ const button = (href: string, label: string) => {
   `;
 };
 
-export const escapeHtml = (value: string) => {
+const escapeHtml = (value: string) => {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -78,7 +78,9 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
   });
 };
 
-export const senderAddress = (username: string) => `${username}@${env.emailDomain}`;
+export const EMAIL_DOMAIN = "easyhost.fun";
+
+export const senderAddress = (username: string) => `${username}@${EMAIL_DOMAIN}`;
 
 export const sendCustomerEmail = async ({
   from,

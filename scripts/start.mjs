@@ -6,63 +6,22 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const envFile = path.join(root, ".env.production");
 
-const REQUIRED = [
-  "POSTGRES_PASSWORD",
-  "MINIO_ROOT_PASSWORD",
-  "JWT_SECRET",
-  "RESEND_API_KEY",
-  "PORT",
-  "DATABASE_URL",
-  "APP_URL",
-  "EMAIL_FROM",
-  "EMAIL_DOMAIN",
-  "EMAIL_DAILY_LIMIT",
-  "MINIO_ENDPOINT",
-  "MINIO_PORT",
-  "MINIO_USE_SSL",
-  "MINIO_ACCESS_KEY",
-  "MINIO_SECRET_KEY",
-  "MINIO_DEPLOY_BUCKET",
-  "MINIO_PUBLIC_ENDPOINT",
-  "MINIO_PUBLIC_PORT",
-  "MINIO_PUBLIC_USE_SSL",
-  "USERDB_PASSWORD",
-  "USERDB_URL",
-  "USERDB_PUBLIC_HOST",
-  "USERDB_PUBLIC_PORT",
-  "USERDB_PUBLIC_SSLMODE",
-  "NPM_LETSENCRYPT_DIR",
-  "USERDB_CERT_NAME",
-  "PUBLIC_IP",
-  "EDGE_PROXY",
-  "NPM_API_URL",
-  "NPM_API_EMAIL",
-  "NPM_API_PASSWORD",
-  "CADDY_ADMIN_URL",
-  "APPS_DOMAIN",
-  "APPS_PROTOCOL",
-  "DOCKER_NETWORK",
-  "BUILD_CONCURRENCY",
-  "VITE_PUBLIC_API_URL",
-  "PROXY_NETWORK",
-];
-
 const checkEnv = () => {
   if (!existsSync(envFile)) {
     console.error("Missing .env.production. Copy .env.production.example to .env.production and fill in every value.");
     process.exit(1);
   }
 
-  const content = readFileSync(envFile, "utf8");
-  const missing = REQUIRED.filter((key) => !new RegExp(`^${key}=\\S+`, "m").test(content));
-  if (missing.length) {
-    console.error(`Missing required values in .env.production: ${missing.join(", ")}`);
-    process.exit(1);
-  }
+  const lines = readFileSync(envFile, "utf8").split("\n").filter((line) => /^[A-Z_]+=/.test(line));
+  const invalid = lines
+    .filter((line) => {
+      const value = line.slice(line.indexOf("=") + 1).trim();
+      return !value || /<[A-Z_]+>/.test(value);
+    })
+    .map((line) => line.slice(0, line.indexOf("=")));
 
-  const placeholders = REQUIRED.filter((key) => new RegExp(`^${key}=.*<[A-Z_]+>`, "m").test(content));
-  if (placeholders.length) {
-    console.error(`Replace the <PLACEHOLDER> values in .env.production: ${placeholders.join(", ")}`);
+  if (invalid.length) {
+    console.error(`Fill in these values in .env.production: ${invalid.join(", ")}`);
     process.exit(1);
   }
 };

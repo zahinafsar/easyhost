@@ -1,4 +1,3 @@
-import { env } from "./lib/env.js";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { logger } from "hono/logger";
@@ -37,7 +36,7 @@ const routes = app
 
 export type AppType = typeof routes;
 
-const port = env.port;
+const port = 48710;
 
 const syncRoutes = () => {
   syncAppRoutes().catch((error) => console.error("Route sync failed", error));

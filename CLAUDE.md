@@ -46,6 +46,7 @@ Hosting platform: Next.js app hosting (containers + Caddy), public object storag
 
 ## Key Patterns
 - Named exports only
+- Fixed values live in code, not env: per-user limits in `server/src/lib/limits.ts`, API port 48710, `EMAIL_DOMAIN` (easyhost.fun), deploy bucket, docker network `easyhost`
 - Env files: one root `.env` for local (API, dashboard via Vite `envDir`, dev compose) and one root `.env.production` for the VPS. No per-package env files
 - Env vars: never use fallbacks. Server reads env only through `server/src/lib/env.ts` (validates all required vars at startup), client through `client/src/lib/env.ts`, prod env lives in `.env.production` (template `.env.production.example`), passed to the api container via `env_file` and to compose interpolation via `--env-file`
 - kebab-case file names
@@ -59,5 +60,5 @@ Hosting platform: Next.js app hosting (containers + Caddy), public object storag
 ## Hosting flow
 - CLI `ezhst deploy` (npm package `ezhst`) tars the project source (skips node_modules, .next, .git, .env*) and uploads to `POST /api/apps/:id/deploy`. No project changes needed
 - Server stores the tarball in MinIO `easyhost-deploys`, builds `easyhost/<slug>:<deploymentId>` from `node:22-alpine` (install by lockfile, `run build`, `next start`), app env is passed as build args and runtime env, runs container `eh-app-<slug>` on docker network `easyhost`
-- Builds go through a Postgres-backed queue (`server/src/lib/build-queue.ts`): deploy creates a QUEUED row, worker claims with `FOR UPDATE SKIP LOCKED`, max `BUILD_CONCURRENCY` builds at once, never two builds for the same app, older QUEUED deploys of the same app become SUPERSEDED, BUILDING rows left by a restart are marked FAILED on boot
-- Caddy route `app-<slug>` is upserted via admin API, host `<slug>.<APPS_DOMAIN>` proxies to `eh-app-<slug>:3000`
+- Builds go through a Postgres-backed queue (`server/src/lib/build-queue.ts`): deploy creates a QUEUED row, worker claims with `FOR UPDATE SKIP LOCKED`, max `LIMITS.concurrentBuilds` builds at once, never two builds for the same app, older QUEUED deploys of the same app become SUPERSEDED, BUILDING rows left by a restart are marked FAILED on boot
+- Caddy route `app-<slug>` is upserted via admin API (`routeApp` in `server/src/lib/routing.ts`), hosts `<slug>.<APPS_DOMAIN>` plus ACTIVE custom domains proxy to `eh-app-<slug>:3000`
