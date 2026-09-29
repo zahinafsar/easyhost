@@ -38,7 +38,11 @@ const run = (args) => {
 };
 
 checkEnv();
-run(["compose", "-f", "docker-compose.prod.yml", "--env-file", ".env", "up", "-d", "--build", "--remove-orphans"]);
+const upArgs = ["compose", "-f", "docker-compose.prod.yml", "--env-file", ".env", "up", "-d", "--build", "--remove-orphans"];
+if (process.argv.includes("--force-recreate")) {
+  upArgs.push("--force-recreate");
+}
+run(upArgs);
 
 console.log(`
 EasyHost is running.
@@ -50,5 +54,6 @@ EasyHost is running.
   Apps       https://<app>.easyhost.fun
 
 Logs: npm run logs
+Restart: npm run restart
 Stop: npm stop
 `);

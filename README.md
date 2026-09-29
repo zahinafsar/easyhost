@@ -82,6 +82,8 @@ git clone <repo> easyhost && cd easyhost
 npm start
 ```
 
+Run `npm run restart` to rebuild and force-recreate the production services without deleting database or storage volumes.
+
 4. In NPM, forward `easyhost.fun`, `www.easyhost.fun`, `app.easyhost.fun`, `api.easyhost.fun`, `storage.easyhost.fun` and `*.easyhost.fun` to `easyhost-caddy` port `80` over HTTP, with SSL enabled (wildcard certificate via DNS challenge for `*.easyhost.fun`).
 
 `npm start` refuses to run while any value in `.env` is empty or still a `<PLACEHOLDER>`.
