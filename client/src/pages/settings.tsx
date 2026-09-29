@@ -1,73 +1,110 @@
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmButton } from "@/components/confirm-button";
 import { PageHeader } from "@/components/page-header";
 import { api, unwrap } from "@/lib/api";
-import { userQuery } from "@/lib/queries";
-import { useAuth } from "@/providers/auth-provider";
+import { appsQuery } from "@/lib/queries";
+import { clearSelectedProject, selectedProjectId, selectProject } from "@/lib/project";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 
 export const SettingsPage = () => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [name, setName] = useState(user?.name ?? "");
+  const navigate = useNavigate();
+  const { data, isLoading } = useQuery(appsQuery().list());
+  const project = data?.apps.find((item) => item.id === selectedProjectId());
+  const [name, setName] = useState("");
 
-  const save = useApiMutation({
-    mutationFn: () => unwrap(api.auth.me.$put({ json: { name } })),
-    success: "Profile updated",
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: userQuery().all }),
+  useEffect(() => {
+    setName(project?.name ?? "");
+  }, [project?.id, project?.name]);
+
+  const rename = useApiMutation({
+    mutationFn: () => unwrap(api.apps[":id"].$put({ param: { id: project?.id ?? "" }, json: { name: name.trim() } })),
+    invalidate: [appsQuery().all],
+    success: "Project name updated",
   });
 
-  const resend = useApiMutation({
-    mutationFn: () => unwrap(api.auth["resend-verification"].$post()),
-    success: "Verification email sent",
+  const remove = useApiMutation({
+    mutationFn: () => unwrap(api.apps[":id"].$delete({ param: { id: project?.id ?? "" } })),
+    invalidate: [appsQuery().all],
+    success: "Project deleted",
+    onSuccess: () => {
+      const nextProject = data?.apps.find((item) => item.id !== project?.id);
+      if (nextProject) {
+        selectProject(nextProject.id);
+        navigate(`/apps/${nextProject.id}`);
+        return;
+      }
+      clearSelectedProject();
+      navigate("/");
+    },
   });
+
+  if (isLoading || !project) {
+    return <Skeleton className="h-64 w-full" />;
+  }
+
+  const unchanged = name.trim() === project.name;
 
   return (
     <>
-      <PageHeader title="Settings" />
-      <div className="max-w-xl space-y-6">
+      <PageHeader title="Project settings" description={`Manage ${project.name} and its resources.`} />
+      <div className="max-w-3xl space-y-8">
         <Card>
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
+          <CardHeader className="border-b">
+            <CardTitle>General</CardTitle>
+            <CardDescription>Update how this project appears in the dashboard.</CardDescription>
           </CardHeader>
           <CardContent>
             <form
-              className="space-y-4"
+              className="space-y-5"
               onSubmit={(event) => {
                 event.preventDefault();
-                save.mutate(undefined);
+                rename.mutate(undefined);
               }}
             >
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required />
+                <Label htmlFor="project-name">Project name</Label>
+                <Input id="project-name" value={name} onChange={(event) => setName(event.target.value)} required />
+                <p className="text-xs text-muted-foreground">Your deployment URL remains {project.url}.</p>
               </div>
-              <Button type="submit" disabled={save.isPending}>
-                Save
+              <Button type="submit" disabled={rename.isPending || !name.trim() || unchanged}>
+                {rename.isPending ? "Saving..." : "Save changes"}
               </Button>
             </form>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Email</CardTitle>
-            <CardDescription>{user?.email}</CardDescription>
+
+        <Card className="border-destructive/50 shadow-none">
+          <CardHeader className="border-b border-destructive/30">
+            <CardTitle>Danger zone</CardTitle>
+            <CardDescription>Actions here permanently affect this entire project.</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center gap-3">
-            {user?.verified && <Badge variant="secondary">Verified</Badge>}
-            {!user?.verified && (
-              <>
-                <Badge variant="secondary">Not verified</Badge>
-                <Button variant="outline" size="sm" onClick={() => resend.mutate(undefined)} disabled={resend.isPending}>
-                  Resend verification
-                </Button>
-              </>
-            )}
+          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="font-medium">Delete this project</p>
+              <p className="max-w-xl text-sm text-muted-foreground">
+                Permanently delete the app, deployments, domains, storage and files, database, email data, and API keys.
+              </p>
+            </div>
+            <ConfirmButton
+              title={`Delete ${project.name}?`}
+              description="Every service and all data in this project will be permanently deleted. This cannot be undone."
+              confirmLabel="Delete project"
+              confirmVariant="destructive"
+              onConfirm={() => remove.mutate(undefined)}
+            >
+              <Button variant="destructive" disabled={remove.isPending}>
+                <Trash2 className="size-4" />
+                {remove.isPending ? "Deleting..." : "Delete project"}
+              </Button>
+            </ConfirmButton>
           </CardContent>
         </Card>
       </div>

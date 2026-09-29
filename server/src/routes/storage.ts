@@ -16,11 +16,11 @@ import {
 import { validate } from "../lib/validator.js";
 import { createBucketSchema, listObjectsSchema, objectKeySchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
+import { requireProject } from "../middleware/require-project.js";
 import type { Bucket } from "@prisma/client";
 import type { UserEnv } from "../lib/types.js";
-import { LIMITS } from "../lib/limits.js";
 
-const findBucket = (userId: string, id: string) => prisma.bucket.findFirst({ where: { id, userId } });
+const findBucket = (projectId: string, id: string) => prisma.bucket.findFirst({ where: { id, projectId } });
 
 const summary = (bucket: Bucket) => ({
   id: bucket.id,
@@ -43,25 +43,21 @@ const withCredentials = (bucket: Bucket) => ({
 
 export const storageRoutes = new Hono<UserEnv>()
   .use(requireUser)
+  .use(requireProject)
   .get("/buckets", async (c) => {
     const buckets = await prisma.bucket.findMany({
-      where: { userId: c.get("user").id },
+      where: { projectId: c.get("projectId") },
       orderBy: { createdAt: "desc" },
     });
-    return c.json({ buckets: buckets.map(summary), limit: LIMITS.buckets });
+    return c.json({ buckets: buckets.map(summary), limit: 1 });
   })
   .post("/buckets", validate("json", createBucketSchema), async (c) => {
-    const userId = c.get("user").id;
+    const projectId = c.get("projectId");
     const { name } = c.req.valid("json");
 
-    const count = await prisma.bucket.count({ where: { userId } });
-    if (count >= LIMITS.buckets) {
-      return c.json({ error: `You can have at most ${LIMITS.buckets} buckets. Delete one to create another.` }, 400);
-    }
-
-    const existing = await prisma.bucket.findUnique({ where: { userId_name: { userId, name } } });
+    const existing = await prisma.bucket.findUnique({ where: { projectId } });
     if (existing) {
-      return c.json({ error: "A bucket with this name already exists" }, 400);
+      return c.json({ error: "This project already has storage" }, 400);
     }
 
     const id = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
@@ -76,11 +72,11 @@ export const storageRoutes = new Hono<UserEnv>()
       throw error;
     }
 
-    const bucket = await prisma.bucket.create({ data: { id, userId, name, minioName, ...credentials } });
+    const bucket = await prisma.bucket.create({ data: { id, projectId, name, minioName, ...credentials } });
     return c.json({ bucket: withCredentials(bucket) }, 201);
   })
   .delete("/buckets/:id", async (c) => {
-    const bucket = await findBucket(c.get("user").id, c.req.param("id"));
+    const bucket = await findBucket(c.get("projectId"), c.req.param("id"));
     if (!bucket) {
       return c.json({ error: "Bucket not found" }, 404);
     }
@@ -91,7 +87,7 @@ export const storageRoutes = new Hono<UserEnv>()
     return c.json({ message: "Bucket deleted" });
   })
   .post("/buckets/:id/rotate-keys", async (c) => {
-    const bucket = await findBucket(c.get("user").id, c.req.param("id"));
+    const bucket = await findBucket(c.get("projectId"), c.req.param("id"));
     if (!bucket) {
       return c.json({ error: "Bucket not found" }, 404);
     }
@@ -102,7 +98,7 @@ export const storageRoutes = new Hono<UserEnv>()
     return c.json({ bucket: withCredentials(updated) });
   })
   .get("/buckets/:id/objects", validate("query", listObjectsSchema), async (c) => {
-    const bucket = await findBucket(c.get("user").id, c.req.param("id"));
+    const bucket = await findBucket(c.get("projectId"), c.req.param("id"));
     if (!bucket) {
       return c.json({ error: "Bucket not found" }, 404);
     }
@@ -111,7 +107,7 @@ export const storageRoutes = new Hono<UserEnv>()
     return c.json({ bucket: withCredentials(bucket), objects });
   })
   .post("/buckets/:id/objects", async (c) => {
-    const bucket = await findBucket(c.get("user").id, c.req.param("id"));
+    const bucket = await findBucket(c.get("projectId"), c.req.param("id"));
     if (!bucket) {
       return c.json({ error: "Bucket not found" }, 404);
     }
@@ -133,7 +129,7 @@ export const storageRoutes = new Hono<UserEnv>()
     return c.json({ key, url: publicObjectUrl(bucket.minioName, key) }, 201);
   })
   .delete("/buckets/:id/objects", validate("query", objectKeySchema), async (c) => {
-    const bucket = await findBucket(c.get("user").id, c.req.param("id"));
+    const bucket = await findBucket(c.get("projectId"), c.req.param("id"));
     if (!bucket) {
       return c.json({ error: "Bucket not found" }, 404);
     }

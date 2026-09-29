@@ -1,9 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api, createKey, unwrap } from "@/lib/api";
+import { selectedProjectId } from "@/lib/project";
 
 export const databasesQuery = () => {
   const query = {
-    all: ["databases"],
+    all: ["databases", selectedProjectId()],
 
     list: () =>
       queryOptions({

@@ -16,10 +16,10 @@ export const requireApiKey = createMiddleware<ApiKeyEnv>(async (c, next) => {
 
   const apiKey = await prisma.apiKey.findUnique({
     where: { hash: hashApiKey(key) },
-    include: { user: { select: { blocked: true } } },
+    include: { project: { include: { user: { select: { blocked: true } } } } },
   });
 
-  if (!apiKey || apiKey.user.blocked) {
+  if (!apiKey || apiKey.project.user.blocked) {
     return c.json({ error: "Missing or invalid API key" }, 401);
   }
 
@@ -28,6 +28,6 @@ export const requireApiKey = createMiddleware<ApiKeyEnv>(async (c, next) => {
     data: { lastUsedAt: new Date() },
   });
 
-  c.set("userId", apiKey.userId);
+  c.set("projectId", apiKey.projectId);
   await next();
 });

@@ -1,7 +1,17 @@
 import { hc, type ClientResponse } from "hono/client";
 import type { AppType } from "../../../../server/src/index.ts";
+import { selectedProjectId } from "@/lib/project";
 
-export const api = hc<AppType>("/").api;
+const projectFetch: typeof fetch = (input, init) => {
+  const headers = new Headers(init?.headers);
+  const projectId = selectedProjectId();
+  if (projectId) {
+    headers.set("X-Project-ID", projectId);
+  }
+  return fetch(input, { ...init, headers });
+};
+
+export const api = hc<AppType>("/", { fetch: projectFetch }).api;
 
 type SuccessStatus = 200 | 201;
 
@@ -21,7 +31,12 @@ export const unwrap = async <T extends ClientResponse<unknown, number, "json">>(
 };
 
 export const upload = async (url: string, form: FormData) => {
-  const res = await fetch(url, { method: "POST", body: form, credentials: "include" });
+  const headers = new Headers();
+  const projectId = selectedProjectId();
+  if (projectId) {
+    headers.set("X-Project-ID", projectId);
+  }
+  const res = await fetch(url, { method: "POST", body: form, credentials: "include", headers });
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error ?? "Upload failed");

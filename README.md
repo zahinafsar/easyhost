@@ -55,9 +55,9 @@ The `userdb` container copies the certificate in on start and checks for renewal
 
 ## Custom domains
 
-Apps can have custom domains (Domains tab on the app page). The user points the domain at the server (CNAME to `<app>.easyhost.fun`, or an A record to `PUBLIC_IP` for a root domain) and clicks Verify. EasyHost checks DNS, then (with `EDGE_PROXY=npm`) asks Nginx Proxy Manager's API for a Let's Encrypt certificate and a proxy host forwarding to `easyhost-caddy:80`, and adds the hostname to the app's Caddy route.
+Apps can have custom domains (Domains tab on the app page). The user points the domain at the server (CNAME to `<app>.easyhost.fun`, or an A record to `PUBLIC_IP` for a root domain) and clicks Verify. EasyHost checks DNS, then in production asks Nginx Proxy Manager's API for a Let's Encrypt certificate and a proxy host forwarding to `easyhost-caddy:80`, and adds the hostname to the app's Caddy route.
 
-NPM setup (once): in NPM, Users, create a dedicated user (no two-factor) with "Item Visibility: Created Items Only" and "Manage" on Proxy Hosts and SSL Certificates, so EasyHost can only see and change what it created. Put its email and password in `NPM_API_EMAIL` and `NPM_API_PASSWORD` in `.env`. Locally `EDGE_PROXY=none` skips NPM.
+NPM setup (once): in NPM, Users, create a dedicated user (no two-factor) with "Item Visibility: Created Items Only" and "Manage" on Proxy Hosts and SSL Certificates, so EasyHost can only see and change what it created. Put its API URL, email, and password in `NPM_API_URL`, `NPM_API_EMAIL`, and `NPM_API_PASSWORD` in the production `.env`. Local development skips NPM.
 
 ## Storage
 

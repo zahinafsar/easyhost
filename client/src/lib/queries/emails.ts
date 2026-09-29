@@ -1,9 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api, createKey, unwrap } from "@/lib/api";
+import { selectedProjectId } from "@/lib/project";
 
 export const emailsQuery = () => {
   const query = {
-    all: ["emails"],
+    all: ["emails", selectedProjectId()],
 
     logs: (page: number) =>
       queryOptions({

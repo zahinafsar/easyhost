@@ -16,12 +16,12 @@ import {
 import { validate } from "../lib/validator.js";
 import { createDatabaseSchema, runQuerySchema, tableRowsQuerySchema, updateCellSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
+import { requireProject } from "../middleware/require-project.js";
 import type { UserEnv } from "../lib/types.js";
-import { LIMITS } from "../lib/limits.js";
 
 const publicFields = { id: true, name: true, dbName: true, createdAt: true, updatedAt: true };
 
-const findDatabase = (userId: string, id: string) => prisma.database.findFirst({ where: { id, userId } });
+const findDatabase = (projectId: string, id: string) => prisma.database.findFirst({ where: { id, projectId } });
 
 const errorMessage = (error: unknown) => {
   if (error instanceof Error) {
@@ -32,42 +32,38 @@ const errorMessage = (error: unknown) => {
 
 export const databaseRoutes = new Hono<UserEnv>()
   .use(requireUser)
+  .use(requireProject)
   .get("/", async (c) => {
     const databases = await prisma.database.findMany({
-      where: { userId: c.get("user").id },
+      where: { projectId: c.get("projectId") },
       orderBy: { createdAt: "desc" },
       select: publicFields,
     });
     const sizes = await databaseSizes(databases.map((database) => database.dbName));
     return c.json({
       databases: databases.map((database) => ({ ...database, sizeBytes: sizes.get(database.dbName) ?? 0 })),
-      limit: LIMITS.databases,
+      limit: 1,
     });
   })
   .post("/", validate("json", createDatabaseSchema), async (c) => {
-    const userId = c.get("user").id;
+    const projectId = c.get("projectId");
     const { name } = c.req.valid("json");
 
-    const count = await prisma.database.count({ where: { userId } });
-    if (count >= LIMITS.databases) {
-      return c.json({ error: `You can have at most ${LIMITS.databases} databases. Delete one to create another.` }, 400);
-    }
-
-    const existing = await prisma.database.findUnique({ where: { userId_name: { userId, name } } });
+    const existing = await prisma.database.findUnique({ where: { projectId } });
     if (existing) {
-      return c.json({ error: "A database with this name already exists" }, 400);
+      return c.json({ error: "This project already has a database" }, 400);
     }
 
     const credentials = generateCredentials();
     await createUserDatabase(credentials);
     const database = await prisma.database.create({
-      data: { userId, name, ...credentials },
+      data: { projectId, name, ...credentials },
       select: publicFields,
     });
     return c.json({ database }, 201);
   })
   .get("/:id", async (c) => {
-    const database = await findDatabase(c.get("user").id, c.req.param("id"));
+    const database = await findDatabase(c.get("projectId"), c.req.param("id"));
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
     }
@@ -88,7 +84,7 @@ export const databaseRoutes = new Hono<UserEnv>()
     });
   })
   .post("/:id/query", validate("json", runQuerySchema), async (c) => {
-    const database = await findDatabase(c.get("user").id, c.req.param("id"));
+    const database = await findDatabase(c.get("projectId"), c.req.param("id"));
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
     }
@@ -101,7 +97,7 @@ export const databaseRoutes = new Hono<UserEnv>()
     }
   })
   .get("/:id/tables/:table/rows", validate("query", tableRowsQuerySchema), async (c) => {
-    const database = await findDatabase(c.get("user").id, c.req.param("id"));
+    const database = await findDatabase(c.get("projectId"), c.req.param("id"));
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
     }
@@ -114,7 +110,7 @@ export const databaseRoutes = new Hono<UserEnv>()
     }
   })
   .patch("/:id/tables/:table/rows", validate("json", updateCellSchema), async (c) => {
-    const database = await findDatabase(c.get("user").id, c.req.param("id"));
+    const database = await findDatabase(c.get("projectId"), c.req.param("id"));
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
     }
@@ -128,7 +124,7 @@ export const databaseRoutes = new Hono<UserEnv>()
     }
   })
   .post("/:id/reset-password", async (c) => {
-    const database = await findDatabase(c.get("user").id, c.req.param("id"));
+    const database = await findDatabase(c.get("projectId"), c.req.param("id"));
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
     }
@@ -138,7 +134,7 @@ export const databaseRoutes = new Hono<UserEnv>()
     return c.json({ connectionString: connectionString(updated) });
   })
   .delete("/:id", async (c) => {
-    const database = await findDatabase(c.get("user").id, c.req.param("id"));
+    const database = await findDatabase(c.get("projectId"), c.req.param("id"));
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
     }

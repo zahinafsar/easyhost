@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { api, createKey, unwrap } from "@/lib/api";
+import { api, createKey } from "@/lib/api";
 
 export const userQuery = () => {
   const query = {
@@ -18,12 +18,6 @@ export const userQuery = () => {
         },
         retry: false,
         staleTime: 5 * 60 * 1000,
-      }),
-
-    overview: () =>
-      queryOptions({
-        queryKey: createKey(...query.all, "overview"),
-        queryFn: () => unwrap(api.overview.$get()),
       }),
   };
 

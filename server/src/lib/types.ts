@@ -3,11 +3,12 @@ import type { AuthUser } from "./auth.js";
 export type UserEnv = {
   Variables: {
     user: AuthUser;
+    projectId: string;
   };
 };
 
 export type ApiKeyEnv = {
   Variables: {
-    userId: string;
+    projectId: string;
   };
 };

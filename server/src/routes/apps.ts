@@ -1,19 +1,32 @@
 import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
-import { minio, DEPLOY_BUCKET } from "../lib/minio.js";
+import { DEPLOY_BUCKET, emptyAndRemoveBucket, minio, removeBucketCredentials } from "../lib/minio.js";
 import { containerLogs, containerName, removeContainer, removeImage, startContainer, stopContainer } from "../lib/docker.js";
 import { appHost, appUrl, removeAppRoute } from "../lib/caddy.js";
 import { routeApp } from "../lib/routing.js";
 import { isPlatformHostname, markDomainFailed, provisionDomain, releaseDomain, resolvesToServer } from "../lib/domains.js";
 import { env } from "../lib/env.js";
 import { enqueueDeployment, queuePosition } from "../lib/build-queue.js";
+import { dropUserDatabase } from "../lib/userdb.js";
 import { validate } from "../lib/validator.js";
-import { addDomainSchema, createAppSchema, logsQuerySchema, updateEnvSchema } from "../lib/validations.js";
+import { addDomainSchema, createAppSchema, isReservedAppName, logsQuerySchema, updateEnvSchema, updateProjectSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
 import type { UserEnv } from "../lib/types.js";
 import { LIMITS } from "../lib/limits.js";
 
 const MAX_ARTIFACT_BYTES = 500 * 1024 * 1024;
+
+const projectSlug = (name: string) => {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 40);
+  if (!slug || isReservedAppName(slug)) {
+    return `project-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
+  }
+  return slug;
+};
 
 const findApp = (userId: string, idOrSlug: string) => {
   return prisma.app.findFirst({
@@ -47,16 +60,26 @@ export const appRoutes = new Hono<UserEnv>()
 
     const count = await prisma.app.count({ where: { userId: c.get("user").id } });
     if (count >= LIMITS.apps) {
-      return c.json({ error: `You can have at most ${LIMITS.apps} apps. Delete one to create another.` }, 400);
+      return c.json({ error: `You can have at most ${LIMITS.apps} projects. Delete one to create another.` }, 400);
     }
 
-    const existing = await prisma.app.findUnique({ where: { slug: name } });
+    let slug = projectSlug(name);
+    const existing = await prisma.app.findUnique({ where: { slug } });
     if (existing) {
-      return c.json({ error: "This app name is taken" }, 400);
+      slug = `${slug.slice(0, 31)}-${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
     }
 
-    const app = await prisma.app.create({ data: { userId: c.get("user").id, name, slug: name } });
+    const app = await prisma.app.create({ data: { userId: c.get("user").id, name, slug } });
     return c.json({ app: withUrl(app) }, 201);
+  })
+  .put("/:id", validate("json", updateProjectSchema), async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "Project not found" }, 404);
+    }
+
+    const updated = await prisma.app.update({ where: { id: app.id }, data: { name: c.req.valid("json").name } });
+    return c.json({ app: withUrl(updated) });
   })
   .get("/:id", async (c) => {
     const app = await findApp(c.get("user").id, c.req.param("id"));
@@ -259,8 +282,12 @@ export const appRoutes = new Hono<UserEnv>()
       return c.json({ error: "App not found" }, 404);
     }
 
-    const deployments = await prisma.deployment.findMany({ where: { appId: app.id } });
-    const domains = await prisma.appDomain.findMany({ where: { appId: app.id } });
+    const [deployments, domains, bucket, database] = await Promise.all([
+      prisma.deployment.findMany({ where: { appId: app.id } }),
+      prisma.appDomain.findMany({ where: { appId: app.id } }),
+      prisma.bucket.findUnique({ where: { projectId: app.id } }),
+      prisma.database.findUnique({ where: { projectId: app.id } }),
+    ]);
     for (const domain of domains) {
       await releaseDomain(domain);
     }
@@ -275,7 +302,14 @@ export const appRoutes = new Hono<UserEnv>()
     if (artifactKeys.length) {
       await minio.removeObjects(DEPLOY_BUCKET, artifactKeys);
     }
+    if (bucket) {
+      await removeBucketCredentials(bucket.accessKey);
+      await emptyAndRemoveBucket(bucket.minioName);
+    }
+    if (database) {
+      await dropUserDatabase(database);
+    }
 
     await prisma.app.delete({ where: { id: app.id } });
-    return c.json({ message: "App deleted" });
+    return c.json({ message: "Project deleted" });
   });

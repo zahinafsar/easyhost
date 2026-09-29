@@ -309,7 +309,7 @@ export const AppDetailPage = () => {
   const remove = useApiMutation({
     mutationFn: () => unwrap(api.apps[":id"].$delete({ param: { id } })),
     invalidate,
-    success: "App deleted",
+    success: "Project deleted",
     onSuccess: () => navigate("/apps"),
   });
 
@@ -350,13 +350,13 @@ export const AppDetailPage = () => {
               </Button>
             )}
             <ConfirmButton
-              title={`Delete ${app.name}?`}
-              description="This removes the container, images, deployments and routing. This cannot be undone."
+              title={`Delete project ${app.name}?`}
+              description="This removes its app, deployments, storage, database, email settings, and API keys. This cannot be undone."
               onConfirm={() => remove.mutate(undefined)}
             >
               <Button variant="destructive">
                 <Trash2 className="size-4" />
-                Delete
+                Delete project
               </Button>
             </ConfirmButton>
           </div>

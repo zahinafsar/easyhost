@@ -111,8 +111,12 @@ export const addDomainSchema = z.object({
 });
 
 export const createAppSchema = z.object({
-  name: resourceName.refine((name) => !RESERVED_APP_NAMES.includes(name), "This app name is reserved"),
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(40, "Name must be at most 40 characters"),
 });
+
+export const updateProjectSchema = createAppSchema;
+
+export const isReservedAppName = (name: string) => RESERVED_APP_NAMES.includes(name);
 
 export const updateEnvSchema = z.object({
   env: z.record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "Invalid env var name"), z.string()),

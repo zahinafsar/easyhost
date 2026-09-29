@@ -15,7 +15,6 @@ const REQUIRED = [
   "APPS_DOMAIN",
   "APPS_PROTOCOL",
   "PUBLIC_IP",
-  "EDGE_PROXY",
 ] as const;
 
 const NPM_REQUIRED = ["NPM_API_URL", "NPM_API_EMAIL", "NPM_API_PASSWORD"] as const;
@@ -53,13 +52,13 @@ const oneOf = <T extends string>(name: EnvName, options: readonly T[]) => {
   return value as T;
 };
 
-const readNpm = (edgeProxy: "npm" | "none") => {
-  if (edgeProxy === "none") {
+const readNpm = () => {
+  if (process.env.NODE_ENV !== "production") {
     return null;
   }
   const missingNpm = NPM_REQUIRED.filter((name) => !process.env[name]?.trim());
   if (missingNpm.length) {
-    throw new Error(`EDGE_PROXY=npm requires: ${missingNpm.join(", ")}`);
+    throw new Error(`Missing required production environment variables: ${missingNpm.join(", ")}`);
   }
   return {
     apiUrl: process.env.NPM_API_URL as string,
@@ -88,5 +87,5 @@ export const env = {
   appsDomain: raw("APPS_DOMAIN"),
   appsProtocol: oneOf("APPS_PROTOCOL", ["http", "https"] as const),
   publicIp: raw("PUBLIC_IP"),
-  npm: readNpm(oneOf("EDGE_PROXY", ["npm", "none"] as const)),
+  npm: readNpm(),
 };

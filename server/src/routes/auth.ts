@@ -22,6 +22,12 @@ export const authRoutes = new Hono()
         email: email.toLowerCase(),
         password: await hashPassword(password),
         verifyToken,
+        apps: {
+          create: {
+            name: "Default project",
+            slug: `project-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`,
+          },
+        },
       },
     });
 

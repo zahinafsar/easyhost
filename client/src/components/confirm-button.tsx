@@ -15,12 +15,14 @@ export const ConfirmButton = ({
   title,
   description,
   confirmLabel = "Delete",
+  confirmVariant = "default",
   onConfirm,
 }: {
   children: React.ReactNode;
   title: string;
   description: string;
   confirmLabel?: string;
+  confirmVariant?: React.ComponentProps<typeof AlertDialogAction>["variant"];
   onConfirm: () => void;
 }) => {
   return (
@@ -33,7 +35,9 @@ export const ConfirmButton = ({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
+          <AlertDialogAction variant={confirmVariant} onClick={onConfirm}>
+            {confirmLabel}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -63,48 +63,42 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  apiKeys   ApiKey[]
-  buckets   Bucket[]
-  databases Database[]
-  emailLogs    EmailLog[]
-  emailSenders EmailSender[]
-  apps      App[]
+  apps App[]
 
   @@map("users")
 }
 
 model ApiKey {
   id         String    @id @default(cuid())
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId  String
+  project    App       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name       String
   prefix     String
   hash       String    @unique
   lastUsedAt DateTime?
   createdAt  DateTime  @default(now())
 
-  @@index([userId])
+  @@index([projectId])
   @@map("api_keys")
 }
 
 model Bucket {
   id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String   @unique
+  project   App      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name      String
   minioName String   @unique
   accessKey String   @unique
   secretKey String
   createdAt DateTime @default(now())
 
-  @@unique([userId, name])
   @@map("buckets")
 }
 
 model Database {
   id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String   @unique
+  project   App      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name      String
   dbName    String   @unique
   roleName  String   @unique
@@ -112,25 +106,23 @@ model Database {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, name])
   @@map("databases")
 }
 
 model EmailSender {
   id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String   @unique
+  project   App      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   username  String   @unique
   createdAt DateTime @default(now())
 
-  @@index([userId])
   @@map("email_senders")
 }
 
 model EmailLog {
   id        String      @id @default(cuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String
+  project   App         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   from      String
   to        String[]
   subject   String
@@ -139,7 +131,7 @@ model EmailLog {
   error     String?
   createdAt DateTime    @default(now())
 
-  @@index([userId, createdAt])
+  @@index([projectId, createdAt])
   @@map("email_logs")
 }
 
@@ -156,6 +148,11 @@ model App {
   updatedAt   DateTime     @updatedAt
   deployments Deployment[]
   domains     AppDomain[]
+  apiKeys     ApiKey[]
+  bucket      Bucket?
+  database    Database?
+  emailLogs   EmailLog[]
+  emailSender EmailSender?
 
   @@map("apps")
 }

@@ -1,6 +1,6 @@
 # EasyHost Project Memory
 
-## Current state (2026-09-26)
+## Current state (2026-09-29)
 - Layout: client/ (Vite dashboard), server/ (Hono API), cli/ (`ezhst`, npm package ezhst), marketing/ (static HTML+CSS), infra/ (caddy, userdb), scripts/start.mjs
 - Env: a single root `.env` both locally and on the VPS (no `.env.production`; templates `.env.example` and `.env.production.example`). No fallbacks anywhere; server validates via server/src/lib/env.ts, client via client/src/lib/env.ts. `npm start` refuses empty or `<PLACEHOLDER>` values
 - Fixed values are code constants: LIMITS (10 apps, 10 buckets, 10 databases, 10 email senders, 100 emails/day, 1 concurrent build), API port 48710, EMAIL_DOMAIN easyhost.fun, bucket easyhost-deploys, docker network easyhost, MinIO user easyhost
@@ -12,9 +12,12 @@
 - EasyHost Caddy has no host ports, joins NPM network (PROXY_NETWORK) as `easyhost-caddy`, serves marketing, dashboard (/api proxied same-origin), api., storage., app subdomains
 - Caddy admin is a unix socket shared only with the API container; API re-syncs app routes on boot and every 60s (no --resume)
 - userdb publishes 5432 directly; TLS cert for db.easyhost.fun issued in NPM and mounted read-only (NPM_LETSENCRYPT_DIR, USERDB_CERT_NAME), reloaded every 6h
-- Custom app domains: API creates NPM certificate then proxy host via NPM API (dedicated NPM user with "Created Items Only" recommended); EDGE_PROXY=none locally
+- Custom app domains: in production, the API creates an NPM certificate then proxy host via NPM API (dedicated NPM user with "Created Items Only" recommended); local development skips NPM
 
 ## Features
+- Projects: deployable `App` records are the project boundary. New accounts receive a `Default project`; the dashboard stores the selected project in localStorage and sends it as `X-Project-ID`. A minimal custom project picker lives at the bottom of the sidebar; its menu opens above the trigger with text-only project names and a separated Create project row with a plus icon. There is no projects/apps list screen. Each project has at most one bucket, one Postgres database, and one email sender address; email logs and API keys are also project-scoped. The generated `restaructure_the_app` migration covers project scoping but predates the unique one-email-sender constraint, so that constraint still needs a follow-up Prisma migration.
+- Settings is project-scoped, not account-scoped. It renames only the project display name (the deployment slug/URL remains stable) and exposes full project deletion. Deletion cleans up the container, routes, images, deployment artifacts, domains, MinIO bucket/credentials/files, Postgres database, email data, and API keys; deleting the last project returns the dashboard to its create-project state.
+- There is no Overview screen or API. `/` redirects to `/apps`, and Apps opens the selected project directly; Apps is the first/default sidebar destination.
 - Deploy: CLI uploads source tarball; Postgres-backed build queue; image built from node:22-alpine (install by lockfile, build, next start); step-based CLI output; build log in Deployment.log
 - Storage: S3 compatible, no custom storage API (v1 storage removed). Each bucket gets a MinIO service account (access/secret key on Bucket row) with an inline policy scoped to that bucket, created/rotated/removed by shelling out to `mc` (MC_HOST_eh env). API image copies mc from pgsty/mc; local dev needs mc on PATH. S3 endpoint = STORAGE_PUBLIC_URL, path-style, region us-east-1, bucket name = minioName eh-<id>. All files public by URL. Dashboard file browser still works via root MinIO client
 - Databases: shared Postgres, one db_<hex> + role u_<hex> each, plus <db>_shadow for prisma migrate dev; console + table editor run as the owner role

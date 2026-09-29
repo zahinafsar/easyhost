@@ -1,9 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api, createKey, unwrap } from "@/lib/api";
+import { selectedProjectId } from "@/lib/project";
 
 export const apiKeysQuery = () => {
   const query = {
-    all: ["api-keys"],
+    all: ["api-keys", selectedProjectId()],
 
     list: () =>
       queryOptions({
