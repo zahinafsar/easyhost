@@ -2,7 +2,7 @@
 
 ## Current state (2026-09-26)
 - Layout: client/ (Vite dashboard), server/ (Hono API), cli/ (`ezhst`, npm package ezhst), marketing/ (static HTML+CSS), infra/ (caddy, userdb), scripts/start.mjs
-- Env: root `.env` (local) and root `.env.production` (VPS) only. No fallbacks anywhere; server validates via server/src/lib/env.ts, client via client/src/lib/env.ts. `npm start` refuses empty or `<PLACEHOLDER>` values
+- Env: a single root `.env` both locally and on the VPS (no `.env.production`; templates `.env.example` and `.env.production.example`). No fallbacks anywhere; server validates via server/src/lib/env.ts, client via client/src/lib/env.ts. `npm start` refuses empty or `<PLACEHOLDER>` values
 - Fixed values are code constants: LIMITS (10 apps, 10 buckets, 10 databases, 10 email senders, 100 emails/day, 1 concurrent build), API port 48710, EMAIL_DOMAIN easyhost.fun, bucket easyhost-deploys, docker network easyhost, MinIO user easyhost
 - Local ports: API 48710, dashboard 51730, postgres 127.0.0.1:54329, userdb 127.0.0.1:54330, minio 127.0.0.1:19000/19001, caddy :80 (admin 127.0.0.1:20190)
 - MinIO images: pgsty/minio + pgsty/mc (official images are no longer public)

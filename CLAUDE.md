@@ -13,7 +13,7 @@ Hosting platform: Next.js app hosting (containers + Caddy), public object storag
 - infra: docker-compose (postgres, userdb, minio, minio-init, caddy)
 
 ## Commands
-- `npm start` (repo root) - Production: validates `.env.production`, builds and starts everything via `docker-compose.prod.yml`
+- `npm start` (repo root) - Production: validates `.env`, builds and starts everything via `docker-compose.prod.yml`
 - `npm stop` / `npm run logs` - Stop / tail production stack
 - `docker compose up -d` - Dev infra: postgres 127.0.0.1:54329, minio 127.0.0.1:19000 (console 19001), caddy :80 (admin 127.0.0.1:20190)
 - `cd server && npm run dev` - API on :48710
@@ -23,7 +23,7 @@ Hosting platform: Next.js app hosting (containers + Caddy), public object storag
 - `cd server && npm run prisma -- studio` - Database GUI
 
 ## Production (VPS)
-- The VPS already runs Nginx Proxy Manager (NPM) on 80/443 for other sites. EasyHost does not publish host ports: its Caddy joins NPM's docker network (`PROXY_NETWORK` in `.env.production`) with alias `easyhost-caddy` and listens on plain HTTP :80
+- The VPS already runs Nginx Proxy Manager (NPM) on 80/443 for other sites. EasyHost does not publish host ports: its Caddy joins NPM's docker network (`PROXY_NETWORK` in `.env`) with alias `easyhost-caddy` and listens on plain HTTP :80
 - NPM (configured once by hand) terminates TLS for `easyhost.fun`, `www`, `app`, `api`, `storage` and `*.easyhost.fun` (wildcard cert via DNS challenge) and forwards all of them to `easyhost-caddy:80`. EasyHost never calls NPM
 - Caddy routes by Host: `easyhost.fun` = static site in `/marketing`, `app.` = built dashboard (its `/api/*` proxied to API, same origin), `api.` = API, `storage.` = MinIO, `<slug>.` = customer apps (routes added via Caddy admin unix socket shared only with the API container)
 - API container mounts the Docker socket and re-syncs app routes into Caddy on start and every 60s
@@ -47,8 +47,8 @@ Hosting platform: Next.js app hosting (containers + Caddy), public object storag
 ## Key Patterns
 - Named exports only
 - Fixed values live in code, not env: per-user limits in `server/src/lib/limits.ts`, API port 48710, `EMAIL_DOMAIN` (easyhost.fun), deploy bucket, docker network `easyhost`
-- Env files: one root `.env` for local (API, dashboard via Vite `envDir`, dev compose) and one root `.env.production` for the VPS. No per-package env files
-- Env vars: never use fallbacks. Server reads env only through `server/src/lib/env.ts` (validates all required vars at startup), client through `client/src/lib/env.ts`, prod env lives in `.env.production` (template `.env.production.example`), passed to the api container via `env_file` and to compose interpolation via `--env-file`
+- Env files: one root `.env` everywhere: local (API, dashboard via Vite `envDir`, dev compose) and the VPS (prod compose). Templates: `.env.example` (local) and `.env.production.example` (VPS). No per-package env files
+- Env vars: never use fallbacks. Server reads env only through `server/src/lib/env.ts` (validates all required vars at startup), client through `client/src/lib/env.ts`, on the VPS `.env` is, passed to the api container via `env_file` and to compose interpolation via `--env-file`
 - kebab-case file names
 - Zod for all validation, `validate()` from `server/src/lib/validator.ts` returns `{ error }` with the first issue
 - API errors are `{ error: string }` with proper status

@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: easyhost
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: easyhost
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -21,16 +21,16 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${USERDB_PASSWORD:?Set USERDB_PASSWORD in .env.production}
+      POSTGRES_PASSWORD: ${USERDB_PASSWORD:?Set USERDB_PASSWORD in .env}
       POSTGRES_DB: postgres
       USERDB_TLS_MODE: files
-      USERDB_TLS_CERT_FILE: /etc/npm-letsencrypt/live/${USERDB_CERT_NAME:?Set USERDB_CERT_NAME in .env.production}/fullchain.pem
-      USERDB_TLS_KEY_FILE: /etc/npm-letsencrypt/live/${USERDB_CERT_NAME:?Set USERDB_CERT_NAME in .env.production}/privkey.pem
+      USERDB_TLS_CERT_FILE: /etc/npm-letsencrypt/live/${USERDB_CERT_NAME:?Set USERDB_CERT_NAME in .env}/fullchain.pem
+      USERDB_TLS_KEY_FILE: /etc/npm-letsencrypt/live/${USERDB_CERT_NAME:?Set USERDB_CERT_NAME in .env}/privkey.pem
     ports:
       - "5432:5432"
     volumes:
       - userdb_data:/var/lib/postgresql/data
-      - ${NPM_LETSENCRYPT_DIR:?Set NPM_LETSENCRYPT_DIR in .env.production}:/etc/npm-letsencrypt:ro
+      - ${NPM_LETSENCRYPT_DIR:?Set NPM_LETSENCRYPT_DIR in .env}:/etc/npm-letsencrypt:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -43,7 +43,7 @@ services:
     command: server /data
     environment:
       MINIO_ROOT_USER: easyhost
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.production}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
     volumes:
       - minio_data:/data
 
@@ -58,14 +58,14 @@ services:
       mc mb --ignore-existing local/easyhost-deploys
       "
     environment:
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.production}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
 
   caddy:
     build:
       context: .
       dockerfile: infra/caddy/Dockerfile
       args:
-        VITE_PUBLIC_API_URL: ${VITE_PUBLIC_API_URL:?Set VITE_PUBLIC_API_URL in .env.production}
+        VITE_PUBLIC_API_URL: ${VITE_PUBLIC_API_URL:?Set VITE_PUBLIC_API_URL in .env}
     restart: unless-stopped
     volumes:
       - caddy_data:/data
@@ -91,7 +91,7 @@ services:
       caddy:
         condition: service_started
     env_file:
-      - .env.production
+      - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - caddy_admin:/run/caddy
@@ -111,5 +111,5 @@ networks:
   apps:
     name: easyhost
   proxy:
-    name: ${PROXY_NETWORK:?Set PROXY_NETWORK in .env.production}
+    name: ${PROXY_NETWORK:?Set PROXY_NETWORK in .env}
     external: true

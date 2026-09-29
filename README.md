@@ -4,7 +4,7 @@ Hosting platform for Next.js apps with object storage, Postgres databases and tr
 
 ## Getting started
 
-All local config lives in one root `.env` (production uses `.env.production`).
+All config lives in one root `.env`, locally and on the VPS. Start from `.env.example` locally and `.env.production.example` on the VPS.
 
 ```bash
 cp .env.example .env
@@ -49,7 +49,7 @@ Production certificate setup (once):
 
 1. In NPM, SSL Certificates, add a Let's Encrypt certificate for `db.easyhost.fun`.
 2. Find NPM's letsencrypt folder on the host (`docker inspect nginx-proxy-manager_app_1 -f '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{println}}{{end}}'`, the one mounted at `/etc/letsencrypt`) and the certificate folder name (`ls <folder>/live`, e.g. `npm-7`).
-3. Set `NPM_LETSENCRYPT_DIR` and `USERDB_CERT_NAME` in `.env.production`.
+3. Set `NPM_LETSENCRYPT_DIR` and `USERDB_CERT_NAME` in `.env`.
 
 The `userdb` container copies the certificate in on start and checks for renewals every 6 hours.
 
@@ -57,7 +57,7 @@ The `userdb` container copies the certificate in on start and checks for renewal
 
 Apps can have custom domains (Domains tab on the app page). The user points the domain at the server (CNAME to `<app>.easyhost.fun`, or an A record to `PUBLIC_IP` for a root domain) and clicks Verify. EasyHost checks DNS, then (with `EDGE_PROXY=npm`) asks Nginx Proxy Manager's API for a Let's Encrypt certificate and a proxy host forwarding to `easyhost-caddy:80`, and adds the hostname to the app's Caddy route.
 
-NPM setup (once): in NPM, Users, create a dedicated user (no two-factor) with "Item Visibility: Created Items Only" and "Manage" on Proxy Hosts and SSL Certificates, so EasyHost can only see and change what it created. Put its email and password in `NPM_API_EMAIL` and `NPM_API_PASSWORD` in `.env.production`. Locally `EDGE_PROXY=none` skips NPM.
+NPM setup (once): in NPM, Users, create a dedicated user (no two-factor) with "Item Visibility: Created Items Only" and "Manage" on Proxy Hosts and SSL Certificates, so EasyHost can only see and change what it created. Put its email and password in `NPM_API_EMAIL` and `NPM_API_PASSWORD` in `.env`. Locally `EDGE_PROXY=none` skips NPM.
 
 ## Storage
 
@@ -74,7 +74,7 @@ Create an API key in the dashboard and send it as `Authorization: Bearer <key>`.
 The VPS runs Nginx Proxy Manager (NPM) on ports 80/443. EasyHost runs behind it and publishes no host ports.
 
 1. DNS: `easyhost.fun`, `www`, `app`, `api`, `storage` and `*.easyhost.fun` point at the VPS.
-2. Copy `.env.production` to the server and set `PROXY_NETWORK` to NPM's docker network.
+2. Copy `.env.production.example` to `.env` on the server, fill it in, and set `PROXY_NETWORK` to NPM's docker network.
 3. Start:
 
 ```bash
@@ -84,4 +84,4 @@ npm start
 
 4. In NPM, forward `easyhost.fun`, `www.easyhost.fun`, `app.easyhost.fun`, `api.easyhost.fun`, `storage.easyhost.fun` and `*.easyhost.fun` to `easyhost-caddy` port `80` over HTTP, with SSL enabled (wildcard certificate via DNS challenge for `*.easyhost.fun`).
 
-`npm start` refuses to run while any value in `.env.production` is empty or still a `<PLACEHOLDER>`.
+`npm start` refuses to run while any value in `.env` is empty or still a `<PLACEHOLDER>`.

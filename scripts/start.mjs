@@ -4,11 +4,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const envFile = path.join(root, ".env.production");
+const envFile = path.join(root, ".env");
 
 const checkEnv = () => {
   if (!existsSync(envFile)) {
-    console.error("Missing .env.production. Copy .env.production.example to .env.production and fill in every value.");
+    console.error("Missing .env. Copy .env.production.example to .env and fill in every value.");
     process.exit(1);
   }
 
@@ -21,7 +21,7 @@ const checkEnv = () => {
     .map((line) => line.slice(0, line.indexOf("=")));
 
   if (invalid.length) {
-    console.error(`Fill in these values in .env.production: ${invalid.join(", ")}`);
+    console.error(`Fill in these values in .env: ${invalid.join(", ")}`);
     process.exit(1);
   }
 };
@@ -38,7 +38,7 @@ const run = (args) => {
 };
 
 checkEnv();
-run(["compose", "-f", "docker-compose.prod.yml", "--env-file", ".env.production", "up", "-d", "--build", "--remove-orphans"]);
+run(["compose", "-f", "docker-compose.prod.yml", "--env-file", ".env", "up", "-d", "--build", "--remove-orphans"]);
 
 console.log(`
 EasyHost is running.
