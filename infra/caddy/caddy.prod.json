@@ -62,11 +62,6 @@
               "match": [{ "host": ["api.easyhost.fun"] }],
               "handle": [{ "handler": "reverse_proxy", "upstreams": [{ "dial": "api:48710" }] }],
               "terminal": true
-            },
-            {
-              "match": [{ "host": ["storage.easyhost.fun"] }],
-              "handle": [{ "handler": "reverse_proxy", "upstreams": [{ "dial": "minio:9000" }] }],
-              "terminal": true
             }
           ]
         }

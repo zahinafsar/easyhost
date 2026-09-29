@@ -84,6 +84,6 @@ npm start
 
 Run `npm run restart` to rebuild and force-recreate the production services without deleting database or storage volumes.
 
-4. In NPM, forward `easyhost.fun`, `www.easyhost.fun`, `app.easyhost.fun`, `api.easyhost.fun`, `storage.easyhost.fun` and `*.easyhost.fun` to `easyhost-caddy` port `80` over HTTP, with SSL enabled (wildcard certificate via DNS challenge for `*.easyhost.fun`).
+4. In NPM, forward `easyhost.fun`, `www.easyhost.fun`, `app.easyhost.fun`, `api.easyhost.fun` and `*.easyhost.fun` to `easyhost-caddy` port `80` over HTTP. Forward `storage.easyhost.fun` directly to `easyhost-minio` port `9000` over HTTP. Enable SSL with the wildcard certificate issued through a DNS challenge.
 
 `npm start` refuses to run while any value in `.env` is empty or still a `<PLACEHOLDER>`.

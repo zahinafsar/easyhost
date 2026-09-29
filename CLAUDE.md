@@ -24,8 +24,8 @@ Hosting platform: Next.js app hosting (containers + Caddy), public object storag
 
 ## Production (VPS)
 - The VPS already runs Nginx Proxy Manager (NPM) on 80/443 for other sites. EasyHost does not publish host ports: its Caddy joins NPM's docker network (`PROXY_NETWORK` in `.env`) with alias `easyhost-caddy` and listens on plain HTTP :80
-- NPM (configured once by hand) terminates TLS for `easyhost.fun`, `www`, `app`, `api`, `storage` and `*.easyhost.fun` (wildcard cert via DNS challenge) and forwards all of them to `easyhost-caddy:80`. EasyHost never calls NPM
-- Caddy routes by Host: `easyhost.fun` = static site in `/marketing`, `app.` = built dashboard (its `/api/*` proxied to API, same origin), `api.` = API, `storage.` = MinIO, `<slug>.` = customer apps (routes added via Caddy admin unix socket shared only with the API container)
+- NPM terminates TLS for `easyhost.fun`, `www`, `app`, `api`, `storage` and `*.easyhost.fun` using a wildcard certificate issued through a DNS challenge. It forwards `storage.easyhost.fun` directly to `easyhost-minio:9000` and the other hosts to `easyhost-caddy:80`
+- Caddy routes by Host: `easyhost.fun` = static site in `/marketing`, `app.` = built dashboard (its `/api/*` proxied to API, same origin), `api.` = API, `<slug>.` = customer apps (routes added via Caddy admin unix socket shared only with the API container)
 - API container mounts the Docker socket and re-syncs app routes into Caddy on start and every 60s
 - Reserved app names (api, app, www, storage, ...) live in `server/src/lib/validations.ts`
 

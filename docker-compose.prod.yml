@@ -47,6 +47,11 @@ services:
       MINIO_API_CORS_ALLOW_ORIGIN: "*"
     volumes:
       - minio_data:/data
+    networks:
+      default: {}
+      proxy:
+        aliases:
+          - easyhost-minio
 
   minio-init:
     image: pgsty/mc:RELEASE.2026-09-16T00-00-00Z
