@@ -1,36 +1,32 @@
 import Docker from "dockerode";
 import { pack } from "tar-stream";
+import path from "node:path";
 import type { Readable } from "node:stream";
+import type { BuildPlan } from "./build-plan.js";
 
 export const docker = new Docker();
 
 const DOCKER_NETWORK = "easyhost";
 export const APP_PORT = 3000;
 
-const INSTALL = `if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm install --frozen-lockfile; \\
-  elif [ -f yarn.lock ]; then corepack enable yarn && yarn install --frozen-lockfile; \\
-  elif [ -f bun.lockb ] || [ -f bun.lock ]; then npm install -g bun && bun install --frozen-lockfile; \\
-  elif [ -f package-lock.json ]; then npm ci; \\
-  else npm install; fi`;
-
-const BUILD = `if [ -f pnpm-lock.yaml ]; then pnpm run build; \\
-  elif [ -f yarn.lock ]; then yarn run build; \\
-  elif [ -f bun.lockb ] || [ -f bun.lock ]; then bun run build; \\
-  else npm run build; fi`;
-
-const dockerfile = (envKeys: string[]) => {
+const dockerfile = (plan: BuildPlan, envKeys: string[]) => {
   const args = envKeys.map((key) => `ARG ${key}`).join("\n");
-  return `FROM node:22-alpine
+  const installPath = path.posix.join("/app", plan.installDir);
+  const appPath = path.posix.join("/app", plan.appDir);
+  return `FROM node:${plan.nodeVersion}-alpine
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 ADD app.tgz /app/
 ${args}
-RUN ${INSTALL}
-RUN ${BUILD}
+WORKDIR ${installPath}
+RUN ${plan.install}
+WORKDIR ${appPath}
+ENV PATH=${appPath}/node_modules/.bin:/app/node_modules/.bin:$PATH
+RUN ${plan.build}
 ENV NODE_ENV=production PORT=${APP_PORT} HOSTNAME=0.0.0.0
 EXPOSE ${APP_PORT}
-CMD ["sh", "-c", "node_modules/.bin/next start -H 0.0.0.0 -p $PORT"]
+CMD ["sh", "-c", ${JSON.stringify(plan.start)}]
 `;
 };
 
@@ -38,9 +34,9 @@ export const containerName = (slug: string) => `eh-app-${slug}`;
 
 export const imageTag = (slug: string, deploymentId: string) => `easyhost/${slug}:${deploymentId.toLowerCase()}`;
 
-const buildContext = (artifact: Buffer, envKeys: string[]) => {
+const buildContext = (artifact: Buffer, plan: BuildPlan, envKeys: string[]) => {
   const tar = pack();
-  tar.entry({ name: "Dockerfile" }, dockerfile(envKeys));
+  tar.entry({ name: "Dockerfile" }, dockerfile(plan, envKeys));
   tar.entry({ name: "app.tgz" }, artifact);
   tar.finalize();
   return tar;
@@ -49,10 +45,11 @@ const buildContext = (artifact: Buffer, envKeys: string[]) => {
 export const buildImage = async (
   artifact: Buffer,
   tag: string,
+  plan: BuildPlan,
   env: Record<string, string>,
   onLog: (line: string) => void,
 ) => {
-  const stream = await docker.buildImage(buildContext(artifact, Object.keys(env)) as unknown as Readable, {
+  const stream = await docker.buildImage(buildContext(artifact, plan, Object.keys(env)) as unknown as Readable, {
     t: tag,
     rm: true,
     forcerm: true,

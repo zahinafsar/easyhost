@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { NODE_VERSIONS } from "./build-plan.js";
 
 const resourceName = z
   .string()
@@ -120,6 +121,29 @@ export const isReservedAppName = (name: string) => RESERVED_APP_NAMES.includes(n
 
 export const updateEnvSchema = z.object({
   env: z.record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "Invalid env var name"), z.string()),
+});
+
+const buildCommand = z
+  .string()
+  .trim()
+  .max(500, "Command must be at most 500 characters")
+  .refine((value) => !/[\r\n]/.test(value), "Command must be a single line")
+  .transform((value) => value || null);
+
+export const updateBuildSchema = z.object({
+  nodeVersion: z.enum(NODE_VERSIONS).nullable(),
+  rootDir: z
+    .string()
+    .trim()
+    .transform((value) => value.replace(/^(\.\/|\/)+/, "").replace(/\/+$/, ""))
+    .refine(
+      (value) => !value || (/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(value) && !value.split("/").some((part) => part === "." || part === "..")),
+      "Use a relative path like apps/web",
+    )
+    .transform((value) => value || null),
+  installCommand: buildCommand,
+  buildCommand,
+  startCommand: buildCommand,
 });
 
 export const paginationSchema = z.object({

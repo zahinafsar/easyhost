@@ -7,10 +7,11 @@ import { env } from "../lib/env.js";
 import { enqueueDeployment, queuePosition } from "../lib/build-queue.js";
 import { dropUserDatabase } from "../lib/userdb.js";
 import { validate } from "../lib/validator.js";
-import { addDomainSchema, createAppSchema, isReservedAppName, logsQuerySchema, updateEnvSchema, updateProjectSchema } from "../lib/validations.js";
+import { addDomainSchema, createAppSchema, isReservedAppName, logsQuerySchema, updateBuildSchema, updateEnvSchema, updateProjectSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
 import type { UserEnv } from "../lib/types.js";
 import { LIMITS } from "../lib/limits.js";
+import { NODE_VERSIONS } from "../lib/build-plan.js";
 
 const MAX_ARTIFACT_BYTES = 500 * 1024 * 1024;
 
@@ -97,6 +98,7 @@ export const appRoutes = new Hono<UserEnv>()
       deployments,
       domains,
       dnsTarget: { cname: appHost(app.slug), ip: env.publicIp },
+      nodeVersions: NODE_VERSIONS,
     });
   })
   .post("/:id/domains", validate("json", addDomainSchema), async (c) => {
@@ -179,6 +181,15 @@ export const appRoutes = new Hono<UserEnv>()
 
     const updated = await prisma.app.update({ where: { id: app.id }, data: { env: c.req.valid("json").env } });
     return c.json({ app: withUrl(updated), message: "Environment saved. Redeploy to apply changes." });
+  })
+  .put("/:id/build", validate("json", updateBuildSchema), async (c) => {
+    const app = await findApp(c.get("user").id, c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "App not found" }, 404);
+    }
+
+    const updated = await prisma.app.update({ where: { id: app.id }, data: c.req.valid("json") });
+    return c.json({ app: withUrl(updated), message: "Build settings saved. Redeploy to apply changes." });
   })
   .post("/:id/deploy", async (c) => {
     const app = await findApp(c.get("user").id, c.req.param("id"));

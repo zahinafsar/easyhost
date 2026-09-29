@@ -136,23 +136,28 @@ model EmailLog {
 }
 
 model App {
-  id          String       @id @default(cuid())
-  userId      String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name        String
-  slug        String       @unique
-  env         Json         @default("{}")
-  status      AppStatus    @default(IDLE)
-  containerId String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deployments Deployment[]
-  domains     AppDomain[]
-  apiKeys     ApiKey[]
-  bucket      Bucket?
-  database    Database?
-  emailLogs   EmailLog[]
-  emailSender EmailSender?
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  slug           String       @unique
+  env            Json         @default("{}")
+  nodeVersion    String?
+  rootDir        String?
+  installCommand String?
+  buildCommand   String?
+  startCommand   String?
+  status         AppStatus    @default(IDLE)
+  containerId    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deployments    Deployment[]
+  domains        AppDomain[]
+  apiKeys        ApiKey[]
+  bucket         Bucket?
+  database       Database?
+  emailLogs      EmailLog[]
+  emailSender    EmailSender?
 
   @@map("apps")
 }

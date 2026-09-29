@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import type { InferRequestType } from "hono/client";
 import { CheckCircle2, ExternalLink, FileText, List, Play, Plus, RefreshCw, Square, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -152,6 +154,126 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
             Save
           </Button>
         </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+type BuildForm = {
+  nodeVersion: string;
+  rootDir: string;
+  installCommand: string;
+  buildCommand: string;
+  startCommand: string;
+};
+
+const BUILD_FIELDS: { key: Exclude<keyof BuildForm, "nodeVersion">; label: string; placeholder: string; hint: string }[] = [
+  {
+    key: "rootDir",
+    label: "Root directory",
+    placeholder: "Project root",
+    hint: "Folder with the app's package.json, e.g. apps/web. Dependencies install where the lockfile is.",
+  },
+  {
+    key: "installCommand",
+    label: "Install command",
+    placeholder: "Auto: from lockfile, e.g. npm ci",
+    hint: "Runs in the folder with the lockfile.",
+  },
+  {
+    key: "buildCommand",
+    label: "Build command",
+    placeholder: "Auto: npm run build (or pnpm, yarn, bun)",
+    hint: "Runs in the root directory. Environment variables are available.",
+  },
+  {
+    key: "startCommand",
+    label: "Start command",
+    placeholder: "next start -H 0.0.0.0 -p $PORT",
+    hint: "Must listen on 0.0.0.0 and $PORT (3000).",
+  },
+];
+
+type NodeVersion = NonNullable<InferRequestType<(typeof api.apps)[":id"]["build"]["$put"]>["json"]["nodeVersion"]>;
+
+const BuildSettings = ({
+  appId,
+  initial,
+  nodeVersions,
+}: {
+  appId: string;
+  initial: { [K in keyof BuildForm]: string | null };
+  nodeVersions: readonly NodeVersion[];
+}) => {
+  const [form, setForm] = useState<BuildForm>({
+    nodeVersion: initial.nodeVersion ?? "",
+    rootDir: initial.rootDir ?? "",
+    installCommand: initial.installCommand ?? "",
+    buildCommand: initial.buildCommand ?? "",
+    startCommand: initial.startCommand ?? "",
+  });
+
+  const save = useApiMutation({
+    mutationFn: () => {
+      return unwrap(
+        api.apps[":id"].build.$put({
+          param: { id: appId },
+          json: { ...form, nodeVersion: nodeVersions.find((version) => version === form.nodeVersion) ?? null },
+        }),
+      );
+    },
+    invalidate: [appsQuery().all],
+    success: "Build settings saved. Redeploy to apply.",
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Build settings</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="space-y-5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            save.mutate(undefined);
+          }}
+        >
+          <p className="text-sm text-muted-foreground">Leave a field empty to detect it automatically.</p>
+          <div className="space-y-2">
+            <Label htmlFor="nodeVersion">Node.js version</Label>
+            <select
+              id="nodeVersion"
+              value={form.nodeVersion}
+              onChange={(event) => setForm({ ...form, nodeVersion: event.target.value })}
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
+            >
+              <option value="">Auto: from engines.node, otherwise {nodeVersions[nodeVersions.length - 1]}</option>
+              {nodeVersions.map((version) => (
+                <option key={version} value={version}>
+                  Node {version}
+                </option>
+              ))}
+            </select>
+          </div>
+          {BUILD_FIELDS.map((field) => (
+            <div key={field.key} className="space-y-2">
+              <Label htmlFor={field.key}>{field.label}</Label>
+              <Input
+                id={field.key}
+                className="font-mono"
+                placeholder={field.placeholder}
+                value={form[field.key]}
+                onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+                spellCheck={false}
+              />
+              <p className="text-xs text-muted-foreground">{field.hint}</p>
+            </div>
+          ))}
+          <Button type="submit" size="sm" disabled={save.isPending}>
+            Save
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );
@@ -373,6 +495,7 @@ export const AppDetailPage = () => {
             Runtime logs
           </TabsTrigger>
           <TabsTrigger value="env">Environment</TabsTrigger>
+          <TabsTrigger value="build">Build</TabsTrigger>
           <TabsTrigger value="domains">Domains</TabsTrigger>
         </TabsList>
         <TabsContent value="deployments" className="mt-4">
@@ -416,6 +539,9 @@ export const AppDetailPage = () => {
         </TabsContent>
         <TabsContent value="env" className="mt-4">
           <EnvEditor appId={app.id} initial={app.env as Record<string, string>} />
+        </TabsContent>
+        <TabsContent value="build" className="mt-4">
+          <BuildSettings appId={app.id} initial={app} nodeVersions={data.nodeVersions} />
         </TabsContent>
         <TabsContent value="domains" className="mt-4">
           <DomainsPanel appId={app.id} domains={data.domains} dnsTarget={data.dnsTarget} />

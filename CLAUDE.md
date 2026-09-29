@@ -59,6 +59,6 @@ Hosting platform: Next.js app hosting (containers routed by Nginx Proxy Manager)
 
 ## Hosting flow
 - CLI `ezhst deploy` (npm package `ezhst`) tars the project source (skips node_modules, .next, .git, .env*) and uploads to `POST /api/apps/:id/deploy`. No project changes needed
-- Server stores the tarball in MinIO `easyhost-deploys`, builds `easyhost/<slug>:<deploymentId>` from `node:22-alpine` (install by lockfile, `run build`, `next start`), app env is passed as build args and runtime env, runs container `eh-app-<slug>` on docker network `easyhost`
+- Server stores the tarball in MinIO `easyhost-deploys`, builds `easyhost/<slug>:<deploymentId>` from `node:<version>-alpine` using the build plan in `server/src/lib/build-plan.ts` (auto-detected Node, install, build and start commands, overridable per app in the Build tab), app env is passed as build args and runtime env, runs container `eh-app-<slug>` on docker network `easyhost`
 - Builds go through a Postgres-backed queue (`server/src/lib/build-queue.ts`): deploy creates a QUEUED row, worker claims with `FOR UPDATE SKIP LOCKED`, max `LIMITS.concurrentBuilds` builds at once, never two builds for the same app, older QUEUED deploys of the same app become SUPERSEDED, BUILDING rows left by a restart are marked FAILED on boot
 - No per-app routing step: `<slug>.<APPS_DOMAIN>` works via NPM's wildcard host once the container runs. Custom domains get their own NPM certificate + proxy host forwarding to `eh-app-<slug>:3000`. Locally apps are not routed

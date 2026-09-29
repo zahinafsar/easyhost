@@ -27,3 +27,7 @@
 
 ## Preferences
 - No backward compatibility or backfills (pre-launch)
+
+## CLI
+- Global config ~/.easyhost/config.json keeps apiUrl from the last `ezhst login --api`; a leftover http://localhost:48710 makes login fail with a network error. Network failures now report the unreachable API URL
+- Build settings (App.nodeVersion, rootDir, installCommand, buildCommand, startCommand; null = auto) edited in the app page Build tab (`PUT /api/apps/:id/build`). server/src/lib/build-plan.ts reads the uploaded tarball: Node from engines.node (supported 20/22/24, default 24), package manager from the lockfile, install runs where the lockfile is (root dir, or repo root for monorepos), build/start in the root dir, default start `next start -H 0.0.0.0 -p $PORT` with node_modules/.bin on PATH. No npm upgrade shim: npm 11 lockfiles need Node 24 (npm 10 `npm ci` rejects them)

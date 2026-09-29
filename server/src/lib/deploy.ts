@@ -1,6 +1,7 @@
 import type { DeploymentStep } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { minio, DEPLOY_BUCKET } from "./minio.js";
+import { resolveBuildPlan, type BuildPlan } from "./build-plan.js";
 import { buildImage, containerName, imageTag, runContainer, removeImage, APP_PORT } from "./docker.js";
 
 const readObject = async (key: string) => {
@@ -39,17 +40,26 @@ const createLogger = (deploymentId: string) => {
   };
 };
 
-const stepFromBuildLine = (line: string): DeploymentStep | null => {
-  if (!line.startsWith("Step ") || !line.includes(" : RUN ")) {
+const stepFromBuildLine = (line: string, plan: BuildPlan): DeploymentStep | null => {
+  if (!line.startsWith("Step ")) {
     return null;
   }
-  if (line.includes("run build")) {
+  if (line.endsWith(` : RUN ${plan.build}`)) {
     return "BUILDING";
   }
-  if (line.includes("install") && !line.includes("apk add")) {
+  if (line.endsWith(` : RUN ${plan.install}`)) {
     return "INSTALLING";
   }
   return null;
+};
+
+const describePlan = (plan: BuildPlan) => {
+  return [
+    `Node ${plan.nodeVersion}`,
+    `Install in /${plan.installDir}: ${plan.install}`,
+    `Build in /${plan.appDir}: ${plan.build}`,
+    `Start: ${plan.start}`,
+  ].join("\n");
 };
 
 export const runDeployment = async (deploymentId: string) => {
@@ -76,9 +86,9 @@ export const runDeployment = async (deploymentId: string) => {
     return stepUpdate;
   };
 
-  const onBuildLog = (line: string) => {
+  const onBuildLog = (plan: BuildPlan) => (line: string) => {
     logger.log(line);
-    const step = stepFromBuildLine(line);
+    const step = stepFromBuildLine(line, plan);
     if (step) {
       setStep(step);
     }
@@ -93,8 +103,11 @@ export const runDeployment = async (deploymentId: string) => {
     const artifact = await readObject(deployment.artifactKey);
     const appEnv = app.env as Record<string, string>;
 
+    const plan = await resolveBuildPlan(artifact, app);
+    logger.log(describePlan(plan));
+
     logger.log(`Installing dependencies and building ${tag}`);
-    await buildImage(artifact, tag, appEnv, onBuildLog);
+    await buildImage(artifact, tag, plan, appEnv, onBuildLog(plan));
 
     await setStep("STARTING");
     logger.log("Starting container");
