@@ -1,15 +1,45 @@
 import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
-import { createPublicBucket, emptyAndRemoveBucket, listAllObjects, minio, minioBucketName, publicBaseUrl, publicObjectUrl } from "../lib/minio.js";
+import {
+  S3_REGION,
+  createBucketCredentials,
+  createPublicBucket,
+  emptyAndRemoveBucket,
+  listAllObjects,
+  minio,
+  minioBucketName,
+  publicBaseUrl,
+  publicObjectUrl,
+  removeBucketCredentials,
+  s3Endpoint,
+} from "../lib/minio.js";
 import { validate } from "../lib/validator.js";
 import { createBucketSchema, listObjectsSchema, objectKeySchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
+import type { Bucket } from "@prisma/client";
 import type { UserEnv } from "../lib/types.js";
 import { LIMITS } from "../lib/limits.js";
 
 const findBucket = (userId: string, id: string) => prisma.bucket.findFirst({ where: { id, userId } });
 
-const withBaseUrl = <T extends { minioName: string }>(bucket: T) => ({ ...bucket, baseUrl: publicBaseUrl(bucket.minioName) });
+const summary = (bucket: Bucket) => ({
+  id: bucket.id,
+  name: bucket.name,
+  minioName: bucket.minioName,
+  baseUrl: publicBaseUrl(bucket.minioName),
+  createdAt: bucket.createdAt,
+});
+
+const withCredentials = (bucket: Bucket) => ({
+  ...summary(bucket),
+  s3: {
+    endpoint: s3Endpoint(),
+    region: S3_REGION,
+    bucket: bucket.minioName,
+    accessKeyId: bucket.accessKey,
+    secretAccessKey: bucket.secretKey,
+  },
+});
 
 export const storageRoutes = new Hono<UserEnv>()
   .use(requireUser)
@@ -18,7 +48,7 @@ export const storageRoutes = new Hono<UserEnv>()
       where: { userId: c.get("user").id },
       orderBy: { createdAt: "desc" },
     });
-    return c.json({ buckets: buckets.map(withBaseUrl), limit: LIMITS.buckets });
+    return c.json({ buckets: buckets.map(summary), limit: LIMITS.buckets });
   })
   .post("/buckets", validate("json", createBucketSchema), async (c) => {
     const userId = c.get("user").id;
@@ -38,8 +68,16 @@ export const storageRoutes = new Hono<UserEnv>()
     const minioName = minioBucketName(id);
     await createPublicBucket(minioName);
 
-    const bucket = await prisma.bucket.create({ data: { id, userId, name, minioName } });
-    return c.json({ bucket: withBaseUrl(bucket) }, 201);
+    let credentials: Awaited<ReturnType<typeof createBucketCredentials>>;
+    try {
+      credentials = await createBucketCredentials(minioName);
+    } catch (error) {
+      await emptyAndRemoveBucket(minioName);
+      throw error;
+    }
+
+    const bucket = await prisma.bucket.create({ data: { id, userId, name, minioName, ...credentials } });
+    return c.json({ bucket: withCredentials(bucket) }, 201);
   })
   .delete("/buckets/:id", async (c) => {
     const bucket = await findBucket(c.get("user").id, c.req.param("id"));
@@ -47,9 +85,21 @@ export const storageRoutes = new Hono<UserEnv>()
       return c.json({ error: "Bucket not found" }, 404);
     }
 
+    await removeBucketCredentials(bucket.accessKey);
     await emptyAndRemoveBucket(bucket.minioName);
     await prisma.bucket.delete({ where: { id: bucket.id } });
     return c.json({ message: "Bucket deleted" });
+  })
+  .post("/buckets/:id/rotate-keys", async (c) => {
+    const bucket = await findBucket(c.get("user").id, c.req.param("id"));
+    if (!bucket) {
+      return c.json({ error: "Bucket not found" }, 404);
+    }
+
+    const credentials = await createBucketCredentials(bucket.minioName);
+    await removeBucketCredentials(bucket.accessKey);
+    const updated = await prisma.bucket.update({ where: { id: bucket.id }, data: credentials });
+    return c.json({ bucket: withCredentials(updated) });
   })
   .get("/buckets/:id/objects", validate("query", listObjectsSchema), async (c) => {
     const bucket = await findBucket(c.get("user").id, c.req.param("id"));
@@ -58,7 +108,7 @@ export const storageRoutes = new Hono<UserEnv>()
     }
 
     const objects = await listAllObjects(bucket.minioName, c.req.valid("query").prefix);
-    return c.json({ bucket: withBaseUrl(bucket), objects });
+    return c.json({ bucket: withCredentials(bucket), objects });
   })
   .post("/buckets/:id/objects", async (c) => {
     const bucket = await findBucket(c.get("user").id, c.req.param("id"));

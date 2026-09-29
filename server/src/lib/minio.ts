@@ -1,5 +1,15 @@
+import { execFile } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
 import { Client } from "minio";
 import { env } from "./env.js";
+
+const run = promisify(execFile);
+
+const MINIO_USER = "easyhost";
 
 const minioUrl = env.minio.url;
 const useSSL = minioUrl.protocol === "https:";
@@ -12,9 +22,71 @@ export const minio = new Client({
   endPoint: minioUrl.hostname,
   port: Number(minioUrl.port || defaultPort),
   useSSL,
-  accessKey: "easyhost",
+  accessKey: MINIO_USER,
   secretKey: env.minio.password,
 });
+
+export const S3_REGION = "us-east-1";
+
+export const s3Endpoint = () => env.minio.publicUrl;
+
+const mcHost = () => {
+  const url = new URL(minioUrl.origin);
+  url.username = MINIO_USER;
+  url.password = env.minio.password;
+  return url.href.replace(/\/$/, "");
+};
+
+const mc = async (args: string[]) => {
+  try {
+    await run("mc", ["--quiet", ...args], { env: { ...process.env, MC_HOST_eh: mcHost() } });
+  } catch (error) {
+    const stderr = (error as { stderr?: string }).stderr?.trim();
+    throw new Error(`mc ${args.slice(0, 4).join(" ")} failed: ${stderr || (error as Error).message}`);
+  }
+};
+
+const bucketAccessPolicy = (minioName: string) => {
+  return JSON.stringify({
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Effect: "Allow",
+        Action: ["s3:ListBucket", "s3:GetBucketLocation", "s3:ListBucketMultipartUploads"],
+        Resource: [`arn:aws:s3:::${minioName}`],
+      },
+      {
+        Effect: "Allow",
+        Action: ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"],
+        Resource: [`arn:aws:s3:::${minioName}/*`],
+      },
+    ],
+  });
+};
+
+export const createBucketCredentials = async (minioName: string) => {
+  const accessKey = `EH${randomBytes(9).toString("hex").toUpperCase()}`;
+  const secretKey = randomBytes(30).toString("base64url");
+  const dir = await mkdtemp(join(tmpdir(), "eh-policy-"));
+  const policyFile = join(dir, "policy.json");
+  try {
+    await writeFile(policyFile, bucketAccessPolicy(minioName));
+    await mc([
+      "admin", "user", "svcacct", "add", "eh", MINIO_USER,
+      "--access-key", accessKey,
+      "--secret-key", secretKey,
+      "--policy", policyFile,
+      "--name", minioName,
+    ]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+  return { accessKey, secretKey };
+};
+
+export const removeBucketCredentials = async (accessKey: string) => {
+  await mc(["admin", "user", "svcacct", "rm", "eh", accessKey]);
+};
 
 export const DEPLOY_BUCKET = "easyhost-deploys";
 

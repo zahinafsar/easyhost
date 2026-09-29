@@ -28,7 +28,7 @@ export const StoragePage = () => {
         action={
           <CreateResourceDialog
             title="Create bucket"
-            description="Buckets hold your files. Every file gets a public link."
+            description="Each bucket gets its own S3 access keys. Every file gets a public link."
             triggerLabel="New bucket"
             placeholder="uploads"
             isPending={createBucket.isPending}

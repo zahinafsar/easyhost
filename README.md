@@ -24,6 +24,8 @@ Dashboard: http://localhost:51730
 API: http://localhost:48710
 MinIO console: http://localhost:19001 (easyhost / easyhost123)
 
+The API provisions per-bucket S3 keys with the MinIO client, so `mc` must be on your PATH locally (`brew install minio/stable/mc`). The production API image ships it.
+
 ## Deploying an app
 
 Any Next.js project, no config changes:
@@ -57,11 +59,14 @@ Apps can have custom domains (Domains tab on the app page). The user points the 
 
 NPM setup (once): in NPM, Users, create a dedicated user (no two-factor) with "Item Visibility: Created Items Only" and "Manage" on Proxy Hosts and SSL Certificates, so EasyHost can only see and change what it created. Put its email and password in `NPM_API_EMAIL` and `NPM_API_PASSWORD` in `.env.production`. Locally `EDGE_PROXY=none` skips NPM.
 
+## Storage
+
+Storage is S3 compatible. Every bucket gets its own access key and secret (shown on the bucket page, rotatable) limited to that bucket. Use any S3 client with endpoint `https://storage.easyhost.fun`, region `us-east-1`, path-style addressing and the bucket's `eh-...` name. Files are publicly readable at `https://storage.easyhost.fun/<bucket>/<key>`.
+
 ## Service API
 
 Create an API key in the dashboard and send it as `Authorization: Bearer <key>`.
 
-- `PUT/DELETE /api/v1/storage/:bucket/:key` and `GET /api/v1/storage/:bucket?prefix=` (upload responses include the file's public `url`; files are read directly from that public URL, no auth)
 - `POST /api/v1/email/send` with `{ "from", "to", "subject", "html" | "text" }`. `from` is required and must be one of your sender addresses (`<username>@easyhost.fun`, up to 10 per account, created on the Email page)
 
 ## Production

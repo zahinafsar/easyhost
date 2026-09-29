@@ -37,7 +37,7 @@ export const ApiKeysPage = () => {
     <>
       <PageHeader
         title="API Keys"
-        description="Keys for the storage, database and email APIs. Send as a Bearer token."
+        description="Keys for the email API. Send as a Bearer token."
         action={
           <CreateResourceDialog
             title="Create API key"

@@ -8,7 +8,6 @@ import { databaseRoutes } from "./routes/databases.js";
 import { emailRoutes } from "./routes/emails.js";
 import { appRoutes } from "./routes/apps.js";
 import { overviewRoutes } from "./routes/overview.js";
-import { v1StorageRoutes } from "./routes/v1/storage.js";
 import { v1EmailRoutes } from "./routes/v1/email.js";
 import { syncAppRoutes } from "./lib/routing.js";
 import { startBuildQueue } from "./lib/build-queue.js";
@@ -31,7 +30,6 @@ const routes = app
   .route("/emails", emailRoutes)
   .route("/apps", appRoutes)
   .route("/overview", overviewRoutes)
-  .route("/v1/storage", v1StorageRoutes)
   .route("/v1/email", v1EmailRoutes);
 
 export type AppType = typeof routes;

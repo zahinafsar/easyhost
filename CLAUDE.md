@@ -33,7 +33,7 @@ Hosting platform: Next.js app hosting (containers + Caddy), public object storag
 - `/docker-compose.yml`, `/infra/caddy/caddy.json` - Local infra
 - `/server/src/index.ts` - Hono app, exports `AppType` for the typed client
 - `/server/src/routes/*` - Dashboard routes (JWT user)
-- `/server/src/routes/v1/*` - Public service API (API key: storage, email)
+- `/server/src/routes/v1/*` - Public service API (API key: email). Storage is plain S3: each bucket has its own MinIO service account (created via `mc` in `server/src/lib/minio.ts`)
 - `/server/src/lib/*` - prisma, auth, email, minio, userdb (customer Postgres), docker, caddy, deploy, build-queue, validations
 - `/server/src/middleware/*` - require-user, require-api-key
 - `/client/src/pages/*` - Route pages

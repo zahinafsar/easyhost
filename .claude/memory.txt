@@ -16,7 +16,7 @@
 
 ## Features
 - Deploy: CLI uploads source tarball; Postgres-backed build queue; image built from node:22-alpine (install by lockfile, build, next start); step-based CLI output; build log in Deployment.log
-- Storage: all files public by URL; uploads/deletes/listing need API key or login
+- Storage: S3 compatible, no custom storage API (v1 storage removed). Each bucket gets a MinIO service account (access/secret key on Bucket row) with an inline policy scoped to that bucket, created/rotated/removed by shelling out to `mc` (MC_HOST_eh env). API image copies mc from pgsty/mc; local dev needs mc on PATH. S3 endpoint = STORAGE_PUBLIC_URL, path-style, region us-east-1, bucket name = minioName eh-<id>. All files public by URL. Dashboard file browser still works via root MinIO client
 - Databases: shared Postgres, one db_<hex> + role u_<hex> each, plus <db>_shadow for prisma migrate dev; console + table editor run as the owner role
 - Email: sender addresses <username>@easyhost.fun (reserved names blocked); send API requires `from`
 
