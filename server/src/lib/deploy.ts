@@ -2,7 +2,6 @@ import type { DeploymentStep } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { minio, DEPLOY_BUCKET } from "./minio.js";
 import { buildImage, containerName, imageTag, runContainer, removeImage, APP_PORT } from "./docker.js";
-import { routeApp } from "./routing.js";
 
 const readObject = async (key: string) => {
   const stream = await minio.getObject(DEPLOY_BUCKET, key);
@@ -102,10 +101,6 @@ export const runDeployment = async (deploymentId: string) => {
     const name = containerName(app.slug);
     const env = { ...appEnv, PORT: String(APP_PORT), HOSTNAME: "0.0.0.0" };
     const containerId = await runContainer(name, tag, env);
-
-    await setStep("ROUTING");
-    logger.log("Updating router");
-    await routeApp(app.id);
 
     const previous = await prisma.deployment.findMany({
       where: { appId: app.id, status: "RUNNING", id: { not: deploymentId } },

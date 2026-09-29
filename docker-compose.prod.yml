@@ -66,26 +66,12 @@ services:
     environment:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
 
-  caddy:
+  api:
     build:
       context: .
-      dockerfile: infra/caddy/Dockerfile
+      dockerfile: server/Dockerfile
       args:
         VITE_PUBLIC_API_URL: ${VITE_PUBLIC_API_URL:?Set VITE_PUBLIC_API_URL in .env}
-    restart: unless-stopped
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
-      - caddy_admin:/run/caddy
-    networks:
-      default: {}
-      apps: {}
-      proxy:
-        aliases:
-          - easyhost-caddy
-
-  api:
-    build: ./server
     restart: unless-stopped
     depends_on:
       postgres:
@@ -94,24 +80,21 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
-      caddy:
-        condition: service_started
     env_file:
       - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - caddy_admin:/run/caddy
     networks:
-      - default
-      - proxy
+      default: {}
+      apps: {}
+      proxy:
+        aliases:
+          - easyhost-api
 
 volumes:
   postgres_data:
   minio_data:
   userdb_data:
-  caddy_data:
-  caddy_config:
-  caddy_admin:
 
 networks:
   apps:

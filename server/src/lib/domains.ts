@@ -2,7 +2,12 @@ import { lookup } from "node:dns/promises";
 import type { AppDomain } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { env } from "./env.js";
+import { APP_PORT, containerName } from "./docker.js";
 import { createNpmCertificate, createNpmProxyHost, deleteNpmCertificate, deleteNpmProxyHost } from "./npm.js";
+
+export const appHost = (slug: string) => `${slug}.${env.appsDomain}`;
+
+export const appUrl = (slug: string) => `${env.appsProtocol}://${appHost(slug)}`;
 
 export const resolvesToServer = async (hostname: string) => {
   try {
@@ -14,13 +19,16 @@ export const resolvesToServer = async (hostname: string) => {
   }
 };
 
-export const provisionDomain = async (domain: AppDomain) => {
+export const provisionDomain = async (domain: AppDomain, slug: string) => {
   if (!env.npm) {
     return { npmCertificateId: null, npmProxyHostId: null };
   }
   const npmCertificateId = await createNpmCertificate(env.npm, domain.hostname);
   try {
-    const npmProxyHostId = await createNpmProxyHost(env.npm, domain.hostname, npmCertificateId);
+    const npmProxyHostId = await createNpmProxyHost(env.npm, domain.hostname, npmCertificateId, {
+      host: containerName(slug),
+      port: APP_PORT,
+    });
     return { npmCertificateId, npmProxyHostId };
   } catch (error) {
     await deleteNpmCertificate(env.npm, npmCertificateId).catch(() => undefined);

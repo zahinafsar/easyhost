@@ -1,7 +1,5 @@
 type NpmConfig = { apiUrl: string; email: string; password: string };
 
-const CADDY_UPSTREAM = { host: "easyhost-caddy", port: 80 };
-
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
 const readError = async (res: Response) => {
@@ -68,12 +66,17 @@ export const createNpmCertificate = async (config: NpmConfig, hostname: string) 
   return certificate.id;
 };
 
-export const createNpmProxyHost = async (config: NpmConfig, hostname: string, certificateId: number) => {
+export const createNpmProxyHost = async (
+  config: NpmConfig,
+  hostname: string,
+  certificateId: number,
+  upstream: { host: string; port: number },
+) => {
   const host = await request<{ id: number }>(config, "POST", "/nginx/proxy-hosts", {
     domain_names: [hostname],
     forward_scheme: "http",
-    forward_host: CADDY_UPSTREAM.host,
-    forward_port: CADDY_UPSTREAM.port,
+    forward_host: upstream.host,
+    forward_port: upstream.port,
     certificate_id: certificateId,
     ssl_forced: true,
     http2_support: true,

@@ -56,30 +56,7 @@ services:
       echo 'minio ready'
       "
 
-  caddy:
-    image: caddy:2-alpine
-    container_name: easyhost-caddy
-    restart: unless-stopped
-    command: caddy run --config /etc/caddy/caddy.json
-    ports:
-      - "80:80"
-      - "443:443"
-      - "127.0.0.1:20190:2019"
-    volumes:
-      - ./infra/caddy/caddy.json:/etc/caddy/caddy.json:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    networks:
-      - default
-      - easyhost
-
 volumes:
   postgres_data:
   userdb_data:
   minio_data:
-  caddy_data:
-  caddy_config:
-
-networks:
-  easyhost:
-    name: easyhost

@@ -39,7 +39,7 @@ ezhst deploy
 
 `.env` files are not uploaded. Use `ezhst env set KEY=VALUE` (or the dashboard) and redeploy.
 
-The app is served at `http://<app-name>.localhost`.
+Locally apps run as containers without routing. In production they are served at `https://<app-name>.easyhost.fun`.
 
 ## Databases
 
@@ -55,7 +55,7 @@ The `userdb` container copies the certificate in on start and checks for renewal
 
 ## Custom domains
 
-Apps can have custom domains (Domains tab on the app page). The user points the domain at the server (CNAME to `<app>.easyhost.fun`, or an A record to `PUBLIC_IP` for a root domain) and clicks Verify. EasyHost checks DNS, then in production asks Nginx Proxy Manager's API for a Let's Encrypt certificate and a proxy host forwarding to `easyhost-caddy:80`, and adds the hostname to the app's Caddy route.
+Apps can have custom domains (Domains tab on the app page). The user points the domain at the server (CNAME to `<app>.easyhost.fun`, or an A record to `PUBLIC_IP` for a root domain) and clicks Verify. EasyHost checks DNS, then in production asks Nginx Proxy Manager's API for a Let's Encrypt certificate and a proxy host forwarding straight to the app container (`eh-app-<app>:3000`).
 
 NPM setup (once): in NPM, Users, create a dedicated user (no two-factor) with "Item Visibility: Created Items Only" and "Manage" on Proxy Hosts and SSL Certificates, so EasyHost can only see and change what it created. Put its API URL, email, and password in `NPM_API_URL`, `NPM_API_EMAIL`, and `NPM_API_PASSWORD` in the production `.env`. Local development skips NPM.
 
@@ -84,6 +84,15 @@ npm start
 
 Run `npm run restart` to rebuild and force-recreate the production services without deleting database or storage volumes.
 
-4. In NPM, forward `easyhost.fun`, `www.easyhost.fun`, `app.easyhost.fun`, `api.easyhost.fun` and `*.easyhost.fun` to `easyhost-caddy` port `80` over HTTP. Forward `storage.easyhost.fun` directly to `easyhost-minio` port `9000` over HTTP. Enable SSL with the wildcard certificate issued through a DNS challenge.
+4. Let NPM reach app containers: `docker network connect easyhost nginx-proxy-manager_app_1`, and make NPM resolve container names at request time: `docker exec nginx-proxy-manager_app_1 sh -c 'printf "resolver 127.0.0.11 ipv6=off valid=10s;\n" > /etc/nginx/conf.d/include/resolvers.conf'`.
+5. In NPM, with SSL from the wildcard certificate issued through a DNS challenge:
+   - `easyhost.fun`, `www.easyhost.fun`, `app.easyhost.fun`, `api.easyhost.fun`: forward to `easyhost-api` port `48710` over HTTP. The API serves the marketing site, the dashboard and redirects `www`.
+   - `storage.easyhost.fun`: forward to `easyhost-minio` port `9000` over HTTP.
+   - `*.easyhost.fun`: forward to `eh-app` port `3000` over HTTP with websockets on, and this advanced config so each subdomain goes to its app container:
+
+```nginx
+if ($host ~* "^([a-z0-9-]+)\.easyhost\.fun$") { set $server "eh-app-$1"; }
+client_max_body_size 100m;
+```
 
 `npm start` refuses to run while any value in `.env` is empty or still a `<PLACEHOLDER>`.

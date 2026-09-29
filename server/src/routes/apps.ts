@@ -2,9 +2,7 @@ import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
 import { DEPLOY_BUCKET, emptyAndRemoveBucket, minio, removeBucketCredentials } from "../lib/minio.js";
 import { containerLogs, containerName, removeContainer, removeImage, startContainer, stopContainer } from "../lib/docker.js";
-import { appHost, appUrl, removeAppRoute } from "../lib/caddy.js";
-import { routeApp } from "../lib/routing.js";
-import { isPlatformHostname, markDomainFailed, provisionDomain, releaseDomain, resolvesToServer } from "../lib/domains.js";
+import { appHost, appUrl, isPlatformHostname, markDomainFailed, provisionDomain, releaseDomain, resolvesToServer } from "../lib/domains.js";
 import { env } from "../lib/env.js";
 import { enqueueDeployment, queuePosition } from "../lib/build-queue.js";
 import { dropUserDatabase } from "../lib/userdb.js";
@@ -144,14 +142,11 @@ export const appRoutes = new Hono<UserEnv>()
     }
 
     try {
-      const ids = await provisionDomain(domain);
+      const ids = await provisionDomain(domain, app.slug);
       const updated = await prisma.appDomain.update({
         where: { id: domain.id },
         data: { ...ids, status: "ACTIVE", error: null },
       });
-      if (app.status === "RUNNING") {
-        await routeApp(app.id);
-      }
       return c.json({ domain: updated });
     } catch (error) {
       let message = "Could not set up HTTPS for this domain";
@@ -174,9 +169,6 @@ export const appRoutes = new Hono<UserEnv>()
 
     await releaseDomain(domain);
     await prisma.appDomain.delete({ where: { id: domain.id } });
-    if (app.status === "RUNNING") {
-      await routeApp(app.id);
-    }
     return c.json({ message: "Domain removed" });
   })
   .put("/:id/env", validate("json", updateEnvSchema), async (c) => {
@@ -258,7 +250,6 @@ export const appRoutes = new Hono<UserEnv>()
     }
 
     await stopContainer(containerName(app.slug));
-    await removeAppRoute(app.slug);
     const updated = await prisma.app.update({ where: { id: app.id }, data: { status: "STOPPED" } });
     return c.json({ app: withUrl(updated) });
   })
@@ -272,7 +263,6 @@ export const appRoutes = new Hono<UserEnv>()
     }
 
     await startContainer(containerName(app.slug));
-    await routeApp(app.id);
     const updated = await prisma.app.update({ where: { id: app.id }, data: { status: "RUNNING" } });
     return c.json({ app: withUrl(updated) });
   })
@@ -291,7 +281,6 @@ export const appRoutes = new Hono<UserEnv>()
     for (const domain of domains) {
       await releaseDomain(domain);
     }
-    await removeAppRoute(app.slug).catch(() => undefined);
     await removeContainer(containerName(app.slug));
     for (const deployment of deployments) {
       if (deployment.imageTag) {

@@ -1,16 +1,18 @@
 # EasyHost Project Memory
 
 ## Current state (2026-09-29)
-- Layout: client/ (Vite dashboard), server/ (Hono API), cli/ (`ezhst`, npm package ezhst), marketing/ (static HTML+CSS), infra/ (caddy, userdb), scripts/start.mjs
+- Layout: client/ (Vite dashboard), server/ (Hono API), cli/ (`ezhst`, npm package ezhst), marketing/ (static HTML+CSS), infra/ (userdb), scripts/start.mjs
 - Env: a single root `.env` both locally and on the VPS (no `.env.production`; templates `.env.example` and `.env.production.example`). No fallbacks anywhere; server validates via server/src/lib/env.ts, client via client/src/lib/env.ts. `npm start` refuses empty or `<PLACEHOLDER>` values
 - Fixed values are code constants: LIMITS (10 apps, 10 buckets, 10 databases, 10 email senders, 100 emails/day, 1 concurrent build), API port 48710, EMAIL_DOMAIN easyhost.fun, bucket easyhost-deploys, docker network easyhost, MinIO user easyhost
-- Local ports: API 48710, dashboard 51730, postgres 127.0.0.1:54329, userdb 127.0.0.1:54330, minio 127.0.0.1:19000/19001, caddy :80 (admin 127.0.0.1:20190)
+- Local ports: API 48710, dashboard 51730, postgres 127.0.0.1:54329, userdb 127.0.0.1:54330, minio 127.0.0.1:19000/19001
 - MinIO images: pgsty/minio + pgsty/mc (official images are no longer public)
 
 ## Production (VPS luggora, 65.181.123.115)
 - Nginx Proxy Manager owns 80/443 and terminates TLS; user chose to keep NPM in front (rejected Caddy as front door)
-- EasyHost Caddy has no host ports, joins NPM network (PROXY_NETWORK) as `easyhost-caddy`, serves marketing, dashboard (/api proxied same-origin), api., storage., app subdomains
-- Caddy admin is a unix socket shared only with the API container; API re-syncs app routes on boot and every 60s (no --resume)
+- Caddy removed (2026-09-29): NPM routes everything. Platform hosts -> `easyhost-api:48710` (API serves marketing, dashboard SPA, www redirect by Host in prod), storage -> `easyhost-minio:9000`, `*.easyhost.fun` wildcard proxy host with advanced config `set $server "eh-app-$1"` from host regex
+- NPM must be connected to docker network `easyhost` (manual one-time step) and use docker resolver (resolvers.conf) so container names resolve per request
+- Existing custom-domain proxy hosts made before this pointed at easyhost-caddy; new ones forward to `eh-app-<slug>:3000`
+- Local dev: no app routing at all; `ROUTING` deploy step enum still exists in Prisma/CLI but the server no longer sets it
 - userdb publishes 5432 directly; TLS cert for db.easyhost.fun issued in NPM and mounted read-only (NPM_LETSENCRYPT_DIR, USERDB_CERT_NAME), reloaded every 6h
 - Custom app domains: in production, the API creates an NPM certificate then proxy host via NPM API (dedicated NPM user with "Created Items Only" recommended); local development skips NPM
 
