@@ -1,0 +1,2 @@
+if ($host ~* "^([a-z0-9-]+)\.easyhost\.fun$") { set $server "eh-app-$1"; }
+client_max_body_size 100m;

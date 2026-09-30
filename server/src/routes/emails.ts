@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
 import { validate } from "../lib/validator.js";
-import { createEmailSenderSchema, paginationSchema } from "../lib/validations.js";
+import { createEmailSenderSchema, paginationSchema, sendEmailSchema } from "../lib/validations.js";
+import { sendProjectEmail } from "../lib/project-email.js";
 import { requireUser } from "../middleware/require-user.js";
 import { requireProject } from "../middleware/require-project.js";
 import { EMAIL_DOMAIN, senderAddress } from "../lib/email.js";
@@ -74,4 +75,11 @@ export const emailRoutes = new Hono<UserEnv>()
       return c.json({ error: "Sender not found" }, 404);
     }
     return c.json({ senders: await listSenders(projectId) });
+  })
+  .post("/send", validate("json", sendEmailSchema), async (c) => {
+    const result = await sendProjectEmail(c.get("projectId"), c.req.valid("json"));
+    if (!result.ok) {
+      return c.json({ error: result.error }, result.status);
+    }
+    return c.json({ id: result.id, from: result.from });
   });

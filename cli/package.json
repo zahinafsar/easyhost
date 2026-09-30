@@ -1,13 +1,14 @@
 {
   "name": "ezhst",
-  "version": "0.1.0",
-  "description": "Deploy Next.js apps to EasyHost",
+  "version": "0.2.0",
+  "description": "EasyHost CLI: agent-first hosting for Next.js apps with storage, databases and email",
   "type": "module",
   "bin": {
     "ezhst": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "skill"
   ],
   "scripts": {
     "dev": "tsx src/index.ts",

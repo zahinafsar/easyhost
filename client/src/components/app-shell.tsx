@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Box, Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings } from "lucide-react";
+import { Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,7 +102,7 @@ export const AppShell = () => {
     <div className="flex min-h-screen">
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-muted/30 md:flex">
         <div className="flex h-14 items-center gap-2 border-b px-5 font-semibold">
-          <Box className="size-5" />
+          <img src="/logo.svg" alt="" className="h-6 w-auto" />
           EasyHost
         </div>
         <nav className="flex-1 space-y-1 p-3">

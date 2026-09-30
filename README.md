@@ -37,7 +37,9 @@ ezhst login --api http://localhost:48710
 ezhst deploy
 ```
 
-`.env` files are not uploaded. Use `ezhst env set KEY=VALUE` (or the dashboard) and redeploy.
+`.env` files are not uploaded. Use `ezhst env set KEY=VALUE` or `ezhst env import .env` (or the dashboard) and redeploy.
+
+The CLI covers everything the dashboard does (projects, deploys, build logs, env, build settings, domains, storage, database, email, API keys). Every command takes `--json`, never prompts without a TTY, and accepts `EZHST_TOKEN` instead of a saved login, so AI agents can drive it. `ezhst --help` lists all commands; the agent skill lives in `cli/skill/SKILL.md` (installed with `ezhst skill install`, served at `https://easyhost.fun/skill.md`).
 
 Locally apps run as containers without routing. In production they are served at `https://<app-name>.easyhost.fun`.
 

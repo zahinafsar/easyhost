@@ -1,55 +1,16 @@
 import { Hono } from "hono";
-import { prisma } from "../../lib/prisma.js";
-import { EMAIL_DOMAIN, senderAddress, sendCustomerEmail } from "../../lib/email.js";
-import { LIMITS } from "../../lib/limits.js";
+import { sendProjectEmail } from "../../lib/project-email.js";
 import { validate } from "../../lib/validator.js";
 import { sendEmailSchema } from "../../lib/validations.js";
 import { requireApiKey } from "../../middleware/require-api-key.js";
 import type { ApiKeyEnv } from "../../lib/types.js";
 
-
 export const v1EmailRoutes = new Hono<ApiKeyEnv>()
   .use(requireApiKey)
   .post("/send", validate("json", sendEmailSchema), async (c) => {
-    const projectId = c.get("projectId");
-    const payload = c.req.valid("json");
-    let to = payload.to;
-    if (typeof to === "string") {
-      to = [to];
+    const result = await sendProjectEmail(c.get("projectId"), c.req.valid("json"));
+    if (!result.ok) {
+      return c.json({ error: result.error }, result.status);
     }
-
-    const [username, domain] = payload.from.toLowerCase().split("@");
-    let sender = null;
-    if (domain === EMAIL_DOMAIN) {
-      sender = await prisma.emailSender.findFirst({ where: { projectId, username } });
-    }
-    if (!sender) {
-      return c.json({ error: `"${payload.from}" is not one of your sender addresses. Create it on the Email page first.` }, 400);
-    }
-    const from = senderAddress(sender.username);
-
-    const dailyLimit = LIMITS.emailsPerDay;
-    const sentToday = await prisma.emailLog.count({
-      where: { projectId, status: "SENT", createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
-    });
-    if (sentToday >= dailyLimit) {
-      return c.json({ error: `Daily email limit of ${dailyLimit} reached` }, 429);
-    }
-
-    try {
-      const { id } = await sendCustomerEmail({ ...payload, from, to });
-      const log = await prisma.emailLog.create({
-        data: { projectId, from, to, subject: payload.subject, status: "SENT", resendId: id },
-      });
-      return c.json({ id: log.id, from });
-    } catch (error) {
-      let message = "Email failed";
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      await prisma.emailLog.create({
-        data: { projectId, from, to, subject: payload.subject, status: "FAILED", error: message },
-      });
-      return c.json({ error: message }, 502);
-    }
+    return c.json({ id: result.id, from: result.from });
   });

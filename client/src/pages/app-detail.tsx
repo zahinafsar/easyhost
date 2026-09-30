@@ -503,7 +503,7 @@ export const AppDetailPage = () => {
             <Card>
               <CardContent className="space-y-3 py-6">
                 <p className="text-sm text-muted-foreground">No deployments yet. From your Next.js project run:</p>
-                <CodeBlock code={`npx ezhst deploy --app ${app.slug}`} />
+                <CodeBlock code={`npx ezhst deploy --project ${app.slug}`} />
               </CardContent>
             </Card>
           )}

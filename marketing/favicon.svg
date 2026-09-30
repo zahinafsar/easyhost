@@ -1,1 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+<svg width="370" height="370" viewBox="0 0 370 370" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="370" height="370" rx="25" fill="white"/>
+<circle cx="127.478" cy="169.773" r="35.5" transform="rotate(-15 127.478 169.773)" stroke="black" stroke-width="10"/>
+<circle cx="203.14" cy="142.14" r="25.4258" transform="rotate(-15 203.14 142.14)" fill="black"/>
+<circle cx="245.14" cy="196.14" r="25.4258" transform="rotate(-15 245.14 196.14)" fill="black"/>
+<circle cx="227.14" cy="270.14" r="25.4258" transform="rotate(-15 227.14 270.14)" fill="black"/>
+<circle cx="178.14" cy="216.14" r="25.4258" transform="rotate(-15 178.14 216.14)" fill="black"/>
+<circle cx="135.14" cy="160.14" r="25.4258" transform="rotate(-15 135.14 160.14)" fill="black"/>
+<circle cx="196.836" cy="154.295" r="35.5" transform="rotate(-15 196.836 154.295)" stroke="black" stroke-width="10"/>
+<circle cx="173.28" cy="224.794" r="35.5" transform="rotate(-15 173.28 224.794)" stroke="black" stroke-width="10"/>
+<circle cx="242.378" cy="208.349" r="35.5" transform="rotate(-15 242.378 208.349)" stroke="black" stroke-width="10"/>
+<circle cx="222.478" cy="277.478" r="35.5" transform="rotate(-15 222.478 277.478)" stroke="black" stroke-width="10"/>
+<path d="M84.8143 105.209C102.699 99.151 142.816 99.0337 160.207 147.027" stroke="black" stroke-width="10"/>
+<path d="M136.213 111.01C130.653 95.8017 130.544 62.3079 174.584 50C177.229 66.201 173.256 101.084 136.213 111.01Z" fill="#2D9200" stroke="black" stroke-width="10"/>
+</svg>

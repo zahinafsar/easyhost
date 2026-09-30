@@ -9,13 +9,17 @@ const PROJECT_FILE = ".easyhost.json";
 const PRODUCTION_API_URL = "https://api.easyhost.fun";
 
 type GlobalConfig = { apiUrl: string; token?: string };
-type ProjectConfig = { appId: string; slug: string };
+type LinkedProject = { projectId: string; slug: string };
 
 export const readConfig = (): GlobalConfig => {
-  if (!existsSync(CONFIG_FILE)) {
-    return { apiUrl: PRODUCTION_API_URL };
+  let config: GlobalConfig = { apiUrl: PRODUCTION_API_URL };
+  if (existsSync(CONFIG_FILE)) {
+    config = { ...config, ...JSON.parse(readFileSync(CONFIG_FILE, "utf8")) };
   }
-  return { apiUrl: PRODUCTION_API_URL, ...JSON.parse(readFileSync(CONFIG_FILE, "utf8")) };
+  if (process.env.EZHST_TOKEN) {
+    config.token = process.env.EZHST_TOKEN;
+  }
+  return config;
 };
 
 export const writeConfig = (config: GlobalConfig) => {
@@ -27,7 +31,7 @@ export const clearConfig = () => {
   rmSync(CONFIG_FILE, { force: true });
 };
 
-export const readProject = (cwd = process.cwd()): ProjectConfig | null => {
+export const readLinkedProject = (cwd = process.cwd()): LinkedProject | null => {
   const file = path.join(cwd, PROJECT_FILE);
   if (!existsSync(file)) {
     return null;
@@ -35,6 +39,6 @@ export const readProject = (cwd = process.cwd()): ProjectConfig | null => {
   return JSON.parse(readFileSync(file, "utf8"));
 };
 
-export const writeProject = (project: ProjectConfig, cwd = process.cwd()) => {
+export const writeLinkedProject = (project: LinkedProject, cwd = process.cwd()) => {
   writeFileSync(path.join(cwd, PROJECT_FILE), `${JSON.stringify(project, null, 2)}\n`);
 };

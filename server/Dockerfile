@@ -28,6 +28,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY server/package.json ./
 COPY marketing ./public/marketing
+COPY cli/skill/SKILL.md ./public/marketing/skill.md
 COPY --from=dashboard /repo/client/dist ./public/dashboard
 EXPOSE 48710
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]

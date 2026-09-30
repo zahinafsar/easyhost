@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Docs | EasyHost</title>
+    <meta name="description" content="EasyHost documentation: the agent skill, the ezhst CLI, deploying Next.js apps, environment variables, domains, storage, Postgres, email and limits." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a href="/" class="logo">
+          <img src="/logo.svg" alt="" />
+          EasyHost
+          <small>docs</small>
+        </a>
+        <nav class="nav-links">
+          <a href="/">Home</a>
+          <a href="/docs" class="keep" aria-current="page">Docs</a>
+          <a href="/skill.md">skill.md</a>
+        </nav>
+        <div class="nav-actions">
+          <a href="https://app.easyhost.fun/login" class="btn btn-ghost">Log in</a>
+          <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="container docs">
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <ol>
+          <li><a href="#quick-start">Quick start</a></li>
+          <li><a href="#skill">Agent skill</a></li>
+          <li><a href="#authentication">Authentication</a></li>
+          <li><a href="#projects">Projects and linking</a></li>
+          <li><a href="#deploying">Deploying</a></li>
+          <li><a href="#env">Environment variables</a></li>
+          <li><a href="#build">Build settings</a></li>
+          <li><a href="#logs">Logs</a></li>
+          <li><a href="#domains">Custom domains</a></li>
+          <li><a href="#storage">Storage</a></li>
+          <li><a href="#database">Database</a></li>
+          <li><a href="#email">Email</a></li>
+          <li><a href="#keys">API keys</a></li>
+          <li><a href="#limits">Limits</a></li>
+        </ol>
+      </aside>
+
+      <main class="doc">
+        <div class="doc-head">
+          <p class="eyebrow">Documentation</p>
+          <h1>EasyHost docs</h1>
+          <p class="lead">Everything on EasyHost runs through the <code>ezhst</code> CLI, which is built to be driven by coding agents. This page covers every command.</p>
+        </div>
+
+        <section id="quick-start">
+          <h2>Quick start</h2>
+          <h3>For agents</h3>
+          <p>Install the skill in your project, then ask your agent (Claude Code, Cursor, Codex or any other) to deploy.</p>
+          <div class="code"><pre>npx ezhst skill install</pre></div>
+          <p>Then tell it: <code>Deploy this to EasyHost</code>. The agent creates an account if you do not have one, creates and links a project, sets environment variables and deploys.</p>
+
+          <h3>For humans</h3>
+          <p>Install the CLI globally or run it with <code>npx</code>.</p>
+          <div class="code"><pre>npm i -g ezhst</pre></div>
+          <p>Create an account (or log in), link your Next.js project folder and deploy.</p>
+          <div class="code"><pre>npx ezhst register
+npx ezhst link
+npx ezhst deploy</pre></div>
+          <p>Already have an account? Use <code>npx ezhst login</code> instead of <code>register</code>. You can also sign up in the <a href="https://app.easyhost.fun/register">dashboard</a>.</p>
+        </section>
+
+        <section id="skill">
+          <h2>Installing the agent skill</h2>
+          <p>The skill is a single <code>SKILL.md</code> file that teaches your agent how to use EasyHost.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst skill install</code><span>Writes <code>.claude/skills/easyhost/SKILL.md</code> in the current project.</span></div>
+            <div class="cmd-row"><code>ezhst skill install --global</code><span>Writes <code>~/.claude/skills/easyhost/SKILL.md</code>, available in every project.</span></div>
+          </div>
+          <p>Use the project install when you want the skill checked into the repo for your team. Use <code>--global</code> to make it available everywhere on your machine.</p>
+          <p>For agents that do not load skill folders, give them the raw file at <a href="/skill.md">https://easyhost.fun/skill.md</a>, for example by adding it to your agent's rules or instructions file.</p>
+        </section>
+
+        <section id="authentication">
+          <h2>Authentication</h2>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst register --name &lt;name&gt; --email &lt;email&gt; --password &lt;password&gt;</code><span>Create an account. A "Default project" is created and a verification email is sent.</span></div>
+            <div class="cmd-row"><code>ezhst login --email &lt;email&gt; --password &lt;password&gt;</code><span>Log in.</span></div>
+            <div class="cmd-row"><code>ezhst logout</code><span>Log out.</span></div>
+            <div class="cmd-row"><code>ezhst whoami</code><span>Show the logged in account.</span></div>
+            <div class="cmd-row"><code>ezhst resend-verification</code><span>Send the verification email again.</span></div>
+            <div class="cmd-row"><code>ezhst forgot-password --email &lt;email&gt;</code><span>Send a password reset link.</span></div>
+          </div>
+          <p><code>login</code> and <code>register</code> save your token in <code>~/.easyhost/config.json</code>. In CI or agent sandboxes, provide the token with the <code>EZHST_TOKEN</code> environment variable instead.</p>
+          <div class="code"><pre>EZHST_TOKEN=&lt;token&gt; npx ezhst deploy --json</pre></div>
+          <h3>Output and prompts</h3>
+          <ul>
+            <li>Every command accepts <code>--json</code> for machine readable output. Agents should always use it.</li>
+            <li>In a terminal, missing values are asked for interactively. Without a TTY the CLI never prompts: it fails with a message naming the missing flag.</li>
+          </ul>
+        </section>
+
+        <section id="projects">
+          <h2>Projects and linking</h2>
+          <p>A project is one app plus its storage bucket, database, email sender and API keys. The project name becomes its subdomain: <code>&lt;slug&gt;.easyhost.fun</code>.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst projects list</code><span>List your projects.</span></div>
+            <div class="cmd-row"><code>ezhst projects create &lt;name&gt;</code><span>Create a project.</span></div>
+            <div class="cmd-row"><code>ezhst projects info</code><span>Status, URL, env, build settings, domains and recent deployments.</span></div>
+            <div class="cmd-row"><code>ezhst projects rename &lt;name&gt;</code><span>Change the display name. The URL stays the same.</span></div>
+            <div class="cmd-row"><code>ezhst projects delete --yes</code><span>Delete the app, deployments, storage, database, email and API keys.</span></div>
+            <div class="cmd-row"><code>ezhst link [--project &lt;slug&gt;]</code><span>Link the current folder to a project (writes <code>.easyhost.json</code>).</span></div>
+          </div>
+          <p>Project-scoped commands use the project linked in <code>.easyhost.json</code>. Pass <code>--project &lt;slug&gt;</code> to any of them to target another project.</p>
+          <div class="code"><pre>ezhst projects create my-app
+ezhst link --project my-app</pre></div>
+        </section>
+
+        <section id="deploying">
+          <h2>Deploying</h2>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst deploy [--verbose]</code><span>Package the Next.js project in the current folder, upload, build and go live.</span></div>
+            <div class="cmd-row"><code>ezhst redeploy [--verbose]</code><span>Rebuild the latest upload. Use after changing env vars or build settings.</span></div>
+            <div class="cmd-row"><code>ezhst start</code><span>Start the app.</span></div>
+            <div class="cmd-row"><code>ezhst stop</code><span>Stop the app.</span></div>
+            <div class="cmd-row"><code>ezhst deployments list</code><span>List deployments.</span></div>
+          </div>
+          <h3>What gets uploaded</h3>
+          <p><code>deploy</code> uploads your project source. It skips <code>node_modules</code>, <code>.next</code>, <code>.git</code> and every <code>.env*</code> file. No changes to your project are needed.</p>
+          <div class="note">
+            <p>Environment variables are not read from your <code>.env</code> files. Set them with <code>ezhst env set</code> or <code>ezhst env import .env</code> before deploying.</p>
+          </div>
+          <p>Your app is live at <code>https://&lt;slug&gt;.easyhost.fun</code> once the build finishes.</p>
+        </section>
+
+        <section id="env">
+          <h2>Environment variables</h2>
+          <p>Variables are applied on the next <code>deploy</code> or <code>redeploy</code>.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst env list</code><span>List variables.</span></div>
+            <div class="cmd-row"><code>ezhst env set KEY=VALUE [KEY=VALUE...]</code><span>Set one or more variables.</span></div>
+            <div class="cmd-row"><code>ezhst env unset KEY [KEY...]</code><span>Remove one or more variables.</span></div>
+            <div class="cmd-row"><code>ezhst env import &lt;file&gt;</code><span>Merge the variables from a .env file.</span></div>
+          </div>
+          <div class="code"><pre>ezhst env set NEXT_PUBLIC_SITE_URL=https://my-app.easyhost.fun
+ezhst env import .env.production
+ezhst redeploy</pre></div>
+        </section>
+
+        <section id="build">
+          <h2>Build settings</h2>
+          <p>Empty settings are auto-detected, which works for most Next.js projects.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst build show</code><span>Show the current settings.</span></div>
+            <div class="cmd-row"><code>ezhst build set [--node 20|22|24] [--root-dir &lt;dir&gt;] [--install &lt;cmd&gt;] [--build &lt;cmd&gt;] [--start &lt;cmd&gt;]</code><span>Override one or more settings. Pass <code>""</code> to reset a field to auto.</span></div>
+            <div class="cmd-row"><code>ezhst build reset</code><span>Reset every setting to auto.</span></div>
+          </div>
+          <h3>Auto-detection</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Setting</th><th>Default</th></tr></thead>
+              <tbody>
+                <tr><td>Node version</td><td><code>engines.node</code> in package.json, otherwise 24</td></tr>
+                <tr><td>Package manager</td><td>From your lockfile</td></tr>
+                <tr><td>Start command</td><td><code>next start -H 0.0.0.0 -p $PORT</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="code"><pre>ezhst build set --node 22 --root-dir apps/web
+ezhst build set --install ""
+ezhst redeploy</pre></div>
+        </section>
+
+        <section id="logs">
+          <h2>Logs and build logs</h2>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst logs [--tail &lt;lines&gt;]</code><span>Runtime logs from the running app.</span></div>
+            <div class="cmd-row"><code>ezhst deployments log [deploymentId]</code><span>Full build log. Defaults to the latest deployment.</span></div>
+          </div>
+          <p>When a deploy fails, read the build log, fix the cause and run <code>ezhst deploy</code> again.</p>
+          <div class="code"><pre>ezhst deployments log --json
+ezhst logs --tail 200</pre></div>
+        </section>
+
+        <section id="domains">
+          <h2>Custom domains</h2>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst domains list</code><span>List domains with the DNS target for each.</span></div>
+            <div class="cmd-row"><code>ezhst domains add &lt;hostname&gt;</code><span>Add a domain.</span></div>
+            <div class="cmd-row"><code>ezhst domains verify &lt;hostname&gt;</code><span>Check DNS, then issue HTTPS.</span></div>
+            <div class="cmd-row"><code>ezhst domains remove &lt;hostname&gt;</code><span>Remove a domain.</span></div>
+          </div>
+          <h3>DNS records</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Domain</th><th>Type</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td>Subdomain, like <code>www.example.com</code></td><td>CNAME</td><td><code>&lt;slug&gt;.easyhost.fun</code></td></tr>
+                <tr><td>Root domain, like <code>example.com</code></td><td>A</td><td>Server IP shown by <code>ezhst domains list</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="code"><pre>ezhst domains add www.example.com
+ezhst domains list
+ezhst domains verify www.example.com</pre></div>
+        </section>
+
+        <section id="storage">
+          <h2>Storage <small>S3 compatible</small></h2>
+          <p>Each project gets one bucket. Files are public by URL.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst storage info</code><span>Bucket, public base URL and S3 credentials.</span></div>
+            <div class="cmd-row"><code>ezhst storage create &lt;name&gt;</code><span>Create the bucket.</span></div>
+            <div class="cmd-row"><code>ezhst storage rotate-keys</code><span>Issue new S3 credentials.</span></div>
+            <div class="cmd-row"><code>ezhst storage ls [prefix]</code><span>List files.</span></div>
+            <div class="cmd-row"><code>ezhst storage upload &lt;files...&gt; [--prefix &lt;path/&gt;]</code><span>Upload files.</span></div>
+            <div class="cmd-row"><code>ezhst storage download &lt;key&gt; [output]</code><span>Download a file.</span></div>
+            <div class="cmd-row"><code>ezhst storage rm &lt;key&gt;</code><span>Delete a file.</span></div>
+            <div class="cmd-row"><code>ezhst storage delete --yes</code><span>Delete the bucket.</span></div>
+          </div>
+          <h3>Using it from your app</h3>
+          <p>Run <code>ezhst storage info</code>, store the credentials with <code>ezhst env set</code>, then use any S3 client. The endpoint is <code>https://storage.easyhost.fun</code>, the region is <code>us-east-1</code> and requests must use path-style URLs.</p>
+          <div class="code"><div class="code-label">lib/storage.ts</div><pre>import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+
+export const s3 = new S3Client({
+  endpoint: "https://storage.easyhost.fun",
+  region: "us-east-1",
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+  },
+});
+
+export const uploadAvatar = async (userId: string, body: Buffer) =&gt; {
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: process.env.S3_BUCKET!,
+      Key: `avatars/${userId}.png`,
+      Body: body,
+      ContentType: "image/png",
+    }),
+  );
+};</pre></div>
+          <p>The file is then served at the public base URL from <code>storage info</code> followed by its key.</p>
+        </section>
+
+        <section id="database">
+          <h2>Database <small>Postgres</small></h2>
+          <p>Each project gets one managed Postgres database.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst db info</code><span>Connection string, shadow connection string and tables.</span></div>
+            <div class="cmd-row"><code>ezhst db create &lt;name&gt;</code><span>Create the database.</span></div>
+            <div class="cmd-row"><code>ezhst db query "&lt;sql&gt;"</code><span>Run a SQL statement.</span></div>
+            <div class="cmd-row"><code>ezhst db query --file &lt;file.sql&gt;</code><span>Run a SQL file.</span></div>
+            <div class="cmd-row"><code>ezhst db rows &lt;table&gt; [--page &lt;n&gt;]</code><span>Browse rows in a table.</span></div>
+            <div class="cmd-row"><code>ezhst db reset-password</code><span>Rotate the password and print the new connection string.</span></div>
+            <div class="cmd-row"><code>ezhst db delete --yes</code><span>Delete the database.</span></div>
+          </div>
+          <h3>Connecting your app</h3>
+          <p>Copy the connection string from <code>ezhst db info</code> into your app's environment. It works with Prisma, Drizzle or any Postgres client.</p>
+          <div class="code"><pre>ezhst db create main
+ezhst db info --json
+ezhst env set DATABASE_URL="postgresql://..."</pre></div>
+          <h3>Prisma migrations</h3>
+          <p><code>prisma migrate dev</code> needs a shadow database. Use the shadow connection string from <code>ezhst db info</code>.</p>
+          <div class="code"><div class="code-label">prisma/schema.prisma</div><pre>datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}</pre></div>
+          <p>After <code>ezhst db reset-password</code>, update <code>DATABASE_URL</code> with <code>ezhst env set</code> and run <code>ezhst redeploy</code>.</p>
+        </section>
+
+        <section id="email">
+          <h2>Email</h2>
+          <p>Send transactional email from <code>&lt;username&gt;@easyhost.fun</code>. Each project has one sender and can send 100 emails per day.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst email info</code><span>Sender address and usage.</span></div>
+            <div class="cmd-row"><code>ezhst email sender create &lt;username&gt;</code><span>Create the sender address.</span></div>
+            <div class="cmd-row"><code>ezhst email sender delete</code><span>Delete the sender.</span></div>
+            <div class="cmd-row"><code>ezhst email send --from &lt;address&gt; --to &lt;address&gt; --subject &lt;text&gt; (--text &lt;body&gt; | --html &lt;html&gt;)</code><span>Send an email.</span></div>
+            <div class="cmd-row"><code>ezhst email logs [--page &lt;n&gt;]</code><span>List sent emails.</span></div>
+          </div>
+          <div class="code"><pre>ezhst email sender create hello
+ezhst email send --from hello@easyhost.fun --to ada@example.com --subject "Welcome" --text "Thanks for signing up."</pre></div>
+          <h3>Sending from your app</h3>
+          <p>Apps send email over HTTP with an <a href="#keys">API key</a>. Send <code>text</code> or <code>html</code>.</p>
+          <div class="code"><div class="code-label">POST https://api.easyhost.fun/api/v1/email/send</div><pre>const res = await fetch("https://api.easyhost.fun/api/v1/email/send", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.EASYHOST_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    from: "hello@easyhost.fun",
+    to: "ada@example.com",
+    subject: "Welcome",
+    html: "&lt;p&gt;Thanks for signing up.&lt;/p&gt;",
+  }),
+});</pre></div>
+        </section>
+
+        <section id="keys">
+          <h2>API keys</h2>
+          <p>API keys authenticate your app against the HTTP email API.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst keys list</code><span>List keys.</span></div>
+            <div class="cmd-row"><code>ezhst keys create &lt;name&gt;</code><span>Create a key. It is shown only once.</span></div>
+            <div class="cmd-row"><code>ezhst keys revoke &lt;id&gt;</code><span>Revoke a key.</span></div>
+          </div>
+          <div class="code"><pre>ezhst keys create production --json
+ezhst env set EASYHOST_API_KEY=&lt;key&gt;</pre></div>
+        </section>
+
+        <section id="limits">
+          <h2>Limits</h2>
+          <p>EasyHost is free within these limits. Only Next.js apps are supported for now.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Resource</th><th>Limit</th></tr></thead>
+              <tbody>
+                <tr><td>Projects</td><td>10</td></tr>
+                <tr><td>Storage buckets</td><td>1 per project</td></tr>
+                <tr><td>Databases</td><td>1 per project</td></tr>
+                <tr><td>Email senders</td><td>1 per project</td></tr>
+                <tr><td>Emails</td><td>100 per day</td></tr>
+                <tr><td>Concurrent builds</td><td>1</td></tr>
+                <tr><td>App container</td><td>512 MB RAM, 1 CPU</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span>&copy; 2026 EasyHost</span>
+        <nav>
+          <a href="/">Home</a>
+          <a href="/skill.md">skill.md</a>
+          <a href="https://app.easyhost.fun/login">Log in</a>
+          <a href="https://app.easyhost.fun/register">Sign up</a>
+          <a href="mailto:hello@easyhost.fun">Contact</a>
+        </nav>
+      </div>
+    </footer>
+    <script>
+      const copyIcon = '<svg class="icon icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="icon icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+      document.querySelectorAll(".code").forEach((block) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "copy";
+        button.setAttribute("aria-label", "Copy code");
+        button.innerHTML = copyIcon;
+        button.addEventListener("click", () => {
+          navigator.clipboard.writeText(block.querySelector("pre").textContent).then(() => {
+            button.classList.add("copied");
+            setTimeout(() => {
+              button.classList.remove("copied");
+            }, 1500);
+          });
+        });
+        block.appendChild(button);
+      });
+    </script>
+  </body>
+</html>

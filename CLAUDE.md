@@ -42,7 +42,8 @@ Hosting platform: Next.js app hosting (containers routed by Nginx Proxy Manager)
 - `/client/src/lib/api` - Typed Hono client (`api`, `unwrap`, `upload`)
 - `/client/src/lib/queries/*` - React Query option factories
 - `/client/src/providers/*`, `/client/src/hooks/*`
-- `/cli/src/commands/*` - CLI commands
+- `/cli/src/commands/*` - CLI commands (full parity with the dashboard, `--json`, `--project <slug>`, no prompts without TTY, `EZHST_TOKEN`)
+- `/cli/skill/SKILL.md` - Agent skill (`ezhst skill install`, copied to `/skill.md` on the marketing site by `server/Dockerfile`)
 
 ## Key Patterns
 - Named exports only

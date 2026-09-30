@@ -4,9 +4,9 @@ import path from "node:path";
 import * as tar from "tar";
 import pc from "picocolors";
 import ora, { type Ora } from "ora";
-import { request, type App, type Deployment, type DeploymentStep } from "../lib/api.js";
-import { resolveApp } from "../lib/resolve-app.js";
-import { fail, log } from "../lib/ui.js";
+import { request, type Deployment, type DeploymentStep, type Project } from "../lib/api.js";
+import { resolveProject, resolveProjectDetail, type ProjectOption } from "../lib/project.js";
+import { fail, isJsonMode, log, output } from "../lib/ui.js";
 
 const IGNORED_DIRS = new Set(["node_modules", ".next", ".git", ".vercel", ".turbo", ".swc"]);
 const IGNORED_FILES = new Set([".DS_Store", ".easyhost.json"]);
@@ -95,7 +95,7 @@ const queueLabel = (position: number | null | undefined) => {
   return `${STEP_LABELS.QUEUED.active} (${position} ahead)`;
 };
 
-const followDeployment = async (app: App, deploymentId: string, verbose: boolean): Promise<FollowResult> => {
+const followDeployment = async (project: Project, deploymentId: string, verbose: boolean): Promise<FollowResult> => {
   let printed = 0;
   let step: DeploymentStep | null = null;
   let stepStartedAt = Date.now();
@@ -108,11 +108,15 @@ const followDeployment = async (app: App, deploymentId: string, verbose: boolean
   };
 
   while (true) {
-    const { deployment } = await request<{ deployment: Deployment }>(`/apps/${app.id}/deployments/${deploymentId}`);
+    const { deployment } = await request<{ deployment: Deployment }>(`/apps/${project.id}/deployments/${deploymentId}`);
     const text = deployment.log ?? "";
 
     if (verbose && text.length > printed) {
-      process.stdout.write(pc.dim(text.slice(printed)));
+      let stream: NodeJS.WriteStream = process.stdout;
+      if (isJsonMode()) {
+        stream = process.stderr;
+      }
+      stream.write(pc.dim(text.slice(printed)));
       printed = text.length;
     }
 
@@ -128,7 +132,7 @@ const followDeployment = async (app: App, deploymentId: string, verbose: boolean
         spinner.fail(STEP_LABELS[step].active);
       }
       if (!verbose) {
-        console.log(`\n${pc.dim(errorTail(text))}\n`);
+        log.info(`\n${pc.dim(errorTail(text))}\n`);
       }
       return "failed";
     }
@@ -164,18 +168,32 @@ const followDeployment = async (app: App, deploymentId: string, verbose: boolean
   }
 };
 
-const warnMissingEnv = (app: App, cwd: string) => {
-  if (!Object.keys(app.env ?? {}).length && existsSync(path.join(cwd, ".env"))) {
+const warnMissingEnv = (project: Project, cwd: string) => {
+  if (!Object.keys(project.env).length && existsSync(path.join(cwd, ".env"))) {
     log.warn(".env files are not uploaded. Set variables with `ezhst env set KEY=VALUE` and redeploy.");
   }
 };
 
-export const deploy = async (options: { app?: string; verbose?: boolean }) => {
+const finish = (project: Project, deploymentId: string, url: string, result: FollowResult, cwd?: string) => {
+  if (result === "superseded") {
+    output({ deploymentId, status: "SUPERSEDED" }, () => log.warn("A newer deploy for this project was queued, so this one was skipped."));
+    return;
+  }
+  if (result === "failed") {
+    if (cwd) {
+      warnMissingEnv(project, cwd);
+    }
+    fail(`Deployment ${deploymentId} failed. See the full build log with \`ezhst deployments log ${deploymentId}\`.`);
+  }
+  output({ deploymentId, status: "RUNNING", url }, () => log.success(`\nLive at ${pc.bold(url)}`));
+};
+
+export const deploy = async (options: ProjectOption & { verbose?: boolean }) => {
   const cwd = process.cwd();
   assertNextProject(cwd);
 
-  const app = await resolveApp(options.app);
-  log.info(`\nDeploying ${pc.bold(app.name)}\n`);
+  const project = await resolveProject(options);
+  log.info(`\nDeploying ${pc.bold(project.name)}\n`);
 
   const { stage, archive } = await withSpinner("Packaging source", () => "Packaged source", () => packSource(cwd));
 
@@ -187,7 +205,7 @@ export const deploy = async (options: { app?: string; verbose?: boolean }) => {
         const blob = await openAsBlob(archive);
         const form = new FormData();
         form.append("file", blob, "app.tgz");
-        const result = await request<{ deployment: Deployment; url: string }>(`/apps/${app.id}/deploy`, {
+        const result = await request<{ deployment: Deployment; url: string }>(`/apps/${project.id}/deploy`, {
           method: "POST",
           body: form,
         });
@@ -195,36 +213,47 @@ export const deploy = async (options: { app?: string; verbose?: boolean }) => {
       },
     );
 
-    const result = await followDeployment(app, deployment.id, !!options.verbose);
-    if (result === "superseded") {
-      log.warn("A newer deploy for this app was queued, so this one was skipped.");
-      return;
-    }
-    if (result === "failed") {
-      warnMissingEnv(app, cwd);
-      fail("Deployment failed. Run with --verbose or open the app in the dashboard for the full log.");
-    }
-    log.success(`\nLive at ${pc.bold(url)}`);
+    const result = await followDeployment(project, deployment.id, !!options.verbose);
+    finish(project, deployment.id, url, result, cwd);
   } finally {
     rmSync(stage, { recursive: true, force: true });
   }
 };
 
-export const redeploy = async (options: { app?: string; verbose?: boolean }) => {
-  const app = await resolveApp(options.app);
-  log.info(`\nRedeploying ${pc.bold(app.name)}\n`);
+export const redeploy = async (options: ProjectOption & { verbose?: boolean }) => {
+  const project = await resolveProject(options);
+  log.info(`\nRedeploying ${pc.bold(project.name)}\n`);
 
   const { deployment, url } = await withSpinner("Queueing redeploy", () => "Queued redeploy", () =>
-    request<{ deployment: Deployment; url: string }>(`/apps/${app.id}/redeploy`, { method: "POST" }),
+    request<{ deployment: Deployment; url: string }>(`/apps/${project.id}/redeploy`, { method: "POST" }),
   );
 
-  const result = await followDeployment(app, deployment.id, !!options.verbose);
-  if (result === "superseded") {
-    log.warn("A newer deploy for this app was queued, so this one was skipped.");
-    return;
+  const result = await followDeployment(project, deployment.id, !!options.verbose);
+  finish(project, deployment.id, url, result);
+};
+
+export const listDeployments = async (options: ProjectOption) => {
+  const { deployments } = await resolveProjectDetail(options);
+  output({ deployments }, () => {
+    if (!deployments.length) {
+      log.info("No deployments yet. Run `ezhst deploy`.");
+      return;
+    }
+    for (const deployment of deployments) {
+      log.info(`${deployment.id}  ${deployment.status.padEnd(10)} ${pc.dim(deployment.createdAt)}`);
+    }
+  });
+};
+
+export const deploymentLog = async (deploymentId: string | undefined, options: ProjectOption) => {
+  const { app, deployments } = await resolveProjectDetail(options);
+  const id = deploymentId ?? deployments[0]?.id;
+  if (!id) {
+    fail("No deployments yet. Run `ezhst deploy`.");
   }
-  if (result === "failed") {
-    fail("Redeploy failed. Run with --verbose or open the app in the dashboard for the full log.");
-  }
-  log.success(`\nLive at ${pc.bold(url)}`);
+  const { deployment } = await request<{ deployment: Deployment }>(`/apps/${app.id}/deployments/${id}`);
+  output({ deployment }, () => {
+    log.dim(`${deployment.id} ${deployment.status}`);
+    process.stdout.write(deployment.log || "No build log yet.\n");
+  });
 };
