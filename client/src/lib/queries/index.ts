@@ -1,3 +1,4 @@
+export { adminQuery } from "./admin";
 export { apiKeysQuery } from "./api-keys";
 export { appsQuery } from "./apps";
 export { databasesQuery } from "./databases";

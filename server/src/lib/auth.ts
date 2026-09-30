@@ -11,6 +11,7 @@ const AUTH_COOKIE = "auth-token";
 export interface JWTPayload extends JoseJWTPayload {
   userId: string;
   email: string;
+  impersonatorId?: string;
 }
 
 export type AuthUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
@@ -19,10 +20,10 @@ export const hashPassword = (password: string) => bcrypt.hash(password, 12);
 
 export const verifyPassword = (password: string, hashedPassword: string) => bcrypt.compare(password, hashedPassword);
 
-export const createToken = (payload: JWTPayload) => {
+export const createToken = (payload: JWTPayload, expiresIn = "30d") => {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("30d")
+    .setExpirationTime(expiresIn)
     .sign(JWT_SECRET);
 };
 
@@ -90,7 +91,7 @@ export const getCurrentUser = async (c: Context) => {
   }
 
   const { blocked, ...currentUser } = user;
-  return currentUser;
+  return { ...currentUser, impersonatorId: payload.impersonatorId ?? null };
 };
 
 export const generateToken = () => crypto.randomUUID().replace(/-/g, "");

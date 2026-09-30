@@ -78,6 +78,27 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
   });
 };
 
+export const sendProjectDeletedEmail = async (email: string, name: string, projectName: string, projectHost: string) => {
+  await resend.emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: `Your EasyHost project "${projectName}" was deleted`,
+    html: emailLayout(`
+      <h1 style="margin: 0 0 8px; font-size: 20px; color: #111;">Your project was deleted</h1>
+      <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
+        Hi ${escapeHtml(name)}, an EasyHost administrator deleted your project <strong>${escapeHtml(projectName)}</strong> (${escapeHtml(projectHost)}).
+      </p>
+      <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+        The app, its deployments, custom domains, storage bucket, database, email sender and API keys were removed and cannot be restored. Your account and other projects are not affected.
+      </p>
+      ${button(APP_URL, "Open dashboard")}
+      <p style="color: #9ca3af; font-size: 12px; margin-top: 24px; margin-bottom: 0;">
+        If you think this was a mistake, reply to this email.
+      </p>
+    `),
+  });
+};
+
 export const EMAIL_DOMAIN = "easyhost.fun";
 
 export const senderAddress = (username: string) => `${username}@${EMAIL_DOMAIN}`;

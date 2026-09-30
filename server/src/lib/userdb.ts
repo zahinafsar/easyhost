@@ -73,6 +73,19 @@ export const rotatePassword = async (roleName: string) => {
   return password;
 };
 
+export const userdbStats = () => {
+  return asAdmin(async (client) => {
+    const result = await client.query<{ databases: number; bytes: string; connections: number }>(
+      `SELECT
+        (SELECT count(*)::int FROM pg_database WHERE datname LIKE 'db\\_%' AND datname NOT LIKE '%\\_shadow') AS databases,
+        (SELECT coalesce(sum(pg_database_size(datname)), 0) FROM pg_database WHERE datname LIKE 'db\\_%') AS bytes,
+        (SELECT count(*)::int FROM pg_stat_activity WHERE datname LIKE 'db\\_%') AS connections`,
+    );
+    const row = result.rows[0];
+    return { databases: row.databases, bytes: Number(row.bytes), connections: row.connections };
+  });
+};
+
 export const databaseSizes = async (dbNames: string[]) => {
   if (!dbNames.length) {
     return new Map<string, number>();

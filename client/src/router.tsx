@@ -15,6 +15,7 @@ import { DatabasePage } from "@/pages/database";
 import { EmailPage } from "@/pages/email";
 import { ApiKeysPage } from "@/pages/api-keys";
 import { SettingsPage } from "@/pages/settings";
+import { AdminPage } from "@/pages/admin";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
       { path: "/verify", element: <VerifyPage /> },
     ],
   },
+  { path: "/admin", element: <AdminPage /> },
   {
     element: <AppShell />,
     children: [

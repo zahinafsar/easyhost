@@ -45,3 +45,10 @@
 - Dashboard (`client/index.html`) is `noindex`
 - `hello` is a reserved email username, so examples use `acme@easyhost.fun`
 - Not stated anywhere on the site because it is undecided: whether commercial use is allowed, and any terms/privacy pages
+
+## Admin (2026-09-30)
+- Lives inside the dashboard at `/admin` (client/src/pages/admin.tsx, standalone route outside AppShell; tabs Health, Analytics, Usage, Users). Only `User.role = ADMIN` (existing enum, no migration). There is no UI to grant admin: the user runs the one-off shell snippet in `seed-admin.txt` (repo root) on the VPS, which upserts a verified ADMIN inside the running api container. User rejected boot-time seeding from env vars and any npm script or source file for it
+- API: server/src/routes/admin.ts behind server/src/middleware/require-admin.ts (`/api/admin/health|analytics|usage|users`, `POST /api/admin/users/:id/impersonate`)
+- Impersonation: admin gets a 2h JWT for the target with an `impersonatorId` claim, replacing the auth cookie; `getCurrentUser` exposes `impersonatorId`; impersonated sessions are rejected by requireAdmin; AppShell shows a red banner and `POST /api/auth/stop-impersonating` restores the admin session. Starts are only written to the API log (user chose no audit table)
+- Analytics are computed from existing tables (signups, projects, deployments, emails per day); no page view tracking. Usage shows live container memory/CPU (docker stats), database size and emails per project; bucket sizes are not measured
+- Project deletion lives in server/src/lib/delete-project.ts (`deleteProject`), shared by the user route and `DELETE /api/admin/projects/:id`. The admin route also emails the owner (`sendProjectDeletedEmail`); a failed email does not undo the deletion (`emailSent: false`). Admin Usage tab has per-project Impersonate owner and Delete buttons

@@ -35,7 +35,8 @@ Hosting platform: Next.js app hosting (containers routed by Nginx Proxy Manager)
 - `/server/src/routes/*` - Dashboard routes (JWT user)
 - `/server/src/routes/v1/*` - Public service API (API key: email). Storage is plain S3: each bucket has its own MinIO service account (created via `mc` in `server/src/lib/minio.ts`)
 - `/server/src/lib/*` - prisma, auth, email, minio, userdb (customer Postgres), docker, domains (app URLs, custom domains), npm (NPM API), deploy, build-queue, validations
-- `/server/src/middleware/*` - require-user, require-api-key
+- `/server/src/middleware/*` - require-user, require-admin, require-api-key
+- `/server/src/routes/admin.ts` + `/client/src/pages/admin.tsx` - Admin at `/admin` (role ADMIN): impersonation, health, analytics, usage
 - `/client/src/pages/*` - Route pages
 - `/client/src/components/ui/*` - shadcn components
 - `/client/src/components/*` - Shared components

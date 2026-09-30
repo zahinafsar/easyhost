@@ -92,6 +92,15 @@ const RESERVED_APP_NAMES = [
   "help", "support", "cdn", "static", "assets", "auth", "login", "console", "caddy", "minio", "db", "root",
 ];
 
+export const adminUsersQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  search: z.string().trim().max(100).default(""),
+});
+
+export const adminAnalyticsQuerySchema = z.object({
+  days: z.coerce.number().int().min(7).max(90).default(30),
+});
+
 export const tableRowsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
 });

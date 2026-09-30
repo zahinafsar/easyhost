@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
-import { DEPLOY_BUCKET, emptyAndRemoveBucket, minio, removeBucketCredentials } from "../lib/minio.js";
-import { containerLogs, containerName, removeContainer, removeImage, startContainer, stopContainer } from "../lib/docker.js";
+import { DEPLOY_BUCKET, minio } from "../lib/minio.js";
+import { containerLogs, containerName, startContainer, stopContainer } from "../lib/docker.js";
 import { appHost, appUrl, isPlatformHostname, markDomainFailed, provisionDomain, releaseDomain, resolvesToServer } from "../lib/domains.js";
 import { env } from "../lib/env.js";
 import { enqueueDeployment, queuePosition } from "../lib/build-queue.js";
-import { dropUserDatabase } from "../lib/userdb.js";
+import { deleteProject } from "../lib/delete-project.js";
 import { validate } from "../lib/validator.js";
 import { addDomainSchema, createAppSchema, isReservedAppName, logsQuerySchema, updateBuildSchema, updateEnvSchema, updateProjectSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
@@ -283,33 +283,6 @@ export const appRoutes = new Hono<UserEnv>()
       return c.json({ error: "App not found" }, 404);
     }
 
-    const [deployments, domains, bucket, database] = await Promise.all([
-      prisma.deployment.findMany({ where: { appId: app.id } }),
-      prisma.appDomain.findMany({ where: { appId: app.id } }),
-      prisma.bucket.findUnique({ where: { projectId: app.id } }),
-      prisma.database.findUnique({ where: { projectId: app.id } }),
-    ]);
-    for (const domain of domains) {
-      await releaseDomain(domain);
-    }
-    await removeContainer(containerName(app.slug));
-    for (const deployment of deployments) {
-      if (deployment.imageTag) {
-        await removeImage(deployment.imageTag);
-      }
-    }
-    const artifactKeys = [...new Set(deployments.map((deployment) => deployment.artifactKey))];
-    if (artifactKeys.length) {
-      await minio.removeObjects(DEPLOY_BUCKET, artifactKeys);
-    }
-    if (bucket) {
-      await removeBucketCredentials(bucket.accessKey);
-      await emptyAndRemoveBucket(bucket.minioName);
-    }
-    if (database) {
-      await dropUserDatabase(database);
-    }
-
-    await prisma.app.delete({ where: { id: app.id } });
+    await deleteProject(app);
     return c.json({ message: "Project deleted" });
   });

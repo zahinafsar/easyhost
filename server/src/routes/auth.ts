@@ -69,6 +69,20 @@ export const authRoutes = new Hono()
     removeAuthCookie(c);
     return c.json({ message: "Logged out" });
   })
+  .post("/stop-impersonating", requireUser, async (c) => {
+    const { impersonatorId } = c.get("user");
+    if (!impersonatorId) {
+      return c.json({ error: "Not impersonating anyone" }, 400);
+    }
+    const admin = await prisma.user.findUnique({ where: { id: impersonatorId } });
+    if (!admin || admin.blocked || admin.role !== "ADMIN") {
+      removeAuthCookie(c);
+      return c.json({ error: "Admin session is no longer valid" }, 401);
+    }
+    const token = await createToken({ userId: admin.id, email: admin.email });
+    setAuthCookie(c, token);
+    return c.json({ message: "Impersonation ended" });
+  })
   .get("/me", requireUser, (c) => {
     return c.json({ user: c.get("user") });
   })

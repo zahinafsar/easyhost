@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings } from "lucide-react";
+import { Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,6 +71,14 @@ export const AppShell = () => {
     },
   });
 
+  const stopImpersonating = useApiMutation({
+    mutationFn: () => unwrap(api.auth["stop-impersonating"].$post()),
+    onSuccess: () => {
+      clearSelectedProject();
+      window.location.href = "/admin";
+    },
+  });
+
   if (isLoading || (user && projects.isLoading)) {
     return (
       <div className="p-8">
@@ -126,6 +134,14 @@ export const AppShell = () => {
         <div className="border-t p-3">
           <p className="truncate px-3 text-sm font-medium">{user.name}</p>
           <p className="truncate px-3 text-xs text-muted-foreground">{user.email}</p>
+          {user.role === "ADMIN" && !user.impersonatorId && (
+            <Button asChild variant="ghost" size="sm" className="mt-2 w-full justify-start">
+              <NavLink to="/admin">
+                <ShieldCheck className="size-4" />
+                Admin
+              </NavLink>
+            </Button>
+          )}
           <Button variant="ghost" size="sm" className="mt-2 w-full justify-start" onClick={logout}>
             <LogOut className="size-4" />
             Log out
@@ -148,6 +164,16 @@ export const AppShell = () => {
             </NavLink>
           ))}
         </nav>
+        {user.impersonatorId && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-red-50 px-6 py-2 text-sm text-red-900">
+            <span>
+              You are impersonating <strong>{user.email}</strong>. Everything you do here happens in their account.
+            </span>
+            <Button size="sm" variant="outline" disabled={stopImpersonating.isPending} onClick={() => stopImpersonating.mutate(undefined)}>
+              Stop impersonating
+            </Button>
+          </div>
+        )}
         {!user.verified && (
           <div className="border-b bg-amber-50 px-6 py-2 text-sm text-amber-900">
             Please verify your email address. Check your inbox for the verification link.
