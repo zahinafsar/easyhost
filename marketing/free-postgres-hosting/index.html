@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Free Postgres Hosting for Next.js Apps | EasyHost</title>
+    <meta name="description" content="A free Postgres 16 database with every EasyHost project: TLS connection string, Prisma shadow database and a SQL CLI. No credit card and no 30-day expiry." />
+    <link rel="canonical" href="https://easyhost.fun/free-postgres-hosting" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="EasyHost" />
+    <meta property="og:url" content="https://easyhost.fun/free-postgres-hosting" />
+    <meta property="og:title" content="Free Postgres Hosting for Next.js Apps | EasyHost" />
+    <meta property="og:description" content="A free Postgres 16 database with every EasyHost project: TLS connection string, Prisma shadow database and a SQL CLI." />
+    <meta property="og:image" content="https://easyhost.fun/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://easyhost.fun/og.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "TechArticle",
+            "headline": "Free Postgres hosting that comes with your app",
+            "description": "A free Postgres 16 database with every EasyHost project: TLS connection string, Prisma shadow database and a SQL CLI. No credit card and no 30-day expiry.",
+            "url": "https://easyhost.fun/free-postgres-hosting",
+            "image": "https://easyhost.fun/og.png",
+            "datePublished": "2026-09-30",
+            "dateModified": "2026-09-30",
+            "author": {
+              "@type": "Organization",
+              "name": "EasyHost",
+              "url": "https://easyhost.fun/"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "EasyHost",
+              "url": "https://easyhost.fun/",
+              "logo": "https://easyhost.fun/icon-512.png"
+            },
+            "mainEntityOfPage": "https://easyhost.fun/free-postgres-hosting"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "EasyHost",
+                "item": "https://easyhost.fun/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Free Postgres hosting",
+                "item": "https://easyhost.fun/free-postgres-hosting"
+              }
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is the EasyHost Postgres database free forever?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "It is free with no trial period and no expiry date. Each project can have one database."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I connect from outside EasyHost?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. The connection string uses a public host with TLS, so it works from your laptop, from CI and from apps hosted elsewhere."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does it work with Prisma and Drizzle?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. It is a standard Postgres 16 database. A shadow database for prisma migrate dev is included."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I use the database without hosting an app on EasyHost?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Create a project, create its database and use the connection string anywhere. You do not have to deploy an app to the project."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a href="/" class="logo">
+          <img src="/logo.svg" alt="" width="18" height="24" />
+          EasyHost
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="/">Home</a>
+          <a href="/free-nextjs-hosting">Free hosting</a>
+          <a href="/vercel-alternative">vs Vercel</a>
+          <a href="/docs" class="keep">Docs</a>
+        </nav>
+        <div class="nav-actions">
+          <a href="https://app.easyhost.fun/login" class="btn btn-ghost">Log in</a>
+          <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="container docs">
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <ol>
+          <li><a href="#included">What you get</a></li>
+          <li><a href="#create">Create a database</a></li>
+          <li><a href="#connect">Connect from your app</a></li>
+          <li><a href="#prisma">Prisma migrations</a></li>
+          <li><a href="#cli">Query from the CLI</a></li>
+          <li><a href="#limits">Limits and caveats</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ol>
+      </aside>
+
+      <main class="doc">
+        <div class="doc-head">
+          <ol class="crumbs" aria-label="Breadcrumb">
+            <li><a href="/">EasyHost</a></li><li aria-current="page">Free Postgres hosting</li>
+          </ol>
+          <h1>Free Postgres hosting that comes with your app</h1>
+          <p class="lead">Every EasyHost project can have one free Postgres 16 database. You get a standard connection string over TLS, a separate shadow database for Prisma, and a CLI that can run SQL. There is no credit card, and the database is not deleted on a timer.</p>
+          <p class="doc-meta">Last updated September 30, 2026</p>
+        </div>
+
+        <section id="included">
+          <h2>What the free Postgres database includes</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Feature</th><th>Details</th></tr></thead>
+              <tbody>
+                <tr><td>Engine</td><td>Postgres 16</td></tr>
+                <tr><td>Databases</td><td>1 per project, up to 10 projects per account</td></tr>
+                <tr><td>Access</td><td>Your own database and role, reachable from anywhere over TLS</td></tr>
+                <tr><td>Connections</td><td>Up to 20 at a time per database</td></tr>
+                <tr><td>Shadow database</td><td>Included, for <code>prisma migrate dev</code></td></tr>
+                <tr><td>Tools</td><td>SQL from the CLI, plus a table browser and editor in the dashboard</td></tr>
+                <tr><td>Expiry</td><td>None</td></tr>
+                <tr><td>Price</td><td>$0</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>The connection string works with any Postgres client, so you can use the database from your EasyHost app, from your laptop, or from an app hosted somewhere else.</p>
+        </section>
+
+        <section id="create">
+          <h2>Create a database</h2>
+          <div class="code"><pre>npx ezhst db create main
+npx ezhst db info --json
+npx ezhst env set DATABASE_URL="postgresql://..."
+npx ezhst redeploy</pre></div>
+          <p><code>db info</code> returns the connection string and the shadow connection string. Setting <code>DATABASE_URL</code> with <code>env set</code> makes it available to your app on the next deploy. A coding agent with the <a href="/guides/deploy-nextjs-with-ai-agents">EasyHost skill</a> does all four steps when you ask it to "add a Postgres database".</p>
+        </section>
+
+        <section id="connect">
+          <h2>Connect from your Next.js app</h2>
+          <p>Use whichever client you already use. With Drizzle:</p>
+          <div class="code"><div class="code-label">lib/db.ts</div><pre>import { drizzle } from "drizzle-orm/node-postgres";
+
+export const db = drizzle(process.env.DATABASE_URL!);</pre></div>
+          <p>With Prisma, <code>DATABASE_URL</code> is read from the datasource block in <code>schema.prisma</code> as usual.</p>
+          <p>Because your app is a long-running Node.js process rather than a set of serverless functions, a normal connection pool works and you do not need a pooling proxy in front of the database.</p>
+        </section>
+
+        <section id="prisma">
+          <h2>Prisma migrations and the shadow database</h2>
+          <p><code>prisma migrate dev</code> needs a second, empty database to detect drift. On a host that gives you a single database, you have to find one somewhere else. EasyHost creates it for you and returns its URL from <code>ezhst db info</code>.</p>
+          <div class="code"><div class="code-label">prisma/schema.prisma</div><pre>datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}</pre></div>
+          <p>Run migrations from your machine against the connection string, for example <code>prisma migrate deploy</code> before a deploy.</p>
+        </section>
+
+        <section id="cli">
+          <h2>Query it from the command line</h2>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst db query "select count(*) from users"</code><span>Run one SQL statement.</span></div>
+            <div class="cmd-row"><code>ezhst db query --file seed.sql</code><span>Run a SQL file.</span></div>
+            <div class="cmd-row"><code>ezhst db rows users --page 2</code><span>Browse rows in a table.</span></div>
+            <div class="cmd-row"><code>ezhst db reset-password</code><span>Rotate the password and print the new connection string.</span></div>
+          </div>
+          <p>All of them accept <code>--json</code>, which is how agents inspect a schema or check that a migration worked. Statements run through the CLI and dashboard time out after 15 seconds. See the <a href="/docs#database">database docs</a> for every command.</p>
+        </section>
+
+        <section id="limits">
+          <h2>Limits and caveats</h2>
+          <ul>
+            <li>One database per project. Create another project if you need a second one.</li>
+            <li>Databases live on a shared Postgres server in one region. This is meant for side projects, prototypes and small apps, not for heavy production workloads.</li>
+            <li>Each database allows up to 20 concurrent connections.</li>
+            <li>Keep your own backups of anything important. <code>pg_dump</code> works with the connection string.</li>
+          </ul>
+          <p>For comparison, Render's free Postgres databases expire 30 days after creation and are capped at 1 GB, according to the <a href="https://render.com/docs/free" rel="noopener">Render free tier docs</a> as of September 2026.</p>
+        </section>
+
+        <section id="faq">
+          <h2>Frequently asked questions</h2>
+          <h3>Is the EasyHost Postgres database free forever?</h3>
+          <p>It is free with no trial period and no expiry date. Each project can have one database.</p>
+          <h3>Can I connect from outside EasyHost?</h3>
+          <p>Yes. The connection string uses a public host with TLS, so it works from your laptop, from CI and from apps hosted elsewhere.</p>
+          <h3>Does it work with Prisma and Drizzle?</h3>
+          <p>Yes. It is a standard Postgres 16 database. A shadow database for <code>prisma migrate dev</code> is included.</p>
+          <h3>Can I use the database without hosting an app on EasyHost?</h3>
+          <p>Yes. Create a project, create its database and use the connection string anywhere. You do not have to deploy an app to the project.</p>
+        </section>
+
+        <section id="start">
+          <h2>Start for free</h2>
+          <p>Install the skill, then tell your agent to deploy. No credit card, no config files.</p>
+          <div class="code"><pre>npx ezhst skill install</pre></div>
+          <div class="doc-cta">
+            <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up free</a>
+            <a href="/docs" class="btn btn-outline">Read the docs</a>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span>&copy; 2026 EasyHost</span>
+        <nav aria-label="Footer">
+          <a href="/">Home</a>
+          <a href="/free-nextjs-hosting">Free Next.js hosting</a>
+          <a href="/free-postgres-hosting">Free Postgres hosting</a>
+          <a href="/vercel-alternative">Vercel alternative</a>
+          <a href="/guides/deploy-nextjs-with-ai-agents">Deploy with an AI agent</a>
+          <a href="/docs">Docs</a>
+          <a href="/skill.md">skill.md</a>
+          <a href="https://app.easyhost.fun/register">Sign up</a>
+          <a href="mailto:hello@easyhost.fun">Contact</a>
+        </nav>
+      </div>
+    </footer>
+    <script>
+      const copyIcon = '<svg class="icon icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="icon icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+      document.querySelectorAll(".code").forEach((block) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "copy";
+        button.setAttribute("aria-label", "Copy code");
+        button.innerHTML = copyIcon;
+        button.addEventListener("click", () => {
+          navigator.clipboard.writeText(block.querySelector("pre").textContent).then(() => {
+            button.classList.add("copied");
+            setTimeout(() => {
+              button.classList.remove("copied");
+            }, 1500);
+          });
+        });
+        block.appendChild(button);
+      });
+    </script>
+  </body>
+</html>

@@ -35,3 +35,13 @@
 - CLI v0.2 (agent-first): full dashboard parity. Commands: register/login (flags), projects, link, deploy/redeploy/start/stop/logs, deployments list/log, env (incl. import), build, domains, storage, db, email (send via JWT route POST /api/emails/send), keys, skill install. Global --json (human output to stderr, errors as {"error"}), --project <slug> or .easyhost.json {projectId, slug}, no prompts without TTY, EZHST_TOKEN overrides saved token. Email sending logic shared in server/src/lib/project-email.ts
 - Skill: cli/skill/SKILL.md (shipped in npm package, installed to .claude/skills/easyhost/SKILL.md, served at easyhost.fun/skill.md via server/Dockerfile copy)
 - Marketing positions EasyHost as the first agent-first free hosting platform; docs at marketing/docs/index.html (/docs)
+
+## Marketing SEO (2026-09-30)
+- Pages (static HTML, one folder each, canonical URLs have no trailing slash): `/`, `/docs`, `/free-nextjs-hosting`, `/free-postgres-hosting`, `/vercel-alternative`, `/guides/deploy-nextjs-with-ai-agents`, plus `404.html`, `robots.txt`, `sitemap.xml`, `llms.txt`, `og.png` (1200x630), `icon-512.png`, `apple-touch-icon.png`
+- Every page has canonical, Open Graph/Twitter tags and JSON-LD (home: Organization, WebSite, SoftwareApplication, FAQPage; others: TechArticle, BreadcrumbList, FAQPage). FAQ JSON-LD must mirror the visible FAQ text. No ratings/reviews in schema (none exist, never invent them)
+- New page checklist: add it to `sitemap.xml`, `llms.txt` and the footer nav of every page; update `dateModified` and the visible "Last updated" line when content changes
+- Competitor numbers on the comparison pages come from vercel.com/docs/plans/hobby and render.com/docs/free (checked 2026-09-30) and are labelled "as of September 2026"; recheck before editing
+- Server (`server/src/index.ts`, marketing host only): 301 for trailing slashes, real 404 status with `404.html`, Cache-Control, gzip precompressed files (created in `server/Dockerfile`). `/api/*` on the marketing host still falls through to the API
+- Dashboard (`client/index.html`) is `noindex`
+- `hello` is a reserved email username, so examples use `acme@easyhost.fun`
+- Not stated anywhere on the site because it is undecided: whether commercial use is allowed, and any terms/privacy pages

@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deploy a Next.js App with Claude Code, Cursor or Codex | EasyHost</title>
+    <meta name="description" content="Step by step: let Claude Code, Cursor or Codex deploy your Next.js app for free. Install one skill, say deploy, and the agent handles sign-up, env vars and builds." />
+    <link rel="canonical" href="https://easyhost.fun/guides/deploy-nextjs-with-ai-agents" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="EasyHost" />
+    <meta property="og:url" content="https://easyhost.fun/guides/deploy-nextjs-with-ai-agents" />
+    <meta property="og:title" content="Deploy a Next.js App with Claude Code, Cursor or Codex | EasyHost" />
+    <meta property="og:description" content="Let Claude Code, Cursor or Codex deploy your Next.js app for free. Install one skill and say deploy." />
+    <meta property="og:image" content="https://easyhost.fun/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://easyhost.fun/og.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "TechArticle",
+            "headline": "How to deploy a Next.js app with Claude Code, Cursor or Codex",
+            "description": "Step by step: let Claude Code, Cursor or Codex deploy your Next.js app for free. Install one skill, say deploy, and the agent handles sign-up, env vars and builds.",
+            "url": "https://easyhost.fun/guides/deploy-nextjs-with-ai-agents",
+            "image": "https://easyhost.fun/og.png",
+            "datePublished": "2026-09-30",
+            "dateModified": "2026-09-30",
+            "author": {
+              "@type": "Organization",
+              "name": "EasyHost",
+              "url": "https://easyhost.fun/"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "EasyHost",
+              "url": "https://easyhost.fun/",
+              "logo": "https://easyhost.fun/icon-512.png"
+            },
+            "mainEntityOfPage": "https://easyhost.fun/guides/deploy-nextjs-with-ai-agents"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "EasyHost",
+                "item": "https://easyhost.fun/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Deploy with an AI agent",
+                "item": "https://easyhost.fun/guides/deploy-nextjs-with-ai-agents"
+              }
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Can Claude Code deploy a Next.js app by itself?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. With the EasyHost skill installed, Claude Code can register or log in, create a project, set environment variables, deploy and read build logs using the ezhst CLI."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does this work with Cursor and Codex?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Add the contents of https://easyhost.fun/skill.md to the instructions file the agent reads, such as AGENTS.md. The CLI is the same."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is it free to deploy this way?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. EasyHost is free with fixed limits: 10 projects, 512 MB of RAM and 1 CPU per app, and no credit card."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Do I need an MCP server?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. The agent uses a normal command line tool through its shell. There is nothing to run in the background."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a href="/" class="logo">
+          <img src="/logo.svg" alt="" width="18" height="24" />
+          EasyHost
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="/">Home</a>
+          <a href="/free-nextjs-hosting">Free hosting</a>
+          <a href="/vercel-alternative">vs Vercel</a>
+          <a href="/docs" class="keep">Docs</a>
+        </nav>
+        <div class="nav-actions">
+          <a href="https://app.easyhost.fun/login" class="btn btn-ghost">Log in</a>
+          <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="container docs">
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <ol>
+          <li><a href="#short-answer">Short answer</a></li>
+          <li><a href="#claude-code">Claude Code</a></li>
+          <li><a href="#cursor-codex">Cursor, Codex and others</a></li>
+          <li><a href="#what-happens">What the agent runs</a></li>
+          <li><a href="#backend">Database, storage, email</a></li>
+          <li><a href="#failures">When a build fails</a></li>
+          <li><a href="#ci">CI and sandboxes</a></li>
+          <li><a href="#safety">What the agent will not do</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ol>
+      </aside>
+
+      <main class="doc">
+        <div class="doc-head">
+          <ol class="crumbs" aria-label="Breadcrumb">
+            <li><a href="/">EasyHost</a></li><li aria-current="page">Deploy with an AI agent</li>
+          </ol>
+          <h1>How to deploy a Next.js app with Claude Code, Cursor or Codex</h1>
+          <p class="lead">To have a coding agent deploy a Next.js app, give it a hosting CLI it can run without a browser and instructions for using it. On EasyHost that is one command, <code>npx ezhst skill install</code>, followed by one sentence: "Deploy this to EasyHost". The agent creates the account, sets environment variables, deploys and returns a live URL. It is free.</p>
+          <p class="doc-meta">Last updated September 30, 2026</p>
+        </div>
+
+        <section id="short-answer">
+          <h2>The short answer</h2>
+          <ol>
+            <li>In your Next.js project, run <code>npx ezhst skill install</code>.</li>
+            <li>Tell your agent: <code>Deploy this to EasyHost</code>.</li>
+            <li>Open the URL it gives you: <code>https://&lt;name&gt;.easyhost.fun</code>.</li>
+          </ol>
+          <p>You need Node.js with <code>npx</code> and a Next.js project that has a <code>build</code> script. You do not need a Dockerfile, a config file or a Git remote.</p>
+        </section>
+
+        <section id="claude-code">
+          <h2>Deploy with Claude Code</h2>
+          <p>Claude Code loads skills from a <code>.claude/skills</code> folder. The install command writes the EasyHost skill there.</p>
+          <div class="code"><pre>npx ezhst skill install</pre></div>
+          <p>That creates <code>.claude/skills/easyhost/SKILL.md</code> in the current project. Commit it if you want your team to have it, or add <code>--global</code> to install it for every project on your machine.</p>
+          <p>Then ask in plain language:</p>
+          <div class="code"><pre>Deploy this to EasyHost</pre></div>
+        </section>
+
+        <section id="cursor-codex">
+          <h2>Deploy with Cursor, Codex or another agent</h2>
+          <p>Agents that do not load skill folders can read the same instructions from a plain file. The skill is published at <a href="/skill.md">https://easyhost.fun/skill.md</a>. Add it to the instructions file your agent reads, for example <code>AGENTS.md</code>:</p>
+          <div class="code"><pre>curl -s https://easyhost.fun/skill.md &gt;&gt; AGENTS.md</pre></div>
+          <p>Then give the agent the same prompt. Any agent that can run shell commands can use the CLI, because every command accepts flags instead of interactive prompts.</p>
+        </section>
+
+        <section id="what-happens">
+          <h2>What the agent actually runs</h2>
+          <p>A first deploy usually looks like this. Every command prints JSON on stdout, so the agent reads results instead of scraping text.</p>
+          <div class="code"><pre>npx ezhst whoami --json
+npx ezhst register --name "Ada" --email ada@example.com --password "..." --json
+npx ezhst projects create my-app --link --json
+npx ezhst env import .env --json
+npx ezhst deploy --json</pre></div>
+          <ol>
+            <li><strong>Check who is logged in.</strong> If nobody is, the agent asks you for an email and password and registers or logs in.</li>
+            <li><strong>Create and link a project.</strong> The project name becomes the subdomain. A <code>.easyhost.json</code> file records the link.</li>
+            <li><strong>Import environment variables.</strong> <code>.env</code> files are never uploaded, so the agent imports them explicitly.</li>
+            <li><strong>Deploy.</strong> The CLI packages the source (without <code>node_modules</code>, <code>.next</code>, <code>.git</code> and <code>.env*</code>), uploads it, and EasyHost installs, builds and starts the app.</li>
+          </ol>
+          <p>A successful deploy returns the deployment id, the status <code>RUNNING</code> and the URL.</p>
+        </section>
+
+        <section id="backend">
+          <h2>Ask for a database, storage or email</h2>
+          <p>The same skill covers the rest of the platform, so follow-up prompts work without more setup:</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>Add a Postgres database and run my Prisma migrations</code><span>Runs <code>db create</code>, reads the connection string, sets <code>DATABASE_URL</code>, migrates and redeploys.</span></div>
+            <div class="cmd-row"><code>Store avatar uploads in a bucket</code><span>Runs <code>storage create</code> and sets the S3 endpoint, bucket and keys as env vars.</span></div>
+            <div class="cmd-row"><code>Send a welcome email on sign-up</code><span>Creates a sender and an API key, then calls the HTTP email API from your app.</span></div>
+            <div class="cmd-row"><code>Put this on www.example.com</code><span>Runs <code>domains add</code>, tells you the DNS record to set, then verifies and issues HTTPS.</span></div>
+          </div>
+          <p>The full command list is in the <a href="/docs">docs</a>.</p>
+        </section>
+
+        <section id="failures">
+          <h2>When a build fails</h2>
+          <p>This is where an agent earns its keep. A failed deploy exits with code 1 and a JSON error, and the full build log is one command away:</p>
+          <div class="code"><pre>npx ezhst deployments log --json</pre></div>
+          <p>The agent reads the log, fixes the cause and deploys again. The common causes:</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
+              <tbody>
+                <tr><td>An environment variable is missing at build time</td><td><code>ezhst env set KEY=VALUE</code>, then <code>ezhst redeploy</code></td></tr>
+                <tr><td><code>npm ci</code> says the lockfile is out of sync</td><td>Delete <code>node_modules</code> and <code>package-lock.json</code>, run <code>npm install</code>, deploy again</td></tr>
+                <tr><td>The app lives in a monorepo subfolder</td><td><code>ezhst build set --root-dir apps/web</code></td></tr>
+                <tr><td>The project needs a different Node version</td><td><code>ezhst build set --node 22</code> (20, 22 or 24)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="ci">
+          <h2>CI and agent sandboxes</h2>
+          <p>Where there is no saved login, such as a CI job or a cloud agent sandbox, pass a token in the environment instead:</p>
+          <div class="code"><pre>EZHST_TOKEN=&lt;token&gt; npx ezhst deploy --json</pre></div>
+          <p>Without a terminal the CLI never waits for input. If a value is missing it fails with a message naming the flag, which is what an agent needs to correct itself.</p>
+        </section>
+
+        <section id="safety">
+          <h2>What the agent will not do on its own</h2>
+          <ul>
+            <li>Destructive commands (<code>projects delete</code>, <code>storage delete</code>, <code>db delete</code>) require an explicit <code>--yes</code>, and the skill tells agents to run them only when you ask.</li>
+            <li>The skill tells agents not to print passwords, keys or connection strings back to you, and to store them as environment variables instead.</li>
+            <li>Your <code>.env</code> files stay on your machine unless the agent imports them with <code>env import</code>.</li>
+          </ul>
+        </section>
+
+        <section id="faq">
+          <h2>Frequently asked questions</h2>
+          <h3>Can Claude Code deploy a Next.js app by itself?</h3>
+          <p>Yes. With the EasyHost skill installed, Claude Code can register or log in, create a project, set environment variables, deploy and read build logs using the <code>ezhst</code> CLI.</p>
+          <h3>Does this work with Cursor and Codex?</h3>
+          <p>Yes. Add the contents of <a href="/skill.md">skill.md</a> to the instructions file the agent reads, such as <code>AGENTS.md</code>. The CLI is the same.</p>
+          <h3>Is it free to deploy this way?</h3>
+          <p>Yes. EasyHost is free with fixed <a href="/free-nextjs-hosting">limits</a>: 10 projects, 512 MB of RAM and 1 CPU per app, and no credit card.</p>
+          <h3>Do I need an MCP server?</h3>
+          <p>No. The agent uses a normal command line tool through its shell. There is nothing to run in the background.</p>
+        </section>
+
+        <section id="start">
+          <h2>Start for free</h2>
+          <p>Install the skill, then tell your agent to deploy. No credit card, no config files.</p>
+          <div class="code"><pre>npx ezhst skill install</pre></div>
+          <div class="doc-cta">
+            <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up free</a>
+            <a href="/docs" class="btn btn-outline">Read the docs</a>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span>&copy; 2026 EasyHost</span>
+        <nav aria-label="Footer">
+          <a href="/">Home</a>
+          <a href="/free-nextjs-hosting">Free Next.js hosting</a>
+          <a href="/free-postgres-hosting">Free Postgres hosting</a>
+          <a href="/vercel-alternative">Vercel alternative</a>
+          <a href="/guides/deploy-nextjs-with-ai-agents">Deploy with an AI agent</a>
+          <a href="/docs">Docs</a>
+          <a href="/skill.md">skill.md</a>
+          <a href="https://app.easyhost.fun/register">Sign up</a>
+          <a href="mailto:hello@easyhost.fun">Contact</a>
+        </nav>
+      </div>
+    </footer>
+    <script>
+      const copyIcon = '<svg class="icon icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="icon icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+      document.querySelectorAll(".code").forEach((block) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "copy";
+        button.setAttribute("aria-label", "Copy code");
+        button.innerHTML = copyIcon;
+        button.addEventListener("click", () => {
+          navigator.clipboard.writeText(block.querySelector("pre").textContent).then(() => {
+            button.classList.add("copied");
+            setTimeout(() => {
+              button.classList.remove("copied");
+            }, 1500);
+          });
+        });
+        block.appendChild(button);
+      });
+    </script>
+  </body>
+</html>

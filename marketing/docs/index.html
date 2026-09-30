@@ -3,9 +3,48 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Docs | EasyHost</title>
-    <meta name="description" content="EasyHost documentation: the agent skill, the ezhst CLI, deploying Next.js apps, environment variables, domains, storage, Postgres, email and limits." />
+    <title>EasyHost Docs: ezhst CLI Reference for Deploying Next.js</title>
+    <meta name="description" content="Every ezhst command: deploy Next.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and email." />
+    <link rel="canonical" href="https://easyhost.fun/docs" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="EasyHost" />
+    <meta property="og:url" content="https://easyhost.fun/docs" />
+    <meta property="og:title" content="EasyHost Docs: ezhst CLI Reference for Deploying Next.js" />
+    <meta property="og:description" content="Every ezhst command: deploy Next.js apps, manage env vars, domains, S3 storage, Postgres and email." />
+    <meta property="og:image" content="https://easyhost.fun/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://easyhost.fun/og.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "TechArticle",
+            "headline": "EasyHost docs: ezhst CLI reference",
+            "description": "Every ezhst command: deploy Next.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and email.",
+            "url": "https://easyhost.fun/docs",
+            "image": "https://easyhost.fun/og.png",
+            "datePublished": "2026-09-29",
+            "dateModified": "2026-09-30",
+            "author": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/" },
+            "publisher": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/", "logo": "https://easyhost.fun/icon-512.png" }
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "EasyHost", "item": "https://easyhost.fun/" },
+              { "@type": "ListItem", "position": 2, "name": "Docs", "item": "https://easyhost.fun/docs" }
+            ]
+          }
+        ]
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -15,11 +54,11 @@
     <header class="nav">
       <div class="container nav-inner">
         <a href="/" class="logo">
-          <img src="/logo.svg" alt="" />
+          <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
           <small>docs</small>
         </a>
-        <nav class="nav-links">
+        <nav class="nav-links" aria-label="Main">
           <a href="/">Home</a>
           <a href="/docs" class="keep" aria-current="page">Docs</a>
           <a href="/skill.md">skill.md</a>
@@ -55,7 +94,7 @@
       <main class="doc">
         <div class="doc-head">
           <p class="eyebrow">Documentation</p>
-          <h1>EasyHost docs</h1>
+          <h1>EasyHost docs: the ezhst CLI</h1>
           <p class="lead">Everything on EasyHost runs through the <code>ezhst</code> CLI, which is built to be driven by coding agents. This page covers every command.</p>
         </div>
 
@@ -64,7 +103,7 @@
           <h3>For agents</h3>
           <p>Install the skill in your project, then ask your agent (Claude Code, Cursor, Codex or any other) to deploy.</p>
           <div class="code"><pre>npx ezhst skill install</pre></div>
-          <p>Then tell it: <code>Deploy this to EasyHost</code>. The agent creates an account if you do not have one, creates and links a project, sets environment variables and deploys.</p>
+          <p>Then tell it: <code>Deploy this to EasyHost</code>. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> walks through it for each agent. The agent creates an account if you do not have one, creates and links a project, sets environment variables and deploys.</p>
 
           <h3>For humans</h3>
           <p>Install the CLI globally or run it with <code>npx</code>.</p>
@@ -253,7 +292,7 @@ export const uploadAvatar = async (userId: string, body: Buffer) =&gt; {
 
         <section id="database">
           <h2>Database <small>Postgres</small></h2>
-          <p>Each project gets one managed Postgres database.</p>
+          <p>Each project gets one managed Postgres database. See <a href="/free-postgres-hosting">free Postgres hosting</a> for what is included.</p>
           <div class="cmds">
             <div class="cmd-row"><code>ezhst db info</code><span>Connection string, shadow connection string and tables.</span></div>
             <div class="cmd-row"><code>ezhst db create &lt;name&gt;</code><span>Create the database.</span></div>
@@ -288,8 +327,8 @@ ezhst env set DATABASE_URL="postgresql://..."</pre></div>
             <div class="cmd-row"><code>ezhst email send --from &lt;address&gt; --to &lt;address&gt; --subject &lt;text&gt; (--text &lt;body&gt; | --html &lt;html&gt;)</code><span>Send an email.</span></div>
             <div class="cmd-row"><code>ezhst email logs [--page &lt;n&gt;]</code><span>List sent emails.</span></div>
           </div>
-          <div class="code"><pre>ezhst email sender create hello
-ezhst email send --from hello@easyhost.fun --to ada@example.com --subject "Welcome" --text "Thanks for signing up."</pre></div>
+          <div class="code"><pre>ezhst email sender create acme
+ezhst email send --from acme@easyhost.fun --to ada@example.com --subject "Welcome" --text "Thanks for signing up."</pre></div>
           <h3>Sending from your app</h3>
           <p>Apps send email over HTTP with an <a href="#keys">API key</a>. Send <code>text</code> or <code>html</code>.</p>
           <div class="code"><div class="code-label">POST https://api.easyhost.fun/api/v1/email/send</div><pre>const res = await fetch("https://api.easyhost.fun/api/v1/email/send", {
@@ -299,7 +338,7 @@ ezhst email send --from hello@easyhost.fun --to ada@example.com --subject "Welco
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    from: "hello@easyhost.fun",
+    from: "acme@easyhost.fun",
     to: "ada@example.com",
     subject: "Welcome",
     html: "&lt;p&gt;Thanks for signing up.&lt;/p&gt;",
@@ -321,7 +360,7 @@ ezhst env set EASYHOST_API_KEY=&lt;key&gt;</pre></div>
 
         <section id="limits">
           <h2>Limits</h2>
-          <p>EasyHost is free within these limits. Only Next.js apps are supported for now.</p>
+          <p>EasyHost is free within these limits. Only Next.js apps are supported for now. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Resource</th><th>Limit</th></tr></thead>
@@ -343,8 +382,12 @@ ezhst env set EASYHOST_API_KEY=&lt;key&gt;</pre></div>
     <footer class="footer">
       <div class="container footer-inner">
         <span>&copy; 2026 EasyHost</span>
-        <nav>
+        <nav aria-label="Footer">
           <a href="/">Home</a>
+          <a href="/free-nextjs-hosting">Free Next.js hosting</a>
+          <a href="/free-postgres-hosting">Free Postgres hosting</a>
+          <a href="/vercel-alternative">Vercel alternative</a>
+          <a href="/guides/deploy-nextjs-with-ai-agents">Deploy with an AI agent</a>
           <a href="/skill.md">skill.md</a>
           <a href="https://app.easyhost.fun/login">Log in</a>
           <a href="https://app.easyhost.fun/register">Sign up</a>

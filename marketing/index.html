@@ -3,9 +3,100 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EasyHost | Free hosting your AI agent can run</title>
-    <meta name="description" content="EasyHost is the first agent-first free hosting platform. Your coding agent deploys Next.js apps and sets up storage, Postgres, email and domains through the ezhst CLI." />
+    <title>EasyHost: Free Next.js Hosting Your AI Agent Can Deploy To</title>
+    <meta name="description" content="Free Next.js hosting with Postgres, S3 storage, email and custom domains. Claude Code, Cursor or Codex deploys your app with the ezhst CLI. No credit card." />
+    <link rel="canonical" href="https://easyhost.fun/" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="EasyHost" />
+    <meta property="og:url" content="https://easyhost.fun/" />
+    <meta property="og:title" content="EasyHost: Free Next.js Hosting Your AI Agent Can Deploy To" />
+    <meta property="og:description" content="Free Next.js hosting with Postgres, S3 storage, email and custom domains. Your coding agent deploys it with one CLI." />
+    <meta property="og:image" content="https://easyhost.fun/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="EasyHost: free Next.js hosting your AI agent can deploy to" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="EasyHost: Free Next.js Hosting Your AI Agent Can Deploy To" />
+    <meta name="twitter:description" content="Free Next.js hosting with Postgres, S3 storage, email and custom domains. Your coding agent deploys it with one CLI." />
+    <meta name="twitter:image" content="https://easyhost.fun/og.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://easyhost.fun/#organization",
+            "name": "EasyHost",
+            "url": "https://easyhost.fun/",
+            "logo": "https://easyhost.fun/icon-512.png",
+            "email": "hello@easyhost.fun",
+            "sameAs": ["https://www.npmjs.com/package/ezhst"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://easyhost.fun/#website",
+            "name": "EasyHost",
+            "url": "https://easyhost.fun/",
+            "publisher": { "@id": "https://easyhost.fun/#organization" }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://easyhost.fun/#software",
+            "name": "EasyHost",
+            "url": "https://easyhost.fun/",
+            "description": "Free hosting for Next.js apps with managed Postgres, S3 compatible storage, transactional email and custom domains, operated through the ezhst CLI by AI coding agents.",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web, macOS, Linux, Windows",
+            "offers": { "@type": "Offer", "price": 0, "priceCurrency": "USD" },
+            "publisher": { "@id": "https://easyhost.fun/#organization" }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is EasyHost really free?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. EasyHost costs $0 per month and signing up does not need a credit card. Every feature is included within fixed limits: 10 projects, and per project one Next.js app, one Postgres database, one storage bucket and one email sender with 100 emails per day." }
+              },
+              {
+                "@type": "Question",
+                "name": "What can I host on EasyHost?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Next.js apps. EasyHost runs next build and next start in a Node.js container, so server rendering, route handlers, server actions and middleware work as they do on your machine. Node 20, 22 and 24 are supported with npm, pnpm, yarn or bun." }
+              },
+              {
+                "@type": "Question",
+                "name": "Do free apps go to sleep?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. Each app runs in its own always-on container with 512 MB of RAM and 1 CPU. It is not stopped when idle, so there is no cold start on the first request." }
+              },
+              {
+                "@type": "Question",
+                "name": "Which AI coding agents can deploy to EasyHost?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Any agent that can run shell commands. Claude Code loads the EasyHost skill after npx ezhst skill install. Cursor, Codex and other agents can read the same instructions from https://easyhost.fun/skill.md." }
+              },
+              {
+                "@type": "Question",
+                "name": "Do I need to connect GitHub or change my project?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. ezhst deploy packages the project folder and uploads it. There is no Git integration, no config file to write and no adapter to install." }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I use my own domain?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every project gets https://<name>.easyhost.fun, and you can add custom domains with ezhst domains add. HTTPS certificates are issued automatically once DNS is verified." }
+              },
+              {
+                "@type": "Question",
+                "name": "How is EasyHost different from Vercel?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Vercel runs Next.js on serverless functions behind a global CDN. EasyHost runs each app as one always-on container in a single region and includes Postgres, S3 storage and email in the same free account, all scriptable by a coding agent through one CLI. EasyHost has no preview deployments, Git integration or edge network." }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -15,13 +106,14 @@
     <header class="nav">
       <div class="container nav-inner">
         <a href="/" class="logo">
-          <img src="/logo.svg" alt="" />
+          <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
         </a>
-        <nav class="nav-links">
+        <nav class="nav-links" aria-label="Main">
           <a href="#agents">For agents</a>
           <a href="#capabilities">Capabilities</a>
           <a href="#limits">Limits</a>
+          <a href="#faq">FAQ</a>
           <a href="/docs" class="keep">Docs</a>
         </nav>
         <div class="nav-actions">
@@ -36,9 +128,9 @@
         <div class="container hero-inner">
           <div>
             <p class="eyebrow reveal">Agent-first hosting. Free.</p>
-            <h1 class="reveal reveal-1">Tell your agent to <mark>ship&nbsp;it</mark>. It&nbsp;will.</h1>
+            <h1 class="reveal reveal-1">Free Next.js hosting your AI agent can <mark>deploy&nbsp;to</mark>.</h1>
             <p class="lead reveal reveal-2">
-              EasyHost is the first agent-first free hosting platform. Claude Code, Cursor, Codex and friends can create the account, deploy your Next.js app and wire up storage, Postgres, email and domains through one CLI.
+              Tell your agent to ship it. It will. EasyHost is the first agent-first free hosting platform: Claude Code, Cursor, Codex and friends can create the account, deploy your Next.js app and wire up Postgres, S3 storage, email and domains through one CLI.
             </p>
             <div class="hero-actions reveal reveal-3">
               <a href="#agents" class="btn btn-primary btn-lg">Install the skill</a>
@@ -183,7 +275,7 @@
               <div>
                 <h3>Transactional email</h3>
                 <p>Send from you@easyhost.fun by CLI or one HTTP request. Every send is logged.</p>
-                <code>ezhst email sender create hello</code>
+                <code>ezhst email sender create acme</code>
               </div>
             </article>
             <article class="cap">
@@ -231,8 +323,9 @@
           <div>
             <p class="eyebrow">Limits</p>
             <h2>Free. These are the limits.</h2>
-            <p class="lead">Every feature is free within these limits. EasyHost runs Next.js apps only for now.</p>
+            <p class="lead">Every feature is free within these limits, with no credit card. EasyHost runs Next.js apps only for now.</p>
             <p class="price">$0 <span>/ month</span></p>
+            <p class="limits-more">See what the <a href="/free-nextjs-hosting">free Next.js hosting</a> plan includes, or how it compares as a <a href="/vercel-alternative">Vercel alternative</a>.</p>
           </div>
           <div class="limit-table">
             <div class="limit-row"><span>Projects</span><b>10</b></div>
@@ -242,6 +335,47 @@
             <div class="limit-row"><span>Emails</span><b>100 / day</b></div>
             <div class="limit-row"><span>Concurrent builds</span><b>1</b></div>
             <div class="limit-row"><span>App container</span><b>512 MB RAM, 1 CPU</b></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" class="section">
+        <div class="container">
+          <p class="eyebrow">FAQ</p>
+          <h2>Questions people ask before they deploy.</h2>
+          <div class="faq">
+            <div>
+              <h3>Is EasyHost really free?</h3>
+              <p>Yes. EasyHost costs $0 per month and signing up does not need a credit card. Every feature is included within fixed <a href="#limits">limits</a>: 10 projects, and per project one Next.js app, one Postgres database, one storage bucket and one email sender with 100 emails per day.</p>
+            </div>
+            <div>
+              <h3>What can I host on EasyHost?</h3>
+              <p>Next.js apps. EasyHost runs <code>next build</code> and <code>next start</code> in a Node.js container, so server rendering, route handlers, server actions and middleware work as they do on your machine. Node 20, 22 and 24 are supported with npm, pnpm, yarn or bun.</p>
+            </div>
+            <div>
+              <h3>Do free apps go to sleep?</h3>
+              <p>No. Each app runs in its own always-on container with 512 MB of RAM and 1 CPU. It is not stopped when idle, so there is no cold start on the first request.</p>
+            </div>
+            <div>
+              <h3>Which AI coding agents can deploy to EasyHost?</h3>
+              <p>Any agent that can run shell commands. Claude Code loads the EasyHost skill after <code>npx ezhst skill install</code>. Cursor, Codex and other agents can read the same instructions from <a href="/skill.md">skill.md</a>. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> has the steps for each.</p>
+            </div>
+            <div>
+              <h3>Do I need to connect GitHub or change my project?</h3>
+              <p>No. <code>ezhst deploy</code> packages the project folder and uploads it. There is no Git integration, no config file to write and no adapter to install.</p>
+            </div>
+            <div>
+              <h3>Can I use my own domain?</h3>
+              <p>Yes. Every project gets <code>https://&lt;name&gt;.easyhost.fun</code>, and you can add <a href="/docs#domains">custom domains</a> with <code>ezhst domains add</code>. HTTPS certificates are issued automatically once DNS is verified.</p>
+            </div>
+            <div>
+              <h3>How is EasyHost different from Vercel?</h3>
+              <p>Vercel runs Next.js on serverless functions behind a global CDN. EasyHost runs each app as one always-on container in a single region and includes Postgres, S3 storage and email in the same free account, all scriptable by a coding agent through one CLI. EasyHost has no preview deployments, Git integration or edge network. Read the full <a href="/vercel-alternative">comparison</a>.</p>
+            </div>
+            <div>
+              <h3>Is the database a real Postgres?</h3>
+              <p>Yes. Each project can have one Postgres 16 database with its own role, reachable over TLS with a standard connection string, plus a shadow database for <code>prisma migrate dev</code>. More on the <a href="/free-postgres-hosting">free Postgres hosting</a> page.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -263,7 +397,11 @@
     <footer class="footer">
       <div class="container footer-inner">
         <span>&copy; 2026 EasyHost</span>
-        <nav>
+        <nav aria-label="Footer">
+          <a href="/free-nextjs-hosting">Free Next.js hosting</a>
+          <a href="/free-postgres-hosting">Free Postgres hosting</a>
+          <a href="/vercel-alternative">Vercel alternative</a>
+          <a href="/guides/deploy-nextjs-with-ai-agents">Deploy with an AI agent</a>
           <a href="/docs">Docs</a>
           <a href="/skill.md">skill.md</a>
           <a href="https://app.easyhost.fun/login">Log in</a>

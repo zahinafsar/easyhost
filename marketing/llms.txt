@@ -1,0 +1,24 @@
+# EasyHost
+
+> EasyHost is free hosting for Next.js apps with managed Postgres, S3 compatible storage, transactional email and custom domains. Everything is operated through the `ezhst` CLI, which is built to be driven by AI coding agents (Claude Code, Cursor, Codex). It costs $0 per month and needs no credit card.
+
+Key facts:
+
+- Each app runs in an always-on Node.js container (512 MB RAM, 1 CPU) using `next build` and `next start`. Apps do not sleep when idle.
+- Limits: 10 projects per account. Per project: one app, one Postgres 16 database, one storage bucket, one email sender, 100 emails per day. One build at a time.
+- Node 20, 22 and 24. npm, pnpm, yarn and bun. Only Next.js is supported.
+- Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
+- There is no Git integration, no preview deployments and no edge network.
+- Install the agent skill with `npx ezhst skill install`, then ask the agent to "Deploy this to EasyHost".
+
+## Docs
+
+- [Agent skill](https://easyhost.fun/skill.md): Complete instructions for an agent using the ezhst CLI
+- [CLI reference](https://easyhost.fun/docs): Every command for deploys, env vars, build settings, logs, domains, storage, Postgres, email and API keys
+- [Deploy with an AI agent](https://easyhost.fun/guides/deploy-nextjs-with-ai-agents): Step by step guide for Claude Code, Cursor and Codex
+
+## Product
+
+- [Free Next.js hosting](https://easyhost.fun/free-nextjs-hosting): What the free plan includes and how apps run
+- [Free Postgres hosting](https://easyhost.fun/free-postgres-hosting): The included Postgres database
+- [Vercel alternative](https://easyhost.fun/vercel-alternative): Differences between EasyHost and Vercel Hobby

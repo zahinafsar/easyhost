@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { logger } from "hono/logger";
+import { readFileSync } from "node:fs";
 import { authRoutes } from "./routes/auth.js";
 import { apiKeyRoutes } from "./routes/api-keys.js";
 import { storageRoutes } from "./routes/storage.js";
@@ -36,13 +37,25 @@ export type AppType = typeof routes;
 const port = 48710;
 
 const dashboardHost = new URL(env.appUrl).host;
-const marketing = serveStatic({ root: "/app/public/marketing" });
+const marketingRoot = "/app/public/marketing";
+const marketing = serveStatic({
+  root: marketingRoot,
+  precompressed: true,
+  onFound: (path, c) => {
+    if (path.includes(".html")) {
+      c.header("Cache-Control", "public, max-age=300");
+    } else {
+      c.header("Cache-Control", "public, max-age=86400");
+    }
+  },
+});
 const dashboard = serveStatic({ root: "/app/public/dashboard" });
 const dashboardIndex = serveStatic({ root: "/app/public/dashboard", path: "index.html" });
 
 const server = new Hono();
 
 if (process.env.NODE_ENV === "production") {
+  const marketingNotFound = readFileSync(`${marketingRoot}/404.html`, "utf8");
   server.use("*", async (c, next) => {
     const host = c.req.header("host");
     if (host === `www.${env.appsDomain}`) {
@@ -50,7 +63,19 @@ if (process.env.NODE_ENV === "production") {
       return c.redirect(`https://${env.appsDomain}${url.pathname}${url.search}`, 301);
     }
     if (host === env.appsDomain) {
-      return marketing(c, next);
+      const path = c.req.path;
+      if (path.length > 1 && path.endsWith("/")) {
+        const url = new URL(c.req.url);
+        return c.redirect(`https://${env.appsDomain}${path.replace(/\/+$/, "")}${url.search}`, 301);
+      }
+      if (path.startsWith("/api/")) {
+        return next();
+      }
+      const found = await marketing(c, async () => {});
+      if (found) {
+        return found;
+      }
+      return c.html(marketingNotFound, 404);
     }
     if (host === dashboardHost && !c.req.path.startsWith("/api/")) {
       return dashboard(c, async () => {
