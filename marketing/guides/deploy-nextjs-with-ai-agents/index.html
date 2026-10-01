@@ -31,7 +31,7 @@
             "url": "https://easyhost.fun/guides/deploy-nextjs-with-ai-agents",
             "image": "https://easyhost.fun/og.png",
             "datePublished": "2026-09-30",
-            "dateModified": "2026-09-30",
+            "dateModified": "2026-10-02",
             "author": {
               "@type": "Organization",
               "name": "EasyHost",
@@ -78,7 +78,7 @@
                 "name": "Does this work with Cursor and Codex?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes. Add the contents of https://easyhost.fun/skill.md to the instructions file the agent reads, such as AGENTS.md. The CLI is the same."
+                  "text": "Yes. Run npx ezhst skill install and choose Global or Local. Both install into .agents/skills. If the agent does not discover the skill, ask it to read the installed SKILL.md or https://easyhost.fun/skill.md."
                 }
               },
               {
@@ -150,14 +150,14 @@
           </ol>
           <h1>How to deploy a Next.js app with Claude Code, Cursor or Codex</h1>
           <p class="lead">To have a coding agent deploy a Next.js app, give it a hosting CLI it can run without a browser and instructions for using it. On EasyHost that is one command, <code>npx ezhst skill install</code>, followed by one sentence: "Deploy this to EasyHost". The agent creates the account, sets environment variables, deploys and returns a live URL. It is free.</p>
-          <p class="doc-meta">Last updated September 30, 2026</p>
+          <p class="doc-meta">Last updated October 2, 2026</p>
         </div>
 
         <section id="short-answer">
           <h2>The short answer</h2>
           <ol>
-            <li>In your Next.js project, run <code>npx ezhst skill install</code>.</li>
-            <li>Tell your agent: <code>Deploy this to EasyHost</code>.</li>
+            <li>In your Next.js project, run <code>npx ezhst skill install</code> and choose Global or Local.</li>
+            <li>Tell your agent: <code>Deploy this to EasyHost</code>. If it does not discover the skill, ask it to read the installed <code>SKILL.md</code> first.</li>
             <li>Open the URL it gives you: <code>https://&lt;name&gt;.easyhost.fun</code>.</li>
           </ol>
           <p>You need Node.js with <code>npx</code> and a Next.js project that has a <code>build</code> script. You do not need a Dockerfile, a config file or a Git remote.</p>
@@ -165,17 +165,19 @@
 
         <section id="claude-code">
           <h2>Deploy with Claude Code</h2>
-          <p>Claude Code loads skills from a <code>.claude/skills</code> folder. The install command writes the EasyHost skill there.</p>
+          <p>Install the EasyHost instructions, then ask Claude Code to read the installed file before deploying.</p>
           <div class="code"><pre>npx ezhst skill install</pre></div>
-          <p>That creates <code>.claude/skills/easyhost/SKILL.md</code> in the current project. Commit it if you want your team to have it, or add <code>--global</code> to install it for every project on your machine.</p>
-          <p>Then ask in plain language:</p>
-          <div class="code"><pre>Deploy this to EasyHost</pre></div>
+          <p>Choose Local to create <code>.agents/skills/easyhost/SKILL.md</code> in the current project, or Global to create <code>~/.agents/skills/easyhost/SKILL.md</code>. Pass <code>--local</code> or <code>--global</code> to skip the prompt. You can commit a local install to share it with your team.</p>
+          <p>For a local install, ask:</p>
+          <div class="code"><pre>Read .agents/skills/easyhost/SKILL.md, then deploy this to EasyHost.</pre></div>
+          <p>For a global install, use <code>~/.agents/skills/easyhost/SKILL.md</code> in that prompt.</p>
         </section>
 
         <section id="cursor-codex">
           <h2>Deploy with Cursor, Codex or another agent</h2>
-          <p>Agents that do not load skill folders can read the same instructions from a plain file. The skill is published at <a href="/skill.md">https://easyhost.fun/skill.md</a>. Add it to the instructions file your agent reads, for example <code>AGENTS.md</code>:</p>
-          <div class="code"><pre>curl -s https://easyhost.fun/skill.md &gt;&gt; AGENTS.md</pre></div>
+          <p>Run the same installer and choose Global or Local. Both choices use <code>.agents/skills</code>. For an agent running the command without prompts, supply the scope explicitly:</p>
+          <div class="code"><pre>npx ezhst skill install --local --json</pre></div>
+          <p>Use <code>--global</code> instead of <code>--local</code> for all projects. If your agent does not discover the skill, ask it to read the installed <code>SKILL.md</code> or <a href="/skill.md">https://easyhost.fun/skill.md</a> before deploying.</p>
           <p>Then give the agent the same prompt. Any agent that can run shell commands can use the CLI, because every command accepts flags instead of interactive prompts.</p>
         </section>
 
@@ -247,7 +249,7 @@ npx ezhst deploy --json</pre></div>
           <h3>Can Claude Code deploy a Next.js app by itself?</h3>
           <p>Yes. With the EasyHost skill installed, Claude Code can register or log in, create a project, set environment variables, deploy and read build logs using the <code>ezhst</code> CLI.</p>
           <h3>Does this work with Cursor and Codex?</h3>
-          <p>Yes. Add the contents of <a href="/skill.md">skill.md</a> to the instructions file the agent reads, such as <code>AGENTS.md</code>. The CLI is the same.</p>
+          <p>Yes. Run <code>npx ezhst skill install</code> and choose Global or Local. Both install into <code>.agents/skills</code>. If the agent does not discover the skill, ask it to read the installed <code>SKILL.md</code> or <a href="/skill.md">skill.md</a>.</p>
           <h3>Is it free to deploy this way?</h3>
           <p>Yes. EasyHost is free with fixed <a href="/free-nextjs-hosting">limits</a>: 10 projects, 512 MB of RAM and 1 CPU per app, and no credit card.</p>
           <h3>Do I need an MCP server?</h3>
@@ -256,7 +258,7 @@ npx ezhst deploy --json</pre></div>
 
         <section id="start">
           <h2>Start for free</h2>
-          <p>Install the skill, then tell your agent to deploy. No credit card, no config files.</p>
+          <p>Install the skill, choose Global or Local, then tell your agent to deploy. No credit card, no config files.</p>
           <div class="code"><pre>npx ezhst skill install</pre></div>
           <div class="doc-cta">
             <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up free</a>

@@ -9,7 +9,8 @@ Key facts:
 - Node 20, 22 and 24. npm, pnpm, yarn and bun. Only Next.js is supported.
 - Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
 - There is no Git integration, no preview deployments and no edge network.
-- Install the agent skill with `npx ezhst skill install`, then ask the agent to "Deploy this to EasyHost".
+- Install the agent skill with `npx ezhst skill install` and choose Global or Local. Global writes `~/.agents/skills/easyhost/SKILL.md`; Local writes `.agents/skills/easyhost/SKILL.md` in the current directory. For noninteractive use, including `--json`, pass exactly one of `--global` or `--local`.
+- Ask the agent to "Deploy this to EasyHost". If it does not discover `.agents/skills`, ask it to read the installed `SKILL.md` or https://easyhost.fun/skill.md first.
 
 ## Docs
 

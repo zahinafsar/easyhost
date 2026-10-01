@@ -101,7 +101,7 @@
         <section id="quick-start">
           <h2>Quick start</h2>
           <h3>For agents</h3>
-          <p>Install the skill in your project, then ask your agent (Claude Code, Cursor, Codex or any other) to deploy.</p>
+          <p>Run the installer and choose Global for all projects or Local for the current project, then ask your agent to deploy.</p>
           <div class="code"><pre>npx ezhst skill install</pre></div>
           <p>Then tell it: <code>Deploy this to EasyHost</code>. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> walks through it for each agent. The agent creates an account if you do not have one, creates and links a project, sets environment variables and deploys.</p>
 
@@ -119,11 +119,12 @@ npx ezhst deploy</pre></div>
           <h2>Installing the agent skill</h2>
           <p>The skill is a single <code>SKILL.md</code> file that teaches your agent how to use EasyHost.</p>
           <div class="cmds">
-            <div class="cmd-row"><code>ezhst skill install</code><span>Writes <code>.claude/skills/easyhost/SKILL.md</code> in the current project.</span></div>
-            <div class="cmd-row"><code>ezhst skill install --global</code><span>Writes <code>~/.claude/skills/easyhost/SKILL.md</code>, available in every project.</span></div>
+            <div class="cmd-row"><code>ezhst skill install</code><span>Asks you to choose Global or Local.</span></div>
+            <div class="cmd-row"><code>ezhst skill install --global</code><span>Writes <code>~/.agents/skills/easyhost/SKILL.md</code> for use across projects.</span></div>
+            <div class="cmd-row"><code>ezhst skill install --local</code><span>Writes <code>.agents/skills/easyhost/SKILL.md</code> in the current project.</span></div>
           </div>
-          <p>Use the project install when you want the skill checked into the repo for your team. Use <code>--global</code> to make it available everywhere on your machine.</p>
-          <p>For agents that do not load skill folders, give them the raw file at <a href="/skill.md">https://easyhost.fun/skill.md</a>, for example by adding it to your agent's rules or instructions file.</p>
+          <p>Choose Local when you want the skill checked into the repo for your team, or Global to keep it in your home directory. Both use <code>.agents/skills</code>. The flags skip the prompt; pass exactly one of <code>--global</code> or <code>--local</code> for noninteractive use, including <code>--json</code>.</p>
+          <p>If your agent does not discover <code>.agents/skills</code>, ask it to read the installed <code>SKILL.md</code> or the raw file at <a href="/skill.md">https://easyhost.fun/skill.md</a> before deploying.</p>
         </section>
 
         <section id="authentication">
