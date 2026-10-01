@@ -7,6 +7,13 @@ const MAX_ROWS = 1000;
 const STATEMENT_TIMEOUT_MS = 15_000;
 
 const adminUrl = new URL(env.userdb.url);
+const adminConfig: pg.ClientConfig = {
+  host: adminUrl.hostname,
+  port: Number(adminUrl.port),
+  user: decodeURIComponent(adminUrl.username),
+  password: decodeURIComponent(adminUrl.password),
+  database: decodeURIComponent(adminUrl.pathname.slice(1)),
+};
 const ssl = { rejectUnauthorized: false };
 
 type DatabaseCredentials = {
@@ -25,7 +32,7 @@ const withClient = async <T>(config: pg.ClientConfig, run: (client: pg.Client) =
   }
 };
 
-const asAdmin = <T>(run: (client: pg.Client) => Promise<T>) => withClient({ connectionString: env.userdb.url }, run);
+const asAdmin = <T>(run: (client: pg.Client) => Promise<T>) => withClient(adminConfig, run);
 
 const asOwner = <T>(credentials: DatabaseCredentials, run: (client: pg.Client) => Promise<T>) => {
   return withClient(

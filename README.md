@@ -45,15 +45,34 @@ Locally apps run as containers without routing. In production they are served at
 
 ## Databases
 
-Each database is a real Postgres database on a shared instance (`userdb` container), with its own role and password, plus a `<name>_shadow` database for `prisma migrate dev`. In production it listens publicly on `db.easyhost.fun:5432` with a trusted Let's Encrypt certificate issued by Nginx Proxy Manager, and connection strings use `sslmode=verify-full`. Locally it uses a self-signed certificate and `sslmode=no-verify`.
+One `postgres` container hosts both EasyHost's internal `easyhost` database and customer databases. Each customer gets a separate Postgres database with its own role and password, plus a `<name>_shadow` database for `prisma migrate dev`. Customer logins are blocked from `easyhost`, `postgres`, and `template1`; they can connect only over TLS, and each customer database revokes public access. Both Prisma and customer database provisioning use `DATABASE_URL`, with the `easyhost` administrator login.
+
+In production Postgres listens publicly on `db.easyhost.fun:5432` with a trusted Let's Encrypt certificate issued by Nginx Proxy Manager, and customer connection strings use `sslmode=verify-full`. Locally the shared instance listens on `localhost:54329` with a self-signed certificate and customer connection strings use `sslmode=no-verify`. The internal `DATABASE_URL` uses `sslmode=require` in both environments.
 
 Production certificate setup (once):
 
 1. In NPM, SSL Certificates, add a Let's Encrypt certificate for `db.easyhost.fun`.
 2. Find NPM's letsencrypt folder on the host (`docker inspect nginx-proxy-manager_app_1 -f '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{println}}{{end}}'`, the one mounted at `/etc/letsencrypt`) and the certificate folder name (`ls <folder>/live`, e.g. `npm-7`).
-3. Set `NPM_LETSENCRYPT_DIR` and `USERDB_CERT_NAME` in `.env`.
+3. Set `NPM_LETSENCRYPT_DIR` and `POSTGRES_CERT_NAME` in `.env`.
 
-The `userdb` container copies the certificate in on start and checks for renewals every 6 hours.
+The `postgres` container copies the certificate in on start and checks for renewals every 6 hours. Access rules are applied on every start, including when reusing an existing `postgres_data` volume.
+
+### Switching from two Postgres containers
+
+On the VPS, pull the updated code and run this from the repository root:
+
+```bash
+git pull
+sh scripts/update-vps.sh
+```
+
+The script builds the images before downtime, stops the API and running EasyHost apps, blocks outside writes to the original customer database instance, backs up both Postgres instances, and restores customer databases (including shadow databases) and roles into the platform's existing `postgres_data` volume. It preserves database names, customer passwords, ownership, and access privileges. The legacy `postgres` administrator role is retained for object ownership with login disabled; administration uses `easyhost`.
+
+It automatically updates the existing `.env`, removes `USERDB_URL` and `USERDB_PASSWORD`, adds `sslmode=require` to `DATABASE_URL`, and renames `USERDB_CERT_NAME` to `POSTGRES_CERT_NAME` while keeping its value. The production public host and port stay the same. It then starts the updated stack, waits for Postgres and the API to become healthy, resumes previously running apps, and removes the stopped original `userdb` container. The original customer data volume is retained. MinIO keeps its existing volume.
+
+Backups, the previous `.env`, container details, and restore logs live in the private, gitignored `.vps-update/backups/<timestamp>` directory. The script stops on name conflicts, unsupported custom databases or tablespaces, backup errors, restore errors, and deployment errors. An interrupted transfer leaves `.vps-update/pending` with its backup path and blocks ordinary `npm start` or `npm run restart`; inspect the error and backup logs before any recovery. Do not delete the state directory or use `docker compose down -v`. After a successful transfer, running the script again updates the services without repeating the transfer.
+
+For local development, update `USERDB_PUBLIC_PORT` and customer connection strings from `54330` to `54329`. Transfer any existing local customer data separately before removing the old instance; the VPS script is for the production Compose stack.
 
 ## Custom domains
 
@@ -73,7 +92,7 @@ Create an API key in the dashboard and send it as `Authorization: Bearer <key>`.
 
 ## Production
 
-The VPS runs Nginx Proxy Manager (NPM) on ports 80/443. EasyHost runs behind it and publishes no host ports.
+The VPS runs Nginx Proxy Manager (NPM) on ports 80/443. EasyHost's API and storage run behind it; the shared Postgres service publishes port 5432 directly with TLS.
 
 1. DNS: `easyhost.fun`, `www`, `app`, `api`, `storage` and `*.easyhost.fun` point at the VPS.
 2. Copy `.env.production.example` to `.env` on the server, fill it in, and set `PROXY_NETWORK` to NPM's docker network.

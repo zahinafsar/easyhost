@@ -7,7 +7,6 @@ const REQUIRED = [
   "MINIO_URL",
   "MINIO_ROOT_PASSWORD",
   "STORAGE_PUBLIC_URL",
-  "USERDB_URL",
   "USERDB_PUBLIC_HOST",
   "USERDB_PUBLIC_PORT",
   "USERDB_PUBLIC_SSLMODE",
@@ -39,7 +38,7 @@ const url = (name: EnvName) => {
   try {
     return new URL(raw(name));
   } catch {
-    throw new Error(`Environment variable ${name} must be a URL, got "${raw(name)}"`);
+    throw new Error(`Environment variable ${name} must be a valid URL`);
   }
 };
 
@@ -50,6 +49,22 @@ const oneOf = <T extends string>(name: EnvName, options: readonly T[]) => {
   }
   return value as T;
 };
+
+const databaseUrl = url("DATABASE_URL");
+const databasePort = Number(databaseUrl.port);
+if (
+  !["postgres:", "postgresql:"].includes(databaseUrl.protocol) ||
+  !databaseUrl.hostname ||
+  !Number.isInteger(databasePort) ||
+  databasePort <= 0 ||
+  databasePort > 65535 ||
+  !databaseUrl.username ||
+  !databaseUrl.password ||
+  databaseUrl.pathname.length <= 1 ||
+  !["require", "verify-ca", "verify-full"].includes(databaseUrl.searchParams.get("sslmode") as string)
+) {
+  throw new Error("Environment variable DATABASE_URL must be a Postgres URL with a host, explicit port from 1 to 65535, username, password, database name, and sslmode=require, verify-ca, or verify-full");
+}
 
 const readNpm = () => {
   if (process.env.NODE_ENV !== "production") {
@@ -77,7 +92,7 @@ export const env = {
     publicUrl: url("STORAGE_PUBLIC_URL").origin,
   },
   userdb: {
-    url: raw("USERDB_URL"),
+    url: databaseUrl.toString(),
     publicHost: raw("USERDB_PUBLIC_HOST"),
     publicPort: integer("USERDB_PUBLIC_PORT"),
     publicSslMode: oneOf("USERDB_PUBLIC_SSLMODE", ["no-verify", "require", "verify-full"] as const),

@@ -4,17 +4,18 @@ After work update .claude/memory.txt with new contexts.
 # EasyHost - Developer Hosting Platform
 
 ## Project Overview
-Hosting platform: Next.js app hosting (containers routed by Nginx Proxy Manager), public object storage (MinIO), Postgres databases (shared `userdb` instance, one database + role each), and transactional email (Resend under the hood).
+Hosting platform: Next.js app hosting (containers routed by Nginx Proxy Manager), public object storage (MinIO), Postgres databases (one `postgres` instance for the platform and customer databases, one database + role per customer project), and transactional email (Resend under the hood).
 
 ## Tech Stack
 - client: Vite + React 19, React Router, React Query, shadcn/ui + Tailwind v4, sonner
 - server: Hono on Node, Prisma + PostgreSQL, Zod, JWT (httpOnly cookie + Bearer), MinIO, pg (customer databases), dockerode, Resend
 - cli: commander, tar, @inquirer/prompts
-- infra: docker-compose (postgres, userdb, minio, minio-init, api in prod)
+- infra: docker-compose (postgres, minio, minio-init, api in prod); infra/postgres provides TLS and access rules
 
 ## Commands
 - `npm start` (repo root) - Production: validates `.env`, builds and starts everything via `docker-compose.prod.yml`
 - `npm stop` / `npm run logs` - Stop / tail production stack
+- `sh scripts/update-vps.sh` - VPS update: build images, stop writers, back up both Postgres instances, transfer customer databases/roles, update `.env`, start the shared stack, resume apps; retains the original customer volume and `.vps-update/backups`. Ordinary start/restart blocks incomplete transfers and an existing old userdb container
 - `docker compose up -d` - Dev infra: postgres 127.0.0.1:54329, minio 127.0.0.1:19000 (console 19001)
 - `cd server && npm run dev` - API on :48710
 - `cd client && npm run dev` - Dashboard on :51730 (proxies /api to :48710)
@@ -23,7 +24,7 @@ Hosting platform: Next.js app hosting (containers routed by Nginx Proxy Manager)
 - `cd server && npm run prisma -- studio` - Database GUI
 
 ## Production (VPS)
-- The VPS already runs Nginx Proxy Manager (NPM) on 80/443 for other sites and it does all routing (no Caddy). EasyHost publishes no host ports: api and minio join NPM's docker network (`PROXY_NETWORK` in `.env`) as `easyhost-api` and `easyhost-minio`, NPM joins the `easyhost` apps network
+- The VPS already runs Nginx Proxy Manager (NPM) on 80/443 for other sites and it does all HTTP routing (no Caddy). API and minio join NPM's docker network (`PROXY_NETWORK` in `.env`) as `easyhost-api` and `easyhost-minio`, NPM joins the `easyhost` apps network. Shared Postgres publishes port 5432 directly with TLS
 - NPM terminates TLS with a wildcard certificate (DNS challenge). `easyhost.fun`, `www`, `app`, `api` -> `easyhost-api:48710`; `storage.` -> `easyhost-minio:9000`; `*.easyhost.fun` -> one wildcard proxy host whose advanced config sets `$server` to `eh-app-<subdomain>` (port 3000), resolved at request time
 - In production the API serves by Host (`server/src/index.ts`): `easyhost.fun` = `/marketing`, `www.` = redirect, `app.` = built dashboard (SPA fallback, `/api/*` same origin), anything else = API. Dashboard and marketing are baked into the api image (`server/Dockerfile`, repo root build context)
 - API container mounts the Docker socket

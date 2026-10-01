@@ -2,37 +2,22 @@ name: easyhost
 
 services:
   postgres:
-    image: postgres:16-alpine
+    build: ./infra/postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: easyhost
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: easyhost
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U easyhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  userdb:
-    build: ./infra/userdb
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${USERDB_PASSWORD:?Set USERDB_PASSWORD in .env}
-      POSTGRES_DB: postgres
-      USERDB_TLS_MODE: files
-      USERDB_TLS_CERT_FILE: /etc/npm-letsencrypt/live/${USERDB_CERT_NAME:?Set USERDB_CERT_NAME in .env}/fullchain.pem
-      USERDB_TLS_KEY_FILE: /etc/npm-letsencrypt/live/${USERDB_CERT_NAME:?Set USERDB_CERT_NAME in .env}/privkey.pem
+      POSTGRES_TLS_MODE: files
+      POSTGRES_TLS_CERT_FILE: /etc/npm-letsencrypt/live/${POSTGRES_CERT_NAME:?Set POSTGRES_CERT_NAME in .env}/fullchain.pem
+      POSTGRES_TLS_KEY_FILE: /etc/npm-letsencrypt/live/${POSTGRES_CERT_NAME:?Set POSTGRES_CERT_NAME in .env}/privkey.pem
     ports:
       - "5432:5432"
     volumes:
-      - userdb_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ${NPM_LETSENCRYPT_DIR:?Set NPM_LETSENCRYPT_DIR in .env}:/etc/npm-letsencrypt:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U easyhost"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -73,10 +58,14 @@ services:
       args:
         VITE_PUBLIC_API_URL: ${VITE_PUBLIC_API_URL:?Set VITE_PUBLIC_API_URL in .env}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:48710/api/health').then(response => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+      retries: 30
     depends_on:
       postgres:
-        condition: service_healthy
-      userdb:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
@@ -94,7 +83,6 @@ services:
 volumes:
   postgres_data:
   minio_data:
-  userdb_data:
 
 networks:
   apps:
