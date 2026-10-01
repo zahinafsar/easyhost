@@ -57,23 +57,6 @@ Production certificate setup (once):
 
 The `postgres` container copies the certificate in on start and checks for renewals every 6 hours. Access rules are applied on every start, including when reusing an existing `postgres_data` volume.
 
-### Switching from two Postgres containers
-
-On the VPS, pull the updated code and run this from the repository root:
-
-```bash
-git pull
-sh scripts/update-vps.sh
-```
-
-The script builds the images before downtime, stops the API and running EasyHost apps, blocks outside writes to the original customer database instance, backs up both Postgres instances, and restores customer databases (including shadow databases) and roles into the platform's existing `postgres_data` volume. It preserves database names, customer passwords, ownership, and access privileges. The legacy `postgres` administrator role is retained for object ownership with login disabled; administration uses `easyhost`.
-
-It automatically updates the existing `.env`, removes `USERDB_URL` and `USERDB_PASSWORD`, adds `sslmode=require` to `DATABASE_URL`, and renames `USERDB_CERT_NAME` to `POSTGRES_CERT_NAME` while keeping its value. The production public host and port stay the same. It then starts the updated stack, waits for Postgres and the API to become healthy, resumes previously running apps, and removes the stopped original `userdb` container. The original customer data volume is retained. MinIO keeps its existing volume.
-
-Backups, the previous `.env`, container details, and restore logs live in the private, gitignored `.vps-update/backups/<timestamp>` directory. The script stops on name conflicts, unsupported custom databases or tablespaces, backup errors, restore errors, and deployment errors. An interrupted transfer leaves `.vps-update/pending` with its backup path and blocks ordinary `npm start` or `npm run restart`; inspect the error and backup logs before any recovery. Do not delete the state directory or use `docker compose down -v`. After a successful transfer, running the script again updates the services without repeating the transfer.
-
-For local development, update `USERDB_PUBLIC_PORT` and customer connection strings from `54330` to `54329`. Transfer any existing local customer data separately before removing the old instance; the VPS script is for the production Compose stack.
-
 ## Custom domains
 
 Apps can have custom domains (Domains tab on the app page). The user points the domain at the server (CNAME to `<app>.easyhost.fun`, or an A record to `PUBLIC_IP` for a root domain) and clicks Verify. EasyHost checks DNS, then in production asks Nginx Proxy Manager's API for a Let's Encrypt certificate and a proxy host forwarding straight to the app container (`eh-app-<app>:3000`).

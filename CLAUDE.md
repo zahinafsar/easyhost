@@ -15,7 +15,6 @@ Hosting platform: Next.js app hosting (containers routed by Nginx Proxy Manager)
 ## Commands
 - `npm start` (repo root) - Production: validates `.env`, builds and starts everything via `docker-compose.prod.yml`
 - `npm stop` / `npm run logs` - Stop / tail production stack
-- `sh scripts/update-vps.sh` - VPS update: build images, stop writers, back up both Postgres instances, transfer customer databases/roles, update `.env`, start the shared stack, resume apps; retains the original customer volume and `.vps-update/backups`. Ordinary start/restart blocks incomplete transfers and an existing old userdb container
 - `docker compose up -d` - Dev infra: postgres 127.0.0.1:54329, minio 127.0.0.1:19000 (console 19001)
 - `cd server && npm run dev` - API on :48710
 - `cd client && npm run dev` - Dashboard on :51730 (proxies /api to :48710)
