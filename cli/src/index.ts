@@ -153,8 +153,9 @@ scoped(keys.command("revoke").description("Revoke an API key").argument("<id>"))
 const skill = program.command("skill").description("Agent skill");
 skill
   .command("install")
-  .description("Install the EasyHost skill for Claude Code")
-  .option("--global", "Install to ~/.claude/skills instead of this project")
+  .description("Install the EasyHost agent skill")
+  .option("--global", "Install to ~/.agents/skills for all projects")
+  .option("--local", "Install to .agents/skills in the current project")
   .action(installSkill);
 
 program.parseAsync().catch((error) => {

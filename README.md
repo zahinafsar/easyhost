@@ -41,6 +41,8 @@ ezhst deploy
 
 The CLI covers everything the dashboard does (projects, deploys, build logs, env, build settings, domains, storage, database, email, API keys). Every command takes `--json`, never prompts without a TTY, and accepts `EZHST_TOKEN` instead of a saved login, so AI agents can drive it. `ezhst --help` lists all commands; the agent skill lives in `cli/skill/SKILL.md` (installed with `ezhst skill install`, served at `https://easyhost.fun/skill.md`).
 
+`ezhst skill install` asks whether to install globally or locally. Global installs to `~/.agents/skills/easyhost/SKILL.md`; Local installs to `.agents/skills/easyhost/SKILL.md` in the current directory. Pass `--global` or `--local` to skip the prompt; one is required for noninteractive use, including `--json`.
+
 Locally apps run as containers without routing. In production they are served at `https://<app-name>.easyhost.fun`.
 
 ## Databases
