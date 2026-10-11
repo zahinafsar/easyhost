@@ -1,7 +1,7 @@
 {
   "name": "ezhst",
-  "version": "0.4.0",
-  "description": "EasyHost CLI: agent-first hosting for Next.js apps with storage, databases and email",
+  "version": "1.0.0",
+  "description": "EasyHost CLI: agent-first hosting for Node.js apps with storage, databases and email",
   "type": "module",
   "bin": {
     "ezhst": "dist/index.js"

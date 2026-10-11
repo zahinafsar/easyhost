@@ -200,6 +200,7 @@ ezhst redeploy</pre></div>
         <section id="build">
           <h2>Build settings</h2>
           <p>Empty settings are auto-detected, which works for most Node.js apps.</p>
+          <p>Supported frameworks include Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. SvelteKit and Astro projects need their Node adapters; any other framework works when its production start command listens on <code>0.0.0.0:$PORT</code>.</p>
           <div class="cmds">
             <div class="cmd-row"><code>ezhst build show</code><span>Show the current settings.</span></div>
             <div class="cmd-row"><code>ezhst build set [--node 20|22|24] [--root-dir &lt;dir&gt;] [--install &lt;cmd&gt;] [--build &lt;cmd&gt;] [--start &lt;cmd&gt;]</code><span>Override one or more settings. Pass <code>""</code> to reset a field to auto.</span></div>
@@ -213,7 +214,7 @@ ezhst redeploy</pre></div>
                 <tr><td>Node version</td><td><code>engines.node</code> in package.json, otherwise 24</td></tr>
                 <tr><td>Package manager</td><td>From your lockfile</td></tr>
                 <tr><td>Build command</td><td>Package build script if present; skipped otherwise</td></tr>
-                <tr><td>Start command</td><td>Package start script, Next.js, or Node.js entry file; must listen on 0.0.0.0 and $PORT</td></tr>
+                <tr><td>Start command</td><td>Package start script, Next.js, Nuxt, or Node.js entry file; must listen on 0.0.0.0 and $PORT</td></tr>
               </tbody>
             </table>
           </div>

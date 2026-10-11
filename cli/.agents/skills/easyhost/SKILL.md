@@ -71,7 +71,7 @@ Projects and runtime:
 Environment and build:
 - `env list | set KEY=VALUE... | unset KEY... | import <file>`
 - `build show`, `build set [--node <v>] [--root-dir <dir>] [--install <cmd>] [--build <cmd>] [--start <cmd>]` (`""` resets a field to auto), `build reset`
-- The start command must listen on `0.0.0.0` and `$PORT`. Auto-detects `scripts.start`, Next.js, or a Node.js entry file. Runs the build script if present; skips building otherwise.
+- The start command must listen on `0.0.0.0` and `$PORT`. Auto-detects `scripts.start`, Next.js, Nuxt, or a Node.js entry file. Runs the build script if present; skips building otherwise.
 
 Custom domains:
 - `domains list | add <hostname> | verify <hostname> | remove <hostname>`

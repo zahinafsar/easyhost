@@ -146,6 +146,9 @@ export const resolveBuildPlan = async (artifact: Buffer, settings: BuildSettings
   if (!start && (manifest.dependencies?.next || manifest.devDependencies?.next)) {
     start = "next start -H 0.0.0.0 -p $PORT";
   }
+  if (!start && (manifest.dependencies?.nuxt || manifest.devDependencies?.nuxt)) {
+    start = "node .output/server/index.mjs";
+  }
   if (!start) {
     const candidates = [manifest.main, "index.js", "server.js"].filter((file): file is string => typeof file === "string");
     const entry = candidates.find((file) => names.has(inDir(appDir, file)));

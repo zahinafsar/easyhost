@@ -7,7 +7,7 @@ Key facts:
 - Each app runs in an always-on Node.js container (512 MB RAM, 1 CPU) using package build/start scripts or a Node.js entry file. Apps do not sleep when idle.
 - Limits: 10 projects per account. Per project: five Node.js apps, five schedules, one Postgres 16 database, one storage bucket, one email sender, 20 emails per day. One build at a time.
 - Schedules call public HTTP/HTTPS APIs every 1 to 43200 minutes, with method, headers and body; 30-second timeout, no redirects, latest 100 runs retained.
-- Node 20, 22 and 24. npm, pnpm, yarn and bun. Node.js apps are supported, including Next.js and APIs.
+- Node 20, 22 and 24. npm, pnpm, yarn and bun. Supported frameworks include Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. Any framework works when it builds and starts as a Node.js service; adapter-based frameworks need their Node adapter.
 - Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
 - There is no Git integration, no preview deployments and no edge network.
 - Install the agent skill with `npx ezhst skill install` and choose Global or Local. Global writes `~/.agents/skills/easyhost/SKILL.md`; Local writes `.agents/skills/easyhost/SKILL.md` in the current directory. For noninteractive use, including `--json`, pass exactly one of `--global` or `--local`.

@@ -28,7 +28,7 @@ The API provisions per-bucket S3 keys with the MinIO client, so `mc` must be on 
 
 ## Deploying an app
 
-Any Node.js app with a `package.json`. HTTP apps must listen on `0.0.0.0` and `process.env.PORT` (3000). The build script is optional; start is detected from `scripts.start`, Next.js, or a Node.js entry file. Override commands in Build settings when needed:
+Any Node.js app with a `package.json`. HTTP apps must listen on `0.0.0.0` and `process.env.PORT` (3000). The build script is optional; start is detected from `scripts.start`, Next.js, Nuxt, or a Node.js entry file. Override commands in Build settings when needed:
 
 ```bash
 cd cli && npm install && npm run build && npm link

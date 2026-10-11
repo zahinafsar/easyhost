@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { readFileSync } from "node:fs";
 import { forgotPassword, login, logout, register, resendVerification, whoami } from "./commands/auth.js";
 import { createApp, deleteApp, listApps } from "./commands/apps.js";
 import { createSchedule, deleteSchedule, listSchedules, scheduleLogs, setScheduleState, updateSchedule } from "./commands/schedules.js";
@@ -24,12 +25,17 @@ import { createKey, listKeys, revokeKey } from "./commands/keys.js";
 import { installSkill } from "./commands/skill.js";
 import { fail, setJsonMode } from "./lib/ui.js";
 
+const packageMetadata: unknown = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+if (!packageMetadata || typeof packageMetadata !== "object" || !("version" in packageMetadata) || typeof packageMetadata.version !== "string") {
+  throw new Error("CLI package version is missing or malformed");
+}
+
 const program = new Command();
 
 program
   .name("ezhst")
   .description("EasyHost from the terminal: deploy apps and manage storage, databases, email and API keys")
-  .version("0.2.0")
+  .version(packageMetadata.version)
   .option("--json", "Print machine-readable JSON")
   .hook("preAction", (_command, action) => {
     setJsonMode(!!action.optsWithGlobals().json);
