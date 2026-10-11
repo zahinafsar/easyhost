@@ -1,12 +1,12 @@
 import type { z } from "zod";
 import { prisma } from "./prisma.js";
-import { EMAIL_DOMAIN, senderAddress, sendCustomerEmail } from "./email.js";
+import { EMAIL_DOMAIN, EmailUsageLimitError, senderAddress, sendCustomerEmail } from "./email.js";
 import { LIMITS } from "./limits.js";
 import type { sendEmailSchema } from "./validations.js";
 
 type SendResult =
   | { ok: true; id: string; from: string }
-  | { ok: false; error: string; status: 400 | 429 | 502 };
+  | { ok: false; error: string; status: 400 | 429 | 502 | 503 };
 
 export const sendProjectEmail = async (projectId: string, payload: z.infer<typeof sendEmailSchema>): Promise<SendResult> => {
   let to = payload.to;
@@ -46,6 +46,6 @@ export const sendProjectEmail = async (projectId: string, payload: z.infer<typeo
     await prisma.emailLog.create({
       data: { projectId, from, to, subject: payload.subject, status: "FAILED", error: message },
     });
-    return { ok: false, error: message, status: 502 };
+    return { ok: false, error: message, status: error instanceof EmailUsageLimitError ? 503 : 502 };
   }
 };

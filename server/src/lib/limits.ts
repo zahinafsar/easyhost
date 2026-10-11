@@ -3,6 +3,6 @@ export const LIMITS = {
   buckets: 10,
   databases: 10,
   emailSenders: 1,
-  emailsPerDay: 100,
+  emailsPerDay: 20,
   concurrentBuilds: 1,
 } as const;

@@ -5,7 +5,7 @@
 Key facts:
 
 - Each app runs in an always-on Node.js container (512 MB RAM, 1 CPU) using `next build` and `next start`. Apps do not sleep when idle.
-- Limits: 10 projects per account. Per project: one app, one Postgres 16 database, one storage bucket, one email sender, 100 emails per day. One build at a time.
+- Limits: 10 projects per account. Per project: one app, one Postgres 16 database, one storage bucket, one email sender, 20 emails per day. One build at a time.
 - Node 20, 22 and 24. npm, pnpm, yarn and bun. Only Next.js is supported.
 - Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
 - There is no Git integration, no preview deployments and no edge network.

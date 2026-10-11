@@ -5,6 +5,12 @@ const resend = new Resend(env.resendApiKey);
 const APP_URL = env.appUrl;
 const FROM_EMAIL = env.emailFrom;
 
+export class EmailUsageLimitError extends Error {
+  constructor() {
+    super("Service temporarily paused due to over usage");
+  }
+}
+
 const emailLayout = (content: string) => {
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
@@ -127,6 +133,9 @@ export const sendCustomerEmail = async ({
   }
 
   if (result.error) {
+    if (["daily_quota_exceeded", "monthly_quota_exceeded", "rate_limit_exceeded"].includes(result.error.name)) {
+      throw new EmailUsageLimitError();
+    }
     throw new Error(result.error.message);
   }
 

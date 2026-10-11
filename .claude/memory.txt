@@ -3,7 +3,7 @@
 ## Current state (2026-09-29)
 - Layout: client/ (Vite dashboard), server/ (Hono API), cli/ (`ezhst`, npm package ezhst), marketing/ (static HTML+CSS), infra/postgres (shared TLS-enabled Postgres), scripts/start.mjs
 - Env: a single root `.env` both locally and on the VPS (no `.env.production`; templates `.env.example` and `.env.production.example`). No fallbacks anywhere; server validates via server/src/lib/env.ts, client via client/src/lib/env.ts. `npm start` refuses empty or `<PLACEHOLDER>` values
-- Fixed values are code constants: LIMITS (10 apps, 10 buckets, 10 databases, 10 email senders, 100 emails/day, 1 concurrent build), API port 48710, EMAIL_DOMAIN easyhost.fun, bucket easyhost-deploys, docker network easyhost, MinIO user easyhost
+- Fixed values are code constants: LIMITS (10 apps, 10 buckets, 10 databases, 10 email senders, 20 emails/day, 1 concurrent build), API port 48710, EMAIL_DOMAIN easyhost.fun, bucket easyhost-deploys, docker network easyhost, MinIO user easyhost
 - Local ports: API 48710, dashboard 51730, shared postgres 127.0.0.1:54329, minio 127.0.0.1:19000/19001
 - MinIO images: pgsty/minio + pgsty/mc (official images are no longer public)
 
@@ -25,7 +25,7 @@
 - Databases: one Postgres container hosts platform easyhost and customer db_<hex> + role u_<hex> each, plus <db>_shadow for prisma migrate dev; console + table editor run as the owner role. Provisioning and Prisma both use DATABASE_URL (explicit port and TLS sslmode required); USERDB_URL and USERDB_PASSWORD removed. Every startup writes HBA rules that block customer access to easyhost/postgres/template1 and require TLS for TCP connections, including on existing volumes. The postgres_data volume is retained; old userdb_data must be backed up/restored before restarting an existing two-instance installation (README instructions). No services restarted or tests run during consolidation (2026-10-01)
 - VPS consolidation completed successfully on 2026-10-01. Customer databases, shadow databases, roles, passwords, ownership and privileges were moved into the shared Postgres instance. The one-time updater, migration guards and migration documentation were removed afterward. The VPS retains its rollback backup directory and original customer data volume outside the repository
 - Removed the stale `CADDY_ADMIN_URL` entry from the local `.env` and `.env.production`; routing uses Nginx Proxy Manager and the `NPM_*` variables
-- Email: sender addresses <username>@easyhost.fun (reserved names blocked); send API requires `from`
+- Email: Resend remains the provider. Sender addresses <username>@easyhost.fun (reserved names blocked); send API requires `from`. Free sending is limited to 20 successful sends per project over a rolling 24 hours. Resend daily/monthly quota and rate-limit errors return HTTP 503 with the exact message `Serice temprarily paused due to over usage` through both send endpoints. Other provider errors remain HTTP 502. No tests run for this change (2026-10-11).
 
 ## Preferences
 - No backward compatibility or backfills (pre-launch)

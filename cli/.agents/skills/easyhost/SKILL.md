@@ -83,7 +83,7 @@ Database (Postgres, one per project):
 - `db create <name> | info | query "<sql>" | query --file <file.sql> | rows <table> [--page n] | reset-password | delete --yes`
 - `db info --json` returns `connectionString` and `shadowConnectionString` (for `prisma migrate dev`). Set `DATABASE_URL` with `env set`, and run migrations from the local machine against it (for Prisma: `prisma migrate deploy`).
 
-Email (from `<username>@easyhost.fun`, 100 emails a day):
+Email (from `<username>@easyhost.fun`, 20 emails a day):
 - `email sender create <username>`, `email info`, `email send --from <address> --to <address> --subject <text> --text <body>` (or `--html`), `email logs`, `email sender delete`
 - From app code: `POST https://api.easyhost.fun/api/v1/email/send` with header `Authorization: Bearer <api key>` and JSON `{ "from", "to", "subject", "text" | "html" }`. Create the key with `keys create <name>` and store it with `env set EASYHOST_API_KEY=...`.
 
@@ -95,6 +95,6 @@ Account:
 
 ## Limits
 
-Free: 10 projects, one bucket, one database and one email sender per project, 100 emails a day, one build at a time, 512 MB RAM and 1 CPU per app. Only Next.js apps are supported right now.
+Free: 10 projects, one bucket, one database and one email sender per project, 20 emails a day, one build at a time, 512 MB RAM and 1 CPU per app. Only Next.js apps are supported right now.
 
 Docs: https://easyhost.fun/docs
