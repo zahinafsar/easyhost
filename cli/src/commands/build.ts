@@ -1,5 +1,5 @@
-import { json, request, type Project } from "../lib/api.js";
-import { resolveProject, type ProjectOption } from "../lib/project.js";
+import { json, request, type App } from "../lib/api.js";
+import { resolveApp, type ProjectOption } from "../lib/project.js";
 import { log, output } from "../lib/ui.js";
 
 type BuildOptions = ProjectOption & {
@@ -10,7 +10,7 @@ type BuildOptions = ProjectOption & {
   start?: string;
 };
 
-const settingsOf = (project: Project) => ({
+const settingsOf = (project: App) => ({
   nodeVersion: project.nodeVersion,
   rootDir: project.rootDir,
   installCommand: project.installCommand,
@@ -18,7 +18,7 @@ const settingsOf = (project: Project) => ({
   startCommand: project.startCommand,
 });
 
-const printSettings = (project: Project) => {
+const printSettings = (project: App) => {
   const rows: [string, string | null][] = [
     ["Node.js version", project.nodeVersion],
     ["Root directory", project.rootDir],
@@ -38,8 +38,8 @@ const pick = (value: string | undefined, current: string | null) => {
   return value;
 };
 
-const saveSettings = async (project: Project, settings: Record<string, string | null>) => {
-  const { app } = await request<{ app: Project }>(`/apps/${project.id}/build`, json("PUT", settings));
+const saveSettings = async (project: App, settings: Record<string, string | null>) => {
+  const { app } = await request<{ app: App }>(`/apps/${project.id}/build`, json("PUT", settings));
   output({ build: settingsOf(app) }, () => {
     printSettings(app);
     log.success("Build settings saved. Run `ezhst redeploy` to apply them.");
@@ -47,12 +47,12 @@ const saveSettings = async (project: Project, settings: Record<string, string | 
 };
 
 export const showBuild = async (options: ProjectOption) => {
-  const project = await resolveProject(options);
+  const project = await resolveApp(options);
   output({ build: settingsOf(project) }, () => printSettings(project));
 };
 
 export const setBuild = async (options: BuildOptions) => {
-  const project = await resolveProject(options);
+  const project = await resolveApp(options);
   let nodeVersion: string | null = pick(options.node, project.nodeVersion);
   if (!nodeVersion) {
     nodeVersion = null;
@@ -67,6 +67,6 @@ export const setBuild = async (options: BuildOptions) => {
 };
 
 export const resetBuild = async (options: ProjectOption) => {
-  const project = await resolveProject(options);
+  const project = await resolveApp(options);
   await saveSettings(project, { nodeVersion: null, rootDir: "", installCommand: "", buildCommand: "", startCommand: "" });
 };

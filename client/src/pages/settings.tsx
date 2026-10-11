@@ -10,14 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmButton } from "@/components/confirm-button";
 import { PageHeader } from "@/components/page-header";
 import { api, unwrap } from "@/lib/api";
-import { appsQuery } from "@/lib/queries";
+import { projectsQuery } from "@/lib/queries";
 import { clearSelectedProject, selectedProjectId, selectProject } from "@/lib/project";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 
 export const SettingsPage = () => {
   const navigate = useNavigate();
-  const { data, isLoading } = useQuery(appsQuery().list());
-  const project = data?.apps.find((item) => item.id === selectedProjectId());
+  const { data, isLoading } = useQuery(projectsQuery().list());
+  const project = data?.projects.find((item) => item.id === selectedProjectId());
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -25,20 +25,20 @@ export const SettingsPage = () => {
   }, [project?.id, project?.name]);
 
   const rename = useApiMutation({
-    mutationFn: () => unwrap(api.apps[":id"].$put({ param: { id: project?.id ?? "" }, json: { name: name.trim() } })),
-    invalidate: [appsQuery().all],
+    mutationFn: () => unwrap(api.projects[":id"].$put({ param: { id: project?.id ?? "" }, json: { name: name.trim() } })),
+    invalidate: [projectsQuery().all],
     success: "Project name updated",
   });
 
   const remove = useApiMutation({
-    mutationFn: () => unwrap(api.apps[":id"].$delete({ param: { id: project?.id ?? "" } })),
-    invalidate: [appsQuery().all],
+    mutationFn: () => unwrap(api.projects[":id"].$delete({ param: { id: project?.id ?? "" } })),
+    invalidate: [projectsQuery().all],
     success: "Project deleted",
     onSuccess: () => {
-      const nextProject = data?.apps.find((item) => item.id !== project?.id);
+      const nextProject = data?.projects.find((item) => item.id !== project?.id);
       if (nextProject) {
         selectProject(nextProject.id);
-        navigate(`/apps/${nextProject.id}`);
+        navigate("/apps");
         return;
       }
       clearSelectedProject();
@@ -72,7 +72,7 @@ export const SettingsPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="project-name">Project name</Label>
                 <Input id="project-name" value={name} onChange={(event) => setName(event.target.value)} required />
-                <p className="text-xs text-muted-foreground">Your deployment URL remains {project.url}.</p>
+                <p className="text-xs text-muted-foreground">App URLs stay the same when you rename this project.</p>
               </div>
               <Button type="submit" disabled={rename.isPending || !name.trim() || unchanged}>
                 {rename.isPending ? "Saving..." : "Save changes"}
@@ -90,7 +90,7 @@ export const SettingsPage = () => {
             <div className="space-y-1">
               <p className="font-medium">Delete this project</p>
               <p className="max-w-xl text-sm text-muted-foreground">
-                Permanently delete the app, deployments, domains, storage and files, database, email data, and API keys.
+                Permanently delete all apps, deployments, domains, schedules, storage and files, database, email data, and API keys.
               </p>
             </div>
             <ConfirmButton

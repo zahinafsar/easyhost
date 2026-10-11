@@ -7,6 +7,8 @@ export const requireProject = createMiddleware<UserEnv>(async (c, next) => {
   const project = await prisma.app.findFirst({
     where: {
       userId: c.get("user").id,
+      parentProjectId: null,
+      deleting: false,
       ...(requestedId ? { id: requestedId } : {}),
     },
     orderBy: { createdAt: "asc" },

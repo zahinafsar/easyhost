@@ -1,6 +1,6 @@
 # EasyHost
 
-Hosting platform for Next.js apps with object storage, Postgres databases and transactional email.
+Hosting platform for Node.js apps with scheduled API calls, object storage, Postgres databases and transactional email. Each project supports up to five apps and five schedules.
 
 ## Getting started
 
@@ -28,22 +28,51 @@ The API provisions per-bucket S3 keys with the MinIO client, so `mc` must be on 
 
 ## Deploying an app
 
-Any Next.js project, no config changes:
+Any Node.js app with a `package.json`. HTTP apps must listen on `0.0.0.0` and `process.env.PORT` (3000). The build script is optional; start is detected from `scripts.start`, Next.js, or a Node.js entry file. Override commands in Build settings when needed:
 
 ```bash
 cd cli && npm install && npm run build && npm link
 cd path/to/your-next-app
 ezhst login --api http://localhost:48710
-ezhst deploy
+ezhst projects list
+ezhst apps create my-api --project <project-slug>
+ezhst deploy --project <project-slug> --app <app-slug>
 ```
 
 `.env` files are not uploaded. Use `ezhst env set KEY=VALUE` or `ezhst env import .env` (or the dashboard) and redeploy.
 
-The CLI covers everything the dashboard does (projects, deploys, build logs, env, build settings, domains, storage, database, email, API keys). Every command takes `--json`, never prompts without a TTY, and accepts `EZHST_TOKEN` instead of a saved login, so AI agents can drive it. `ezhst --help` lists all commands; the agent skill lives in `cli/skill/SKILL.md` (installed with `ezhst skill install`, served at `https://easyhost.fun/skill.md`).
+The CLI covers everything the dashboard does (projects, apps, schedules, deploys, build logs, env, build settings, domains, storage, database, email, API keys). App commands accept `--app <slug-or-id>`; use `ezhst link --project <slug> --app <slug>` to save both selections. A project with multiple apps requires an explicit or linked app. Every command takes `--json`, never prompts without a TTY, and accepts `EZHST_TOKEN` instead of a saved login, so AI agents can drive it. `ezhst --help` lists all commands; the agent skill lives in `cli/skill/SKILL.md` (installed with `ezhst skill install`, served at `https://easyhost.fun/skill.md`).
 
 `ezhst skill install` asks whether to install globally or locally. Global installs to `~/.agents/skills/easyhost/SKILL.md`; Local installs to `.agents/skills/easyhost/SKILL.md` in the current directory. Pass `--global` or `--local` to skip the prompt; one is required for noninteractive use, including `--json`.
 
 Locally apps run as containers without routing. In production they are served at `https://<app-name>.easyhost.fun`.
+
+## Scheduled API calls
+
+Create up to five schedules per project from the Schedules page or CLI:
+
+```bash
+ezhst schedules create sync --project <project-slug> --url https://my-api.example.com/sync --every 15 --method POST --headers '{"Content-Type":"application/json"}' --body '{}'
+ezhst schedules list --project <project-slug>
+ezhst schedules logs <schedule-id> --project <project-slug>
+ezhst schedules pause <schedule-id> --project <project-slug>
+ezhst schedules resume <schedule-id> --project <project-slug>
+```
+
+Intervals range from 1 minute to 30 days. The first call runs after one full interval; saving or resuming restarts the interval. The worker polls every 10 seconds, uses database leases to prevent overlapping calls to the same schedule, and skips missed intervals after downtime. Calls time out after 30 seconds, accept public HTTP/HTTPS URLs, and do not follow redirects. The latest 100 runs are retained; the dashboard and CLI show the latest 10. A request already in progress may finish after pausing or deleting a schedule.
+
+## Project apps and schedules schema update
+
+Existing project IDs, app URLs, deployments, and shared resources are retained. Existing apps count as the first app in their projects. New project workspaces start without an app. Deleting an app keeps project services; deleting a project removes all of its apps, schedules, and shared resources. Pending deployments must finish before deletion.
+
+The Prisma client has been regenerated. Create and apply the additive migration before running the updated server:
+
+```bash
+cd server
+npm run prisma -- migrate dev --name project_apps_schedules
+```
+
+Commit the Prisma-generated migration. Production startup applies committed migrations with `prisma migrate deploy`. Do not reset the database if Prisma reports drift; resolve the migration history first.
 
 ## Databases
 

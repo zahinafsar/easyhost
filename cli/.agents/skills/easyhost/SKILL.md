@@ -1,18 +1,18 @@
 ---
 name: easyhost
-description: Deploy and manage apps on EasyHost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship a Next.js app to EasyHost, or to manage its environment variables, build settings, logs, custom domains, S3 storage, Postgres database, transactional email or API keys.
+description: Deploy and manage apps on EasyHost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship a Node.js app to EasyHost, or to manage its environment variables, build settings, logs, custom domains, S3 storage, Postgres database, transactional email or API keys.
 ---
 
 # EasyHost
 
-EasyHost is free hosting for Next.js apps with built-in S3 storage, Postgres and email. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
+EasyHost is free hosting for Node.js apps with built-in S3 storage, Postgres and email. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
 
 ## Rules for agents
 
 - Always pass `--json` and parse stdout. Progress and hints go to stderr. On failure the process exits with code 1 and prints `{"error": "..."}`.
 - The CLI never prompts without a TTY. Pass every value as a flag.
-- Commands that act on a project use the project linked in `.easyhost.json`, or `--project <slug>`.
-- Destructive commands (`projects delete`, `storage delete`, `db delete`) need `--yes`. Only run them when the user explicitly asks.
+- Commands that act on a project use the project linked in `.easyhost.json`, or `--project <slug>`. App commands also use `--app <slug-or-id>` or the linked app. With multiple apps, select one explicitly.
+- Destructive commands (`projects delete`, `apps delete`, `schedules delete`, `storage delete`, `db delete`) need `--yes`. Only run them when the user explicitly asks.
 - Never print secrets (passwords, S3 secret keys, API keys, connection strings) back to the user unless they ask. Put them in env vars with `ezhst env set` instead.
 - `.env` files are never uploaded. Environment variables must be set with `ezhst env set` or `ezhst env import .env`.
 
@@ -26,7 +26,7 @@ Check first: `npx ezhst whoami --json`. If it fails with "Not logged in":
 
 ## 2. Pick or create a project
 
-A project is one app plus its storage, database, email sender and API keys. Its slug is the subdomain: `https://<slug>.easyhost.fun`.
+A project contains up to five Node.js apps, five schedules, and shared storage, database, email sender and API keys. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
 
 ```
 npx ezhst projects list --json
@@ -36,9 +36,11 @@ npx ezhst link --project <slug> --json
 
 ## 3. Deploy
 
-Run inside the Next.js project folder (it needs `package.json` with `next` and a `build` script):
+Run inside the Node.js app folder with a `package.json`. First create an app and link it (app slugs are returned by the create command). Build scripts are optional:
 
 ```
+npx ezhst apps create <name> --project <project-slug> --json
+npx ezhst link --project <project-slug> --app <app-slug> --json
 npx ezhst env import .env --json
 npx ezhst deploy --json
 ```
@@ -61,14 +63,15 @@ After changing env vars or build settings, run `npx ezhst redeploy --json` (rebu
 
 Projects and runtime:
 - `projects list | info | rename <name> | delete --yes`, `projects create <name> [--link]`, `link --project <slug>`
-- `deploy [--verbose]`, `redeploy`, `start`, `stop`
+- `apps list | create <name> | delete --yes`
+- `deploy [--verbose] [--app <slug>]`, `redeploy`, `start`, `stop`
 - `logs [--tail 200]` runtime logs
 - `deployments list`, `deployments log [deploymentId]` build logs
 
 Environment and build:
 - `env list | set KEY=VALUE... | unset KEY... | import <file>`
 - `build show`, `build set [--node <v>] [--root-dir <dir>] [--install <cmd>] [--build <cmd>] [--start <cmd>]` (`""` resets a field to auto), `build reset`
-- The start command must listen on `0.0.0.0` and `$PORT`. Default: `next start -H 0.0.0.0 -p $PORT`.
+- The start command must listen on `0.0.0.0` and `$PORT`. Auto-detects `scripts.start`, Next.js, or a Node.js entry file. Runs the build script if present; skips building otherwise.
 
 Custom domains:
 - `domains list | add <hostname> | verify <hostname> | remove <hostname>`
@@ -87,6 +90,12 @@ Email (from `<username>@easyhost.fun`, 20 emails a day):
 - `email sender create <username>`, `email info`, `email send --from <address> --to <address> --subject <text> --text <body>` (or `--html`), `email logs`, `email sender delete`
 - From app code: `POST https://api.easyhost.fun/api/v1/email/send` with header `Authorization: Bearer <api key>` and JSON `{ "from", "to", "subject", "text" | "html" }`. Create the key with `keys create <name>` and store it with `env set EASYHOST_API_KEY=...`.
 
+Schedules (up to five per project, intervals in minutes):
+- `schedules list`, `schedules create <name> --url <url> --every <minutes> [--method POST] [--headers '<json>'] [--body '<text>'] [--paused]`
+- `schedules update <id> [--name <name>] [--url <url>] [--every <minutes>] [--method <method>] [--headers '<json>'] [--body '<text>']`
+- `schedules pause <id>`, `schedules resume <id>`, `schedules logs <id>`, `schedules delete <id> --yes`
+- Public HTTP/HTTPS URLs only, intervals 1 to 43200 minutes, 30-second timeout, no redirects. First call follows one interval; saving/resuming restarts it. Latest 100 runs retained, latest 10 shown. Missed intervals are skipped; execution has up to 10 seconds of polling delay. Requests in progress may finish after pausing/deleting.
+
 API keys:
 - `keys list | create <name> | revoke <id>` (a key is shown only once)
 
@@ -95,6 +104,6 @@ Account:
 
 ## Limits
 
-Free: 10 projects, one bucket, one database and one email sender per project, 20 emails a day, one build at a time, 512 MB RAM and 1 CPU per app. Only Next.js apps are supported right now.
+Free: 10 projects. Per project: five Node.js apps, five schedules, one bucket, one database, one email sender and 20 emails a day. One build at a time; 512 MB RAM and 1 CPU per app.
 
 Docs: https://easyhost.fun/docs

@@ -276,7 +276,7 @@ const UsageTab = ({ currentUserId }: { currentUserId: string }) => {
                       </ConfirmButton>
                       <ConfirmButton
                         title={`Delete ${project.name}?`}
-                        description={`This permanently removes the app, deployments, domains, storage bucket, database, email sender and API keys of ${project.slug}, and emails ${project.owner.email} that it was deleted.`}
+                        description={`This permanently removes all apps, deployments, domains, schedules, storage bucket, database, email sender and API keys of ${project.slug}, and emails ${project.owner.email} that it was deleted.`}
                         confirmLabel="Delete project"
                         confirmVariant="destructive"
                         onConfirm={() => removeProject.mutate(project.id)}

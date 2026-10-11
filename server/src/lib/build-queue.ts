@@ -50,17 +50,28 @@ const processQueue = async () => {
 };
 
 export const enqueueDeployment = async (appId: string, artifactKey: string) => {
-  const replaced = await prisma.deployment.findMany({
-    where: { appId, status: "QUEUED" },
-    select: { id: true },
-  });
-  for (const item of replaced) {
-    await prisma.$executeRaw`UPDATE deployments SET status = 'SUPERSEDED', "finishedAt" = NOW(), log = log || ${"Replaced by a newer deploy\n"} WHERE id = ${item.id} AND status = 'QUEUED'`;
-  }
-
-  const deployment = await prisma.deployment.create({
-    data: { appId, artifactKey },
-    select: { id: true, status: true, step: true, imageTag: true, createdAt: true, finishedAt: true },
+  const deployment = await prisma.$transaction(async (tx) => {
+    const current = await tx.app.findUnique({ where: { id: appId } });
+    if (!current) {
+      throw new Error("App not found");
+    }
+    const projectId = current.parentProjectId ?? current.id;
+    await tx.$queryRaw`SELECT id FROM apps WHERE id = ${projectId} FOR UPDATE`;
+    const [app, project] = await Promise.all([
+      tx.app.findUnique({ where: { id: appId } }),
+      tx.app.findUnique({ where: { id: projectId } }),
+    ]);
+    if (!app || !app.appEnabled || app.deleting || !project || project.deleting) {
+      throw new Error("This app or project is being deleted");
+    }
+    await tx.deployment.updateMany({
+      where: { appId, status: "QUEUED" },
+      data: { status: "SUPERSEDED", finishedAt: new Date(), log: "Replaced by a newer deploy\n" },
+    });
+    return tx.deployment.create({
+      data: { appId, artifactKey },
+      select: { id: true, status: true, step: true, imageTag: true, createdAt: true, finishedAt: true },
+    });
   });
 
   processQueue().catch((error) => console.error("Build queue failed", error));

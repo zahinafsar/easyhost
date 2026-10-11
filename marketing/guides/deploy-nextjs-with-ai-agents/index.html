@@ -31,7 +31,7 @@
             "url": "https://easyhost.fun/guides/deploy-nextjs-with-ai-agents",
             "image": "https://easyhost.fun/og.png",
             "datePublished": "2026-09-30",
-            "dateModified": "2026-10-02",
+            "dateModified": "2026-10-11",
             "author": {
               "@type": "Organization",
               "name": "EasyHost",
@@ -150,7 +150,7 @@
           </ol>
           <h1>How to deploy a Next.js app with Claude Code, Cursor or Codex</h1>
           <p class="lead">To have a coding agent deploy a Next.js app, give it a hosting CLI it can run without a browser and instructions for using it. On EasyHost that is one command, <code>npx ezhst skill install</code>, followed by one sentence: "Deploy this to EasyHost". The agent creates the account, sets environment variables, deploys and returns a live URL. It is free.</p>
-          <p class="doc-meta">Last updated October 2, 2026</p>
+          <p class="doc-meta">Last updated October 11, 2026</p>
         </div>
 
         <section id="short-answer">
@@ -191,7 +191,7 @@ npx ezhst env import .env --json
 npx ezhst deploy --json</pre></div>
           <ol>
             <li><strong>Check who is logged in.</strong> If nobody is, the agent asks you for an email and password and registers or logs in.</li>
-            <li><strong>Create and link a project.</strong> The project name becomes the subdomain. A <code>.easyhost.json</code> file records the link.</li>
+            <li><strong>Create and link a project.</strong> Each app has its own subdomain within the project. A <code>.easyhost.json</code> file records the link.</li>
             <li><strong>Import environment variables.</strong> <code>.env</code> files are never uploaded, so the agent imports them explicitly.</li>
             <li><strong>Deploy.</strong> The CLI packages the source (without <code>node_modules</code>, <code>.next</code>, <code>.git</code> and <code>.env*</code>), uploads it, and EasyHost installs, builds and starts the app.</li>
           </ol>

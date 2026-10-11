@@ -16,7 +16,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { ConfirmButton } from "@/components/confirm-button";
 import { CodeBlock } from "@/components/code-block";
 import { api, unwrap } from "@/lib/api";
-import { appsQuery, userQuery } from "@/lib/queries";
+import { appsQuery, projectsQuery, userQuery } from "@/lib/queries";
 import { formatDate } from "@/lib/format";
 import { mergeEnv, parseEnv, stringifyEnv, type EnvRow } from "@/lib/dotenv";
 import { cn } from "@/lib/utils";
@@ -183,13 +183,13 @@ const BUILD_FIELDS: { key: Exclude<keyof BuildForm, "nodeVersion">; label: strin
   {
     key: "buildCommand",
     label: "Build command",
-    placeholder: "Auto: npm run build (or pnpm, yarn, bun)",
+    placeholder: "Auto: build script, skipped if absent",
     hint: "Runs in the root directory. Environment variables are available.",
   },
   {
     key: "startCommand",
     label: "Start command",
-    placeholder: "next start -H 0.0.0.0 -p $PORT",
+    placeholder: "Auto: start script or Node.js entry file",
     hint: "Must listen on 0.0.0.0 and $PORT (3000).",
   },
 ];
@@ -406,11 +406,11 @@ const DomainsPanel = ({
 export const AppDetailPage = () => {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const { data, isLoading } = useQuery(appsQuery().detail(id));
+  const { data, isLoading, error } = useQuery(appsQuery().detail(id));
   const [selected, setSelected] = useState<string | null>(null);
   const logs = useQuery({ ...appsQuery().logs(id), enabled: false });
 
-  const invalidate = [appsQuery().all, userQuery().all];
+  const invalidate = [appsQuery().all, projectsQuery().all, userQuery().all];
 
   const redeploy = useApiMutation({
     mutationFn: () => unwrap(api.apps[":id"].redeploy.$post({ param: { id } })),
@@ -431,9 +431,13 @@ export const AppDetailPage = () => {
   const remove = useApiMutation({
     mutationFn: () => unwrap(api.apps[":id"].$delete({ param: { id } })),
     invalidate,
-    success: "Project deleted",
+    success: "App deleted",
     onSuccess: () => navigate("/apps"),
   });
+
+  if (error) {
+    return <p role="alert" className="text-destructive">{error.message}</p>;
+  }
 
   if (isLoading || !data) {
     return <Skeleton className="h-64 w-full" />;
@@ -472,13 +476,13 @@ export const AppDetailPage = () => {
               </Button>
             )}
             <ConfirmButton
-              title={`Delete project ${app.name}?`}
-              description="This removes its app, deployments, storage, database, email settings, and API keys. This cannot be undone."
+              title={`Delete app ${app.name}?`}
+              description="This removes this app, its deployments and custom domains. Project storage, database, email, and schedules are retained."
               onConfirm={() => remove.mutate(undefined)}
             >
               <Button variant="destructive">
                 <Trash2 className="size-4" />
-                Delete project
+                Delete app
               </Button>
             </ConfirmButton>
           </div>
@@ -502,8 +506,8 @@ export const AppDetailPage = () => {
           {!deployments.length && (
             <Card>
               <CardContent className="space-y-3 py-6">
-                <p className="text-sm text-muted-foreground">No deployments yet. From your Next.js project run:</p>
-                <CodeBlock code={`npx ezhst deploy --project ${app.slug}`} />
+                <p className="text-sm text-muted-foreground">No deployments yet. From your Node.js app folder run:</p>
+                <CodeBlock code={`npx ezhst deploy --project ${app.projectId} --app ${app.slug}`} />
               </CardContent>
             </Card>
           )}
@@ -538,10 +542,10 @@ export const AppDetailPage = () => {
           </pre>
         </TabsContent>
         <TabsContent value="env" className="mt-4">
-          <EnvEditor appId={app.id} initial={app.env as Record<string, string>} />
+          <EnvEditor key={app.id} appId={app.id} initial={app.env as Record<string, string>} />
         </TabsContent>
         <TabsContent value="build" className="mt-4">
-          <BuildSettings appId={app.id} initial={app} nodeVersions={data.nodeVersions} />
+          <BuildSettings key={app.id} appId={app.id} initial={app} nodeVersions={data.nodeVersions} />
         </TabsContent>
         <TabsContent value="domains" className="mt-4">
           <DomainsPanel appId={app.id} domains={data.domains} dnsTarget={data.dnsTarget} />

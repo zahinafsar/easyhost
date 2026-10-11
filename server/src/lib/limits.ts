@@ -1,5 +1,7 @@
 export const LIMITS = {
-  apps: 10,
+  projects: 10,
+  apps: 5,
+  schedules: 5,
   buckets: 10,
   databases: 10,
   emailSenders: 1,

@@ -9,7 +9,7 @@ const PROJECT_FILE = ".easyhost.json";
 const PRODUCTION_API_URL = "https://api.easyhost.fun";
 
 type GlobalConfig = { apiUrl: string; token?: string };
-type LinkedProject = { projectId: string; slug: string };
+type LinkedProject = { projectId: string; slug: string; appId?: string };
 
 export const readConfig = (): GlobalConfig => {
   let config: GlobalConfig = { apiUrl: PRODUCTION_API_URL };

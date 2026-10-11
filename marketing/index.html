@@ -60,12 +60,12 @@
               {
                 "@type": "Question",
                 "name": "Is EasyHost really free?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes. EasyHost costs $0 per month and signing up does not need a credit card. Every feature is included within fixed limits: 10 projects, and per project one Next.js app, one Postgres database, one storage bucket and one email sender with 20 emails per day." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. EasyHost costs $0 per month and signing up does not need a credit card. Every feature is included within fixed limits: 10 projects, and per project up to five Node.js apps and five schedules, one Postgres database, one storage bucket and one email sender with 20 emails per day." }
               },
               {
                 "@type": "Question",
                 "name": "What can I host on EasyHost?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Next.js apps. EasyHost runs next build and next start in a Node.js container, so server rendering, route handlers, server actions and middleware work as they do on your machine. Node 20, 22 and 24 are supported with npm, pnpm, yarn or bun." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Node.js apps, including Next.js, Express, Fastify and other Node.js services. EasyHost detects package build and start scripts; apps without a build script can run directly. HTTP apps must listen on 0.0.0.0 and the assigned PORT. Node 20, 22 and 24 are supported with npm, pnpm, yarn or bun." }
               },
               {
                 "@type": "Question",
@@ -329,6 +329,8 @@
           </div>
           <div class="limit-table">
             <div class="limit-row"><span>Projects</span><b>10</b></div>
+            <div class="limit-row"><span>Apps</span><b>5 per project</b></div>
+            <div class="limit-row"><span>Schedules</span><b>5 per project</b></div>
             <div class="limit-row"><span>Storage buckets</span><b>1 per project</b></div>
             <div class="limit-row"><span>Postgres databases</span><b>1 per project</b></div>
             <div class="limit-row"><span>Email senders</span><b>1 per project</b></div>
@@ -346,11 +348,11 @@
           <div class="faq">
             <div>
               <h3>Is EasyHost really free?</h3>
-              <p>Yes. EasyHost costs $0 per month and signing up does not need a credit card. Every feature is included within fixed <a href="#limits">limits</a>: 10 projects, and per project one Next.js app, one Postgres database, one storage bucket and one email sender with 20 emails per day.</p>
+              <p>Yes. EasyHost costs $0 per month and signing up does not need a credit card. Every feature is included within fixed <a href="#limits">limits</a>: 10 projects, and per project up to five Node.js apps and five schedules, one Postgres database, one storage bucket and one email sender with 20 emails per day.</p>
             </div>
             <div>
               <h3>What can I host on EasyHost?</h3>
-              <p>Next.js apps. EasyHost runs <code>next build</code> and <code>next start</code> in a Node.js container, so server rendering, route handlers, server actions and middleware work as they do on your machine. Node 20, 22 and 24 are supported with npm, pnpm, yarn or bun.</p>
+              <p>Node.js apps, including Next.js, Express, Fastify and other Node.js services. EasyHost detects package build and start scripts; apps without a build script can run directly. HTTP apps must listen on <code>0.0.0.0</code> and the assigned <code>PORT</code>. Node 20, 22 and 24 are supported with npm, pnpm, yarn or bun.</p>
             </div>
             <div>
               <h3>Do free apps go to sleep?</h3>

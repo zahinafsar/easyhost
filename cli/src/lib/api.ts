@@ -1,6 +1,7 @@
 import { readConfig } from "./config.js";
 
-export type Project = {
+export type App = {
+  projectId: string;
   id: string;
   name: string;
   slug: string;
@@ -16,6 +17,20 @@ export type Project = {
   updatedAt: string;
 };
 
+export type Project = {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ScheduleRun = { id: string; startedAt: string; statusCode: number | null; error: string | null; durationMs: number };
+export type Schedule = { id: string; name: string; url: string; method: string; headers: Record<string, string>; body: string | null; intervalMinutes: number; enabled: boolean; nextRunAt: string; runs: ScheduleRun[] };
+
+let activeProjectId: string | undefined;
+export const setProjectScope = (projectId: string) => { activeProjectId = projectId; };
+
 export type DeploymentStep = "QUEUED" | "PREPARING" | "INSTALLING" | "BUILDING" | "STARTING" | "ROUTING" | "DONE";
 
 export type Deployment = {
@@ -30,8 +45,8 @@ export type Deployment = {
 
 export type Domain = { id: string; hostname: string; status: string; error: string | null };
 
-export type ProjectDetail = {
-  app: Project;
+export type AppDetail = {
+  app: App;
   deployments: Deployment[];
   domains: Domain[];
   dnsTarget: { cname: string; ip: string };
@@ -50,8 +65,9 @@ export const request = async <T>(pathname: string, init: RequestInit = {}, proje
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  if (projectId) {
-    headers.set("X-Project-ID", projectId);
+  const scope = projectId ?? activeProjectId;
+  if (scope) {
+    headers.set("X-Project-ID", scope);
   }
   if (init.body && typeof init.body === "string") {
     headers.set("Content-Type", "application/json");

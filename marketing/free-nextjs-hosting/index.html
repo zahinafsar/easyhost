@@ -70,7 +70,7 @@
                 "name": "Is there a catch to the free plan?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "No trial and no card. The catch is the limits: 10 projects, 512 MB of RAM and 1 CPU per app, one region, and Next.js only."
+                  "text": "No trial and no card. The catch is the limits: 10 projects, 512 MB of RAM and 1 CPU per app, one region, and five Node.js apps per project."
                 }
               },
               {
@@ -157,7 +157,7 @@
             <table>
               <thead><tr><th>Resource</th><th>Included</th></tr></thead>
               <tbody>
-                <tr><td>Projects</td><td>10 per account, one Next.js app each</td></tr>
+                <tr><td>Projects</td><td>10 per account, up to 5 Node.js apps and 5 schedules each</td></tr>
                 <tr><td>App container</td><td>512 MB RAM, 1 CPU, always on</td></tr>
                 <tr><td>URL and HTTPS</td><td><code>https://&lt;name&gt;.easyhost.fun</code> plus custom domains with automatic certificates</td></tr>
                 <tr><td>Postgres</td><td>1 database per project (Postgres 16), with a shadow database for Prisma</td></tr>
@@ -218,7 +218,7 @@ npx ezhst deploy</pre></div>
           <h2>What EasyHost does not do</h2>
           <p>Free hosting always has trade-offs. These are ours, stated plainly so you can decide before you deploy.</p>
           <ul>
-            <li>Only Next.js apps are supported right now.</li>
+            <li>Node.js apps are supported, including Next.js and APIs.</li>
             <li>Apps run in one region. There is no edge network or CDN in front of them.</li>
             <li>There is no Git integration and there are no preview deployments. You deploy with the CLI.</li>
             <li>512 MB of RAM is enough for most Next.js apps, but not for heavy in-process workloads.</li>
@@ -229,7 +229,7 @@ npx ezhst deploy</pre></div>
         <section id="faq">
           <h2>Frequently asked questions</h2>
           <h3>Is there a catch to the free plan?</h3>
-          <p>No trial and no card. The catch is the limits: 10 projects, 512 MB of RAM and 1 CPU per app, one region, and Next.js only.</p>
+          <p>No trial and no card. The catch is the limits: 10 projects, 512 MB of RAM and 1 CPU per app, one region, and five Node.js apps per project.</p>
           <h3>Does a free Next.js app on EasyHost sleep when nobody visits?</h3>
           <p>No. The container keeps running, so there is no cold start after a period without traffic.</p>
           <h3>Can I host a full-stack Next.js app with a database for free?</h3>

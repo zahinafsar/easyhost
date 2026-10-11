@@ -4,8 +4,8 @@ import path from "node:path";
 import * as tar from "tar";
 import pc from "picocolors";
 import ora, { type Ora } from "ora";
-import { request, type Deployment, type DeploymentStep, type Project } from "../lib/api.js";
-import { resolveProject, resolveProjectDetail, type ProjectOption } from "../lib/project.js";
+import { request, type Deployment, type DeploymentStep, type App } from "../lib/api.js";
+import { resolveApp, resolveAppDetail, type ProjectOption } from "../lib/project.js";
 import { fail, isJsonMode, log, output } from "../lib/ui.js";
 
 const IGNORED_DIRS = new Set(["node_modules", ".next", ".git", ".vercel", ".turbo", ".swc"]);
@@ -23,18 +23,15 @@ const isIgnored = (entry: string) => {
   return name.startsWith(".env") && name !== ".env.example";
 };
 
-const assertNextProject = (cwd: string) => {
+const assertNodeProject = (cwd: string) => {
   const pkgFile = path.join(cwd, "package.json");
   if (!existsSync(pkgFile)) {
-    fail("No package.json found. Run this inside your Next.js project.");
+    fail("No package.json found. Run this inside your Node.js app.");
   }
 
   const pkg = JSON.parse(readFileSync(pkgFile, "utf8"));
-  if (!pkg.dependencies?.next && !pkg.devDependencies?.next) {
-    fail("This does not look like a Next.js project. Only Next.js apps are supported right now.");
-  }
-  if (!pkg.scripts?.build) {
-    fail("No build script found in package.json.");
+  if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+    fail("package.json must contain a JSON object.");
   }
 };
 
@@ -95,7 +92,7 @@ const queueLabel = (position: number | null | undefined) => {
   return `${STEP_LABELS.QUEUED.active} (${position} ahead)`;
 };
 
-const followDeployment = async (project: Project, deploymentId: string, verbose: boolean): Promise<FollowResult> => {
+const followDeployment = async (project: App, deploymentId: string, verbose: boolean): Promise<FollowResult> => {
   let printed = 0;
   let step: DeploymentStep | null = null;
   let stepStartedAt = Date.now();
@@ -168,13 +165,13 @@ const followDeployment = async (project: Project, deploymentId: string, verbose:
   }
 };
 
-const warnMissingEnv = (project: Project, cwd: string) => {
+const warnMissingEnv = (project: App, cwd: string) => {
   if (!Object.keys(project.env).length && existsSync(path.join(cwd, ".env"))) {
     log.warn(".env files are not uploaded. Set variables with `ezhst env set KEY=VALUE` and redeploy.");
   }
 };
 
-const finish = (project: Project, deploymentId: string, url: string, result: FollowResult, cwd?: string) => {
+const finish = (project: App, deploymentId: string, url: string, result: FollowResult, cwd?: string) => {
   if (result === "superseded") {
     output({ deploymentId, status: "SUPERSEDED" }, () => log.warn("A newer deploy for this project was queued, so this one was skipped."));
     return;
@@ -190,9 +187,9 @@ const finish = (project: Project, deploymentId: string, url: string, result: Fol
 
 export const deploy = async (options: ProjectOption & { verbose?: boolean }) => {
   const cwd = process.cwd();
-  assertNextProject(cwd);
+  assertNodeProject(cwd);
 
-  const project = await resolveProject(options);
+  const project = await resolveApp(options, true);
   log.info(`\nDeploying ${pc.bold(project.name)}\n`);
 
   const { stage, archive } = await withSpinner("Packaging source", () => "Packaged source", () => packSource(cwd));
@@ -221,7 +218,7 @@ export const deploy = async (options: ProjectOption & { verbose?: boolean }) => 
 };
 
 export const redeploy = async (options: ProjectOption & { verbose?: boolean }) => {
-  const project = await resolveProject(options);
+  const project = await resolveApp(options);
   log.info(`\nRedeploying ${pc.bold(project.name)}\n`);
 
   const { deployment, url } = await withSpinner("Queueing redeploy", () => "Queued redeploy", () =>
@@ -233,7 +230,7 @@ export const redeploy = async (options: ProjectOption & { verbose?: boolean }) =
 };
 
 export const listDeployments = async (options: ProjectOption) => {
-  const { deployments } = await resolveProjectDetail(options);
+  const { deployments } = await resolveAppDetail(options);
   output({ deployments }, () => {
     if (!deployments.length) {
       log.info("No deployments yet. Run `ezhst deploy`.");
@@ -246,7 +243,7 @@ export const listDeployments = async (options: ProjectOption) => {
 };
 
 export const deploymentLog = async (deploymentId: string | undefined, options: ProjectOption) => {
-  const { app, deployments } = await resolveProjectDetail(options);
+  const { app, deployments } = await resolveAppDetail(options);
   const id = deploymentId ?? deployments[0]?.id;
   if (!id) {
     fail("No deployments yet. Run `ezhst deploy`.");

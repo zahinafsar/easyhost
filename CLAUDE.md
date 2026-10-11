@@ -4,7 +4,7 @@ After work update .claude/memory.txt with new contexts.
 # EasyHost - Developer Hosting Platform
 
 ## Project Overview
-Hosting platform: Next.js app hosting (containers routed by Nginx Proxy Manager), public object storage (MinIO), Postgres databases (one `postgres` instance for the platform and customer databases, one database + role per customer project), and transactional email (Resend under the hood).
+Hosting platform: Node.js app hosting (containers routed by Nginx Proxy Manager), public object storage (MinIO), Postgres databases (one `postgres` instance for the platform and customer databases, one database + role per customer project), and transactional email (Resend under the hood).
 
 ## Tech Stack
 - client: Vite + React 19, React Router, React Query, shadcn/ui + Tailwind v4, sonner
@@ -32,6 +32,7 @@ Hosting platform: Next.js app hosting (containers routed by Nginx Proxy Manager)
 ## Structure
 - `/docker-compose.yml` - Local infra
 - `/server/src/index.ts` - Hono app, exports `AppType` for the typed client
+- `/server/src/routes/projects.ts` + `/server/src/routes/apps.ts` - Projects retain root App rows; child App rows use parentProjectId, max five enabled apps per project. Existing data stays in place. Schedules use `/server/src/routes/schedules.ts` and a persistent worker in `/server/src/lib/schedule-worker.ts` (five schedules per project, intervals in minutes).
 - `/server/src/routes/*` - Dashboard routes (JWT user)
 - `/server/src/routes/v1/*` - Public service API (API key: email). Storage is plain S3: each bucket has its own MinIO service account (created via `mc` in `server/src/lib/minio.ts`)
 - `/server/src/lib/*` - prisma, auth, email, minio, userdb (customer Postgres), docker, domains (app URLs, custom domains), npm (NPM API), deploy, build-queue, validations

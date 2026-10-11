@@ -23,7 +23,7 @@ WORKDIR ${installPath}
 RUN ${plan.install}
 WORKDIR ${appPath}
 ENV PATH=${appPath}/node_modules/.bin:/app/node_modules/.bin:$PATH
-RUN ${plan.build}
+${plan.build ? `RUN ${plan.build}` : ""}
 ENV NODE_ENV=production PORT=${APP_PORT} HOSTNAME=0.0.0.0
 EXPOSE ${APP_PORT}
 CMD ["sh", "-c", ${JSON.stringify(plan.start)}]

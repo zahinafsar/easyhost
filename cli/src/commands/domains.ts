@@ -1,6 +1,6 @@
 import pc from "picocolors";
 import { json, request, type Domain } from "../lib/api.js";
-import { resolveProjectDetail, type ProjectOption } from "../lib/project.js";
+import { resolveAppDetail, type ProjectOption } from "../lib/project.js";
 import { fail, log, output } from "../lib/ui.js";
 
 const findDomain = (domains: Domain[], hostname: string) => {
@@ -12,7 +12,7 @@ const findDomain = (domains: Domain[], hostname: string) => {
 };
 
 export const listDomains = async (options: ProjectOption) => {
-  const { domains, dnsTarget } = await resolveProjectDetail(options);
+  const { domains, dnsTarget } = await resolveAppDetail(options);
   output({ domains, dnsTarget }, () => {
     if (!domains.length) {
       log.info("No custom domains yet. Add one with `ezhst domains add <hostname>`.");
@@ -28,7 +28,7 @@ export const listDomains = async (options: ProjectOption) => {
 };
 
 export const addDomain = async (hostname: string, options: ProjectOption) => {
-  const { app, dnsTarget } = await resolveProjectDetail(options);
+  const { app, dnsTarget } = await resolveAppDetail(options);
   const { domain } = await request<{ domain: Domain }>(`/apps/${app.id}/domains`, json("POST", { hostname }));
   output({ domain, dnsTarget }, () => {
     log.success(`Added ${domain.hostname}.`);
@@ -38,14 +38,14 @@ export const addDomain = async (hostname: string, options: ProjectOption) => {
 };
 
 export const verifyDomain = async (hostname: string, options: ProjectOption) => {
-  const { app, domains } = await resolveProjectDetail(options);
+  const { app, domains } = await resolveAppDetail(options);
   const domain = findDomain(domains, hostname);
   const result = await request<{ domain: Domain }>(`/apps/${app.id}/domains/${domain.id}/verify`, { method: "POST" });
   output(result, () => log.success(`${result.domain.hostname} is ${result.domain.status.toLowerCase()}`));
 };
 
 export const removeDomain = async (hostname: string, options: ProjectOption) => {
-  const { app, domains } = await resolveProjectDetail(options);
+  const { app, domains } = await resolveAppDetail(options);
   const domain = findDomain(domains, hostname);
   const result = await request<{ message: string }>(`/apps/${app.id}/domains/${domain.id}`, { method: "DELETE" });
   output(result, () => log.success(`Removed ${domain.hostname}`));

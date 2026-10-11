@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EasyHost Docs: ezhst CLI Reference for Deploying Next.js</title>
-    <meta name="description" content="Every ezhst command: deploy Next.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and email." />
+    <title>EasyHost Docs: ezhst CLI Reference for Deploying Node.js</title>
+    <meta name="description" content="Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and email." />
     <link rel="canonical" href="https://easyhost.fun/docs" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="EasyHost" />
     <meta property="og:url" content="https://easyhost.fun/docs" />
-    <meta property="og:title" content="EasyHost Docs: ezhst CLI Reference for Deploying Next.js" />
-    <meta property="og:description" content="Every ezhst command: deploy Next.js apps, manage env vars, domains, S3 storage, Postgres and email." />
+    <meta property="og:title" content="EasyHost Docs: ezhst CLI Reference for Deploying Node.js" />
+    <meta property="og:description" content="Every ezhst command: deploy Node.js apps, manage env vars, domains, S3 storage, Postgres and email." />
     <meta property="og:image" content="https://easyhost.fun/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -27,7 +27,7 @@
           {
             "@type": "TechArticle",
             "headline": "EasyHost docs: ezhst CLI reference",
-            "description": "Every ezhst command: deploy Next.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and email.",
+            "description": "Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and email.",
             "url": "https://easyhost.fun/docs",
             "image": "https://easyhost.fun/og.png",
             "datePublished": "2026-09-29",
@@ -85,6 +85,7 @@
           <li><a href="#domains">Custom domains</a></li>
           <li><a href="#storage">Storage</a></li>
           <li><a href="#database">Database</a></li>
+          <li><a href="#schedules">Schedules</a></li>
           <li><a href="#email">Email</a></li>
           <li><a href="#keys">API keys</a></li>
           <li><a href="#limits">Limits</a></li>
@@ -108,7 +109,7 @@
           <h3>For humans</h3>
           <p>Install the CLI globally or run it with <code>npx</code>.</p>
           <div class="code"><pre>npm i -g ezhst</pre></div>
-          <p>Create an account (or log in), link your Next.js project folder and deploy.</p>
+          <p>Create an account (or log in), link your Node.js app folder and deploy.</p>
           <div class="code"><pre>npx ezhst register
 npx ezhst link
 npx ezhst deploy</pre></div>
@@ -148,24 +149,27 @@ npx ezhst deploy</pre></div>
 
         <section id="projects">
           <h2>Projects and linking</h2>
-          <p>A project is one app plus its storage bucket, database, email sender and API keys. The project name becomes its subdomain: <code>&lt;slug&gt;.easyhost.fun</code>.</p>
+          <p>A project contains up to five Node.js apps and five scheduled API calls, with a shared storage bucket, database, email sender and API keys. Each app has its own subdomain: <code>&lt;app-slug&gt;.easyhost.fun</code>.</p>
           <div class="cmds">
             <div class="cmd-row"><code>ezhst projects list</code><span>List your projects.</span></div>
             <div class="cmd-row"><code>ezhst projects create &lt;name&gt;</code><span>Create a project.</span></div>
-            <div class="cmd-row"><code>ezhst projects info</code><span>Status, URL, env, build settings, domains and recent deployments.</span></div>
+            <div class="cmd-row"><code>ezhst projects info</code><span>Project details and apps.</span></div>
             <div class="cmd-row"><code>ezhst projects rename &lt;name&gt;</code><span>Change the display name. The URL stays the same.</span></div>
-            <div class="cmd-row"><code>ezhst projects delete --yes</code><span>Delete the app, deployments, storage, database, email and API keys.</span></div>
+            <div class="cmd-row"><code>ezhst projects delete --yes</code><span>Delete all apps, deployments, schedules, storage, database, email and API keys.</span></div>
             <div class="cmd-row"><code>ezhst link [--project &lt;slug&gt;]</code><span>Link the current folder to a project (writes <code>.easyhost.json</code>).</span></div>
           </div>
           <p>Project-scoped commands use the project linked in <code>.easyhost.json</code>. Pass <code>--project &lt;slug&gt;</code> to any of them to target another project.</p>
-          <div class="code"><pre>ezhst projects create my-app
-ezhst link --project my-app</pre></div>
+          <div class="code"><pre>ezhst projects create my-project
+ezhst projects list
+ezhst apps create my-api --project &lt;project-slug&gt;
+ezhst link --project &lt;project-slug&gt; --app &lt;app-slug&gt;</pre></div>
         </section>
 
         <section id="deploying">
           <h2>Deploying</h2>
+          <p>Use <code>ezhst apps list</code>, <code>ezhst apps create &lt;name&gt;</code>, and <code>ezhst apps delete --app &lt;slug&gt; --yes</code> to manage up to five apps per project. Deployment, environment, build, domain and runtime commands accept <code>--app &lt;slug-or-id&gt;</code>. Link an app with <code>ezhst link --project &lt;slug&gt; --app &lt;slug&gt;</code>.</p>
           <div class="cmds">
-            <div class="cmd-row"><code>ezhst deploy [--verbose]</code><span>Package the Next.js project in the current folder, upload, build and go live.</span></div>
+            <div class="cmd-row"><code>ezhst deploy [--verbose]</code><span>Package the Node.js app in the current folder, upload, build and go live.</span></div>
             <div class="cmd-row"><code>ezhst redeploy [--verbose]</code><span>Rebuild the latest upload. Use after changing env vars or build settings.</span></div>
             <div class="cmd-row"><code>ezhst start</code><span>Start the app.</span></div>
             <div class="cmd-row"><code>ezhst stop</code><span>Stop the app.</span></div>
@@ -195,7 +199,7 @@ ezhst redeploy</pre></div>
 
         <section id="build">
           <h2>Build settings</h2>
-          <p>Empty settings are auto-detected, which works for most Next.js projects.</p>
+          <p>Empty settings are auto-detected, which works for most Node.js apps.</p>
           <div class="cmds">
             <div class="cmd-row"><code>ezhst build show</code><span>Show the current settings.</span></div>
             <div class="cmd-row"><code>ezhst build set [--node 20|22|24] [--root-dir &lt;dir&gt;] [--install &lt;cmd&gt;] [--build &lt;cmd&gt;] [--start &lt;cmd&gt;]</code><span>Override one or more settings. Pass <code>""</code> to reset a field to auto.</span></div>
@@ -208,7 +212,8 @@ ezhst redeploy</pre></div>
               <tbody>
                 <tr><td>Node version</td><td><code>engines.node</code> in package.json, otherwise 24</td></tr>
                 <tr><td>Package manager</td><td>From your lockfile</td></tr>
-                <tr><td>Start command</td><td><code>next start -H 0.0.0.0 -p $PORT</code></td></tr>
+                <tr><td>Build command</td><td>Package build script if present; skipped otherwise</td></tr>
+                <tr><td>Start command</td><td>Package start script, Next.js, or Node.js entry file; must listen on 0.0.0.0 and $PORT</td></tr>
               </tbody>
             </table>
           </div>
@@ -318,6 +323,20 @@ ezhst env set DATABASE_URL="postgresql://..."</pre></div>
           <p>After <code>ezhst db reset-password</code>, update <code>DATABASE_URL</code> with <code>ezhst env set</code> and run <code>ezhst redeploy</code>.</p>
         </section>
 
+        <section id="schedules">
+          <h2>Scheduled API calls</h2>
+          <p>Create up to five schedules per project. Calls support public HTTP/HTTPS URLs, request headers and a body. Intervals range from 1 to 43200 minutes. Calls time out after 30 seconds and do not follow redirects.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst schedules list</code><span>List schedules.</span></div>
+            <div class="cmd-row"><code>ezhst schedules create &lt;name&gt; --url &lt;url&gt; --every &lt;minutes&gt; [--method POST] [--headers '&lt;json&gt;'] [--body '&lt;text&gt;']</code><span>Create a schedule.</span></div>
+            <div class="cmd-row"><code>ezhst schedules update &lt;id&gt; [--url &lt;url&gt;] [--every &lt;minutes&gt;]</code><span>Update a schedule. Also accepts --name, --method, --headers and --body.</span></div>
+            <div class="cmd-row"><code>ezhst schedules pause &lt;id&gt; | resume &lt;id&gt;</code><span>Pause or resume calls.</span></div>
+            <div class="cmd-row"><code>ezhst schedules logs &lt;id&gt;</code><span>Show the latest 10 results; the latest 100 are retained.</span></div>
+            <div class="cmd-row"><code>ezhst schedules delete &lt;id&gt; --yes</code><span>Delete a schedule and its history.</span></div>
+          </div>
+          <p>The first call follows one full interval. Saving or resuming restarts the interval. Execution may be delayed by the 10-second worker poll or available capacity. Missed intervals are skipped after downtime, and calls to the same schedule do not overlap. Requests already in progress may finish after pausing or deleting.</p>
+        </section>
+
         <section id="email">
           <h2>Email</h2>
           <p>Send transactional email from <code>&lt;username&gt;@easyhost.fun</code>. Each project has one sender and can send 20 emails per day.</p>
@@ -361,12 +380,14 @@ ezhst env set EASYHOST_API_KEY=&lt;key&gt;</pre></div>
 
         <section id="limits">
           <h2>Limits</h2>
-          <p>EasyHost is free within these limits. Only Next.js apps are supported for now. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
+          <p>EasyHost is free within these limits. Node.js apps are supported, including Next.js and HTTP APIs. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Resource</th><th>Limit</th></tr></thead>
               <tbody>
                 <tr><td>Projects</td><td>10</td></tr>
+                <tr><td>Apps</td><td>5 per project</td></tr>
+                <tr><td>Schedules</td><td>5 per project</td></tr>
                 <tr><td>Storage buckets</td><td>1 per project</td></tr>
                 <tr><td>Databases</td><td>1 per project</td></tr>
                 <tr><td>Email senders</td><td>1 per project</td></tr>

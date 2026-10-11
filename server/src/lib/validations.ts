@@ -163,3 +163,25 @@ export const paginationSchema = z.object({
 export const logsQuerySchema = z.object({
   tail: z.coerce.number().int().min(1).max(2000).default(200),
 });
+
+export const scheduleSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(60, "Name must be at most 60 characters"),
+  url: z.url().max(2048).refine((value) => {
+    try {
+      const url = new URL(value);
+      return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }, "Use an HTTP or HTTPS URL without embedded credentials"),
+  method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]),
+  headers: z.record(
+    z.string().regex(/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/).refine((name) => !["host", "connection", "content-length", "transfer-encoding", "upgrade", "trailer", "expect"].includes(name.toLowerCase()) && !name.toLowerCase().startsWith("proxy-"), "This header is managed by the scheduler"),
+    z.string().max(4096).refine((value) => /^[\t\x20-\x7e\x80-\xff]*$/.test(value), "Header values must contain valid HTTP header characters"),
+  ).refine((headers) => Object.keys(headers).length <= 20, "Use at most 20 headers"),
+  body: z.string().max(16_384, "Body must be at most 16 KB").refine((value) => Buffer.byteLength(value, "utf8") <= 16_384, "Body must be at most 16 KB").nullable(),
+  intervalMinutes: z.number().int().min(1, "Interval must be at least 1 minute").max(43_200, "Interval must be at most 30 days"),
+  enabled: z.boolean(),
+}).refine((value) => !["GET", "HEAD"].includes(value.method) || !value.body, { message: "GET and HEAD requests cannot have a body", path: ["body"] });
+
+export const scheduleStateSchema = z.object({ enabled: z.boolean() });

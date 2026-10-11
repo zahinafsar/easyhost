@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings, ShieldCheck } from "lucide-react";
+import { Clock3, Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import { api, unwrap } from "@/lib/api";
-import { appsQuery } from "@/lib/queries";
+import { projectsQuery } from "@/lib/queries";
 import { clearSelectedProject, selectedProjectId, selectProject } from "@/lib/project";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/apps", label: "Apps", icon: Rocket },
+  { to: "/schedules", label: "Schedules", icon: Clock3 },
   { to: "/storage", label: "Storage", icon: HardDrive },
   { to: "/databases", label: "Databases", icon: Database },
   { to: "/email", label: "Email", icon: Mail },
@@ -26,13 +27,13 @@ export const AppShell = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [projectId, setProjectId] = useState(() => selectedProjectId());
-  const projects = useQuery({ ...appsQuery().list(), enabled: !!user });
-  const appRouteProjectId = location.pathname.startsWith("/apps/") ? location.pathname.split("/")[2] : undefined;
+  const projects = useQuery({ ...projectsQuery().list(), enabled: !!user });
+  const routeAppId = location.pathname.startsWith("/apps/") ? location.pathname.split("/")[2] : undefined;
   const activeProject =
-    projects.data?.apps.find((project) => project.id === appRouteProjectId) ??
-    projects.data?.apps.find((project) => project.id === projectId) ??
-    projects.data?.apps[0];
-  const hasNoProjects = projects.data?.apps.length === 0;
+    projects.data?.projects.find((project) => project.appIds.includes(routeAppId ?? "")) ??
+    projects.data?.projects.find((project) => project.id === projectId) ??
+    projects.data?.projects[0];
+  const hasNoProjects = projects.data?.projects.length === 0;
 
   useEffect(() => {
     if (hasNoProjects && projectId) {
@@ -52,7 +53,7 @@ export const AppShell = () => {
     setProjectId(nextProjectId);
     const section = location.pathname.split("/")[1];
     if (section === "apps") {
-      navigate(`/apps/${nextProjectId}`);
+      navigate("/apps");
       return;
     }
     if (section === "storage" || section === "databases") {
@@ -61,13 +62,13 @@ export const AppShell = () => {
   };
 
   const createProject = useApiMutation({
-    mutationFn: (name: string) => unwrap(api.apps.$post({ json: { name } })),
-    invalidate: [appsQuery().all],
+    mutationFn: (name: string) => unwrap(api.projects.$post({ json: { name } })),
+    invalidate: [projectsQuery().all],
     success: "Project created",
-    onSuccess: ({ app }) => {
-      selectProject(app.id);
-      setProjectId(app.id);
-      navigate(`/apps/${app.id}`);
+    onSuccess: ({ project }) => {
+      selectProject(project.id);
+      setProjectId(project.id);
+      navigate("/apps");
     },
   });
 
@@ -93,7 +94,7 @@ export const AppShell = () => {
 
   const projectSwitcher = (
     <ProjectSwitcher
-      projects={projects.data?.apps ?? []}
+      projects={projects.data?.projects ?? []}
       selectedId={activeProject?.id}
       isCreating={createProject.isPending}
       onSelect={openProject}
@@ -101,10 +102,7 @@ export const AppShell = () => {
     />
   );
 
-  const projectNavItems = navItems.map((item) => ({
-    ...item,
-    to: item.to === "/apps" && activeProject ? `/apps/${activeProject.id}` : item.to,
-  }));
+  const projectNavItems = navItems;
 
   return (
     <div className="flex min-h-screen">
@@ -180,7 +178,7 @@ export const AppShell = () => {
           </div>
         )}
         <main className="mx-auto w-full max-w-6xl flex-1 p-6 md:p-8">
-          {activeProject && selectedProjectId() === activeProject.id ? <Outlet /> : null}
+          {activeProject && selectedProjectId() === activeProject.id ? <Outlet key={activeProject.id} /> : null}
           {!activeProject && (
             <div className="flex min-h-[60vh] flex-col items-center justify-center gap-2 text-center">
               <FolderKanban className="size-8 text-muted-foreground" />

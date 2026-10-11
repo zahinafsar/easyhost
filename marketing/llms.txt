@@ -1,12 +1,13 @@
 # EasyHost
 
-> EasyHost is free hosting for Next.js apps with managed Postgres, S3 compatible storage, transactional email and custom domains. Everything is operated through the `ezhst` CLI, which is built to be driven by AI coding agents (Claude Code, Cursor, Codex). It costs $0 per month and needs no credit card.
+> EasyHost is free hosting for Node.js apps, including Next.js with managed Postgres, S3 compatible storage, transactional email and custom domains. Everything is operated through the `ezhst` CLI, which is built to be driven by AI coding agents (Claude Code, Cursor, Codex). It costs $0 per month and needs no credit card.
 
 Key facts:
 
-- Each app runs in an always-on Node.js container (512 MB RAM, 1 CPU) using `next build` and `next start`. Apps do not sleep when idle.
-- Limits: 10 projects per account. Per project: one app, one Postgres 16 database, one storage bucket, one email sender, 20 emails per day. One build at a time.
-- Node 20, 22 and 24. npm, pnpm, yarn and bun. Only Next.js is supported.
+- Each app runs in an always-on Node.js container (512 MB RAM, 1 CPU) using package build/start scripts or a Node.js entry file. Apps do not sleep when idle.
+- Limits: 10 projects per account. Per project: five Node.js apps, five schedules, one Postgres 16 database, one storage bucket, one email sender, 20 emails per day. One build at a time.
+- Schedules call public HTTP/HTTPS APIs every 1 to 43200 minutes, with method, headers and body; 30-second timeout, no redirects, latest 100 runs retained.
+- Node 20, 22 and 24. npm, pnpm, yarn and bun. Node.js apps are supported, including Next.js and APIs.
 - Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
 - There is no Git integration, no preview deployments and no edge network.
 - Install the agent skill with `npx ezhst skill install` and choose Global or Local. Global writes `~/.agents/skills/easyhost/SKILL.md`; Local writes `.agents/skills/easyhost/SKILL.md` in the current directory. For noninteractive use, including `--json`, pass exactly one of `--global` or `--local`.

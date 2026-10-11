@@ -8,6 +8,9 @@ import { apiKeyRoutes } from "./routes/api-keys.js";
 import { storageRoutes } from "./routes/storage.js";
 import { databaseRoutes } from "./routes/databases.js";
 import { emailRoutes } from "./routes/emails.js";
+import { projectRoutes } from "./routes/projects.js";
+import { scheduleRoutes } from "./routes/schedules.js";
+import { startScheduleWorker } from "./lib/schedule-worker.js";
 import { appRoutes } from "./routes/apps.js";
 import { adminRoutes } from "./routes/admin.js";
 import { v1EmailRoutes } from "./routes/v1/email.js";
@@ -30,6 +33,8 @@ const routes = app
   .route("/storage", storageRoutes)
   .route("/databases", databaseRoutes)
   .route("/emails", emailRoutes)
+  .route("/projects", projectRoutes)
+  .route("/schedules", scheduleRoutes)
   .route("/apps", appRoutes)
   .route("/admin", adminRoutes)
   .route("/v1/email", v1EmailRoutes);
@@ -95,5 +100,6 @@ server.route("/", app);
 
 serve({ fetch: server.fetch, port }, (info) => {
   console.log(`EasyHost API listening on http://localhost:${info.port}`);
+  startScheduleWorker();
   startBuildQueue().catch((error) => console.error("Build queue failed to start", error));
 });

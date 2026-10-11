@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
-import { json, request, type Project } from "../lib/api.js";
-import { resolveProject, type ProjectOption } from "../lib/project.js";
+import { json, request, type App } from "../lib/api.js";
+import { resolveApp, type ProjectOption } from "../lib/project.js";
 import { fail, log, output } from "../lib/ui.js";
 
-const saveEnv = async (project: Project, env: Record<string, string>) => {
+const saveEnv = async (project: App, env: Record<string, string>) => {
   await request(`/apps/${project.id}/env`, json("PUT", { env }));
   output({ env }, () => log.success("Environment saved. Run `ezhst redeploy` to apply it."));
 };
@@ -30,7 +30,7 @@ const parseDotenv = (text: string) => {
 };
 
 export const listEnv = async (options: ProjectOption) => {
-  const project = await resolveProject(options);
+  const project = await resolveApp(options);
   output({ env: project.env }, () => {
     const entries = Object.entries(project.env);
     if (!entries.length) {
@@ -44,7 +44,7 @@ export const listEnv = async (options: ProjectOption) => {
 };
 
 export const setEnv = async (pairs: string[], options: ProjectOption) => {
-  const project = await resolveProject(options);
+  const project = await resolveApp(options);
   const env = { ...project.env };
   for (const pair of pairs) {
     const index = pair.indexOf("=");
@@ -57,7 +57,7 @@ export const setEnv = async (pairs: string[], options: ProjectOption) => {
 };
 
 export const unsetEnv = async (keys: string[], options: ProjectOption) => {
-  const project = await resolveProject(options);
+  const project = await resolveApp(options);
   const env = { ...project.env };
   for (const key of keys) {
     delete env[key];
@@ -66,7 +66,7 @@ export const unsetEnv = async (keys: string[], options: ProjectOption) => {
 };
 
 export const importEnv = async (file: string, options: ProjectOption) => {
-  const project = await resolveProject(options);
+  const project = await resolveApp(options);
   const imported = parseDotenv(readFileSync(file, "utf8"));
   if (!Object.keys(imported).length) {
     fail(`No variables found in ${file}.`);

@@ -19,7 +19,7 @@ export const requireApiKey = createMiddleware<ApiKeyEnv>(async (c, next) => {
     include: { project: { include: { user: { select: { blocked: true } } } } },
   });
 
-  if (!apiKey || apiKey.project.user.blocked) {
+  if (!apiKey || apiKey.project.user.blocked || apiKey.project.deleting || apiKey.project.parentProjectId !== null) {
     return c.json({ error: "Missing or invalid API key" }, 401);
   }
 

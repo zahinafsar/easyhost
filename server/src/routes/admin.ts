@@ -105,7 +105,7 @@ export const adminRoutes = new Hono<UserEnv>()
       prisma.deployment.count({ where: { status: "BUILDING" } }),
       prisma.deployment.findFirst({ where: { status: "QUEUED" }, orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
       prisma.deployment.count({ where: { status: "FAILED", createdAt: { gte: dayAgo() } } }),
-      prisma.app.groupBy({ by: ["status"], _count: { _all: true } }),
+      prisma.app.groupBy({ by: ["status"], where: { appEnabled: true }, _count: { _all: true } }),
       statfs("/"),
     ]);
 
@@ -138,7 +138,7 @@ export const adminRoutes = new Hono<UserEnv>()
         SELECT
           to_char(d.day, 'YYYY-MM-DD') AS day,
           (SELECT count(*)::int FROM users u WHERE u."createdAt" >= d.day AND u."createdAt" < d.day + interval '1 day') AS signups,
-          (SELECT count(*)::int FROM apps a WHERE a."createdAt" >= d.day AND a."createdAt" < d.day + interval '1 day') AS projects,
+          (SELECT count(*)::int FROM apps a WHERE a."parentProjectId" IS NULL AND a."createdAt" >= d.day AND a."createdAt" < d.day + interval '1 day') AS projects,
           (SELECT count(*)::int FROM deployments p WHERE p."createdAt" >= d.day AND p."createdAt" < d.day + interval '1 day') AS deployments,
           (SELECT count(*)::int FROM deployments p WHERE p.status = 'FAILED' AND p."createdAt" >= d.day AND p."createdAt" < d.day + interval '1 day') AS "failedDeployments",
           (SELECT count(*)::int FROM email_logs e WHERE e.status = 'SENT' AND e."createdAt" >= d.day AND e."createdAt" < d.day + interval '1 day') AS emails,
@@ -152,8 +152,8 @@ export const adminRoutes = new Hono<UserEnv>()
       `,
       prisma.user.count(),
       prisma.user.count({ where: { verified: true } }),
-      prisma.app.count(),
-      prisma.app.count({ where: { status: "RUNNING" } }),
+      prisma.app.count({ where: { parentProjectId: null } }),
+      prisma.app.count({ where: { appEnabled: true, status: "RUNNING" } }),
       prisma.database.count(),
       prisma.bucket.count(),
       prisma.appDomain.count({ where: { status: "ACTIVE" } }),
@@ -168,6 +168,7 @@ export const adminRoutes = new Hono<UserEnv>()
   .get("/usage", async (c) => {
     const [projects, emails] = await Promise.all([
       prisma.app.findMany({
+        where: { parentProjectId: null },
         take: USAGE_PROJECTS,
         orderBy: { updatedAt: "desc" },
         select: {
@@ -175,6 +176,8 @@ export const adminRoutes = new Hono<UserEnv>()
           name: true,
           slug: true,
           status: true,
+          appEnabled: true,
+          projectApps: { select: { slug: true, status: true, _count: { select: { deployments: true, domains: true } } } },
           user: { select: { id: true, email: true } },
           database: { select: { dbName: true } },
           bucket: { select: { id: true } },
@@ -194,11 +197,14 @@ export const adminRoutes = new Hono<UserEnv>()
     const [sizes, containers] = await Promise.all([
       databaseSizes(dbNames).catch(() => new Map<string, number>()),
       Promise.all(
-        projects.map((project) => {
-          if (project.status !== "RUNNING") {
+        projects.map(async (project) => {
+          const apps = [...(project.appEnabled ? [project] : []), ...project.projectApps];
+          const stats = await Promise.all(apps.filter((app) => app.status === "RUNNING").map((app) => containerUsage(containerName(app.slug))));
+          const running = stats.filter((stat) => stat !== null);
+          if (!running.length) {
             return null;
           }
-          return containerUsage(containerName(project.slug));
+          return { memoryBytes: running.reduce((sum, stat) => sum + stat.memoryBytes, 0), cpuPercent: running.reduce((sum, stat) => sum + stat.cpuPercent, 0) };
         }),
       ),
     ]);
@@ -212,20 +218,20 @@ export const adminRoutes = new Hono<UserEnv>()
         id: project.id,
         name: project.name,
         slug: project.slug,
-        status: project.status,
+        status: [...(project.appEnabled ? [project] : []), ...project.projectApps].some((app) => app.status === "RUNNING") ? "RUNNING" : "IDLE",
         owner: project.user,
         container: containers[index],
         databaseBytes,
         hasBucket: !!project.bucket,
         emailsToday: emails.get(project.id) ?? 0,
-        deployments: project._count.deployments,
-        domains: project._count.domains,
+        deployments: project._count.deployments + project.projectApps.reduce((sum, app) => sum + app._count.deployments, 0),
+        domains: project._count.domains + project.projectApps.reduce((sum, app) => sum + app._count.domains, 0),
       };
     });
 
     return c.json({
       projects: rows,
-      limits: { memoryBytes: 512 * 1024 * 1024, emailsPerDay: LIMITS.emailsPerDay },
+      limits: { memoryBytes: 512 * 1024 * 1024 * LIMITS.apps, emailsPerDay: LIMITS.emailsPerDay },
       totals: {
         memoryBytes: rows.reduce((sum, row) => sum + (row.container?.memoryBytes ?? 0), 0),
         databaseBytes: rows.reduce((sum, row) => sum + (row.databaseBytes ?? 0), 0),
@@ -259,7 +265,7 @@ export const adminRoutes = new Hono<UserEnv>()
           verified: true,
           blocked: true,
           createdAt: true,
-          apps: { select: { id: true, status: true } },
+          apps: { select: { id: true, status: true, parentProjectId: true, appEnabled: true } },
         },
       }),
       prisma.user.count({ where }),
@@ -269,27 +275,30 @@ export const adminRoutes = new Hono<UserEnv>()
     return c.json({
       users: users.map(({ apps, ...user }) => ({
         ...user,
-        projects: apps.length,
-        runningApps: apps.filter((app) => app.status === "RUNNING").length,
+        projects: apps.filter((app) => app.parentProjectId === null).length,
+        runningApps: apps.filter((app) => app.appEnabled && app.status === "RUNNING").length,
         emailsToday: apps.reduce((sum, app) => sum + (emails.get(app.id) ?? 0), 0),
       })),
       total,
       page,
       pages: Math.max(1, Math.ceil(total / USERS_PER_PAGE)),
-      projectLimit: LIMITS.apps,
+      projectLimit: LIMITS.projects,
     });
   })
   .delete("/projects/:id", async (c) => {
     const admin = c.get("user");
     const project = await prisma.app.findUnique({
-      where: { id: c.req.param("id") },
+      where: { id: c.req.param("id"), parentProjectId: null },
       include: { user: { select: { id: true, email: true, name: true } } },
     });
     if (!project) {
       return c.json({ error: "Project not found" }, 404);
     }
 
-    await deleteProject(project);
+    const result = await deleteProject(project);
+    if (!result.ok) {
+      return c.json({ error: result.error }, 409);
+    }
     console.log(`Admin ${admin.email} (${admin.id}) deleted project ${project.slug} (${project.id}) owned by ${project.user.email}`);
 
     let emailSent = true;

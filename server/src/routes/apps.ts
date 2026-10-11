@@ -5,35 +5,17 @@ import { containerLogs, containerName, startContainer, stopContainer } from "../
 import { appHost, appUrl, isPlatformHostname, markDomainFailed, provisionDomain, releaseDomain, resolvesToServer } from "../lib/domains.js";
 import { env } from "../lib/env.js";
 import { enqueueDeployment, queuePosition } from "../lib/build-queue.js";
-import { deleteProject } from "../lib/delete-project.js";
+import { deleteApp } from "../lib/delete-project.js";
+import { findProjectApp, projectAppsWhere, resourceSlug, withAppUrl } from "../lib/project-apps.js";
+import { requireProject } from "../middleware/require-project.js";
 import { validate } from "../lib/validator.js";
-import { addDomainSchema, createAppSchema, isReservedAppName, logsQuerySchema, updateBuildSchema, updateEnvSchema, updateProjectSchema } from "../lib/validations.js";
+import { addDomainSchema, createAppSchema, logsQuerySchema, updateBuildSchema, updateEnvSchema, updateProjectSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
 import type { UserEnv } from "../lib/types.js";
 import { LIMITS } from "../lib/limits.js";
 import { NODE_VERSIONS } from "../lib/build-plan.js";
 
 const MAX_ARTIFACT_BYTES = 500 * 1024 * 1024;
-
-const projectSlug = (name: string) => {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 40);
-  if (!slug || isReservedAppName(slug)) {
-    return `project-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
-  }
-  return slug;
-};
-
-const findApp = (userId: string, idOrSlug: string) => {
-  return prisma.app.findFirst({
-    where: { userId, OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
-  });
-};
-
-const withUrl = <T extends { slug: string }>(app: T) => ({ ...app, url: appUrl(app.slug) });
 
 const deploymentSummary = {
   id: true,
@@ -46,42 +28,47 @@ const deploymentSummary = {
 
 export const appRoutes = new Hono<UserEnv>()
   .use(requireUser)
+  .use(requireProject)
   .get("/", async (c) => {
     const apps = await prisma.app.findMany({
-      where: { userId: c.get("user").id },
+      where: { userId: c.get("user").id, ...projectAppsWhere(c.get("projectId")) },
       orderBy: { createdAt: "desc" },
       include: { deployments: { select: deploymentSummary, orderBy: { createdAt: "desc" }, take: 1 } },
     });
-    return c.json({ apps: apps.map(withUrl), limit: LIMITS.apps });
+    return c.json({ apps: apps.map(withAppUrl), limit: LIMITS.apps });
   })
   .post("/", validate("json", createAppSchema), async (c) => {
     const { name } = c.req.valid("json");
 
-    const count = await prisma.app.count({ where: { userId: c.get("user").id } });
-    if (count >= LIMITS.apps) {
-      return c.json({ error: `You can have at most ${LIMITS.apps} projects. Delete one to create another.` }, 400);
+    const projectId = c.get("projectId");
+    const app = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM apps WHERE id = ${projectId} FOR UPDATE`;
+      const project = await tx.app.findUnique({ where: { id: projectId } });
+      if (!project || project.deleting) {
+        return null;
+      }
+      const count = await tx.app.count({ where: { appEnabled: true, OR: [{ id: projectId }, { parentProjectId: projectId }] } });
+      if (count >= LIMITS.apps) {
+        return null;
+      }
+      return tx.app.create({ data: { userId: c.get("user").id, parentProjectId: projectId, name, slug: resourceSlug(name) } });
+    });
+    if (!app) {
+      return c.json({ error: `Each project can have at most ${LIMITS.apps} apps.` }, 400);
     }
-
-    let slug = projectSlug(name);
-    const existing = await prisma.app.findUnique({ where: { slug } });
-    if (existing) {
-      slug = `${slug.slice(0, 31)}-${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
-    }
-
-    const app = await prisma.app.create({ data: { userId: c.get("user").id, name, slug } });
-    return c.json({ app: withUrl(app) }, 201);
+    return c.json({ app: withAppUrl(app) }, 201);
   })
   .put("/:id", validate("json", updateProjectSchema), async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
-      return c.json({ error: "Project not found" }, 404);
+      return c.json({ error: "App not found" }, 404);
     }
 
-    const updated = await prisma.app.update({ where: { id: app.id }, data: { name: c.req.valid("json").name } });
-    return c.json({ app: withUrl(updated) });
+    const updated = await prisma.app.update({ where: { id: app.id }, data: { appName: c.req.valid("json").name } });
+    return c.json({ app: withAppUrl(updated) });
   })
   .get("/:id", async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -94,7 +81,7 @@ export const appRoutes = new Hono<UserEnv>()
     });
     const domains = await prisma.appDomain.findMany({ where: { appId: app.id }, orderBy: { createdAt: "asc" } });
     return c.json({
-      app: withUrl(app),
+      app: withAppUrl(app),
       deployments,
       domains,
       dnsTarget: { cname: appHost(app.slug), ip: env.publicIp },
@@ -102,7 +89,7 @@ export const appRoutes = new Hono<UserEnv>()
     });
   })
   .post("/:id/domains", validate("json", addDomainSchema), async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -120,7 +107,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ domain }, 201);
   })
   .post("/:id/domains/:domainId/verify", async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -160,7 +147,7 @@ export const appRoutes = new Hono<UserEnv>()
     }
   })
   .delete("/:id/domains/:domainId", async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -174,25 +161,25 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ message: "Domain removed" });
   })
   .put("/:id/env", validate("json", updateEnvSchema), async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
 
     const updated = await prisma.app.update({ where: { id: app.id }, data: { env: c.req.valid("json").env } });
-    return c.json({ app: withUrl(updated), message: "Environment saved. Redeploy to apply changes." });
+    return c.json({ app: withAppUrl(updated), message: "Environment saved. Redeploy to apply changes." });
   })
   .put("/:id/build", validate("json", updateBuildSchema), async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
 
     const updated = await prisma.app.update({ where: { id: app.id }, data: c.req.valid("json") });
-    return c.json({ app: withUrl(updated), message: "Build settings saved. Redeploy to apply changes." });
+    return c.json({ app: withAppUrl(updated), message: "Build settings saved. Redeploy to apply changes." });
   })
   .post("/:id/deploy", async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -215,7 +202,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ deployment, url: appUrl(app.slug) }, 201);
   })
   .post("/:id/redeploy", async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -232,7 +219,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ deployment, url: appUrl(app.slug) }, 201);
   })
   .get("/:id/deployments/:deploymentId", async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -246,7 +233,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ deployment: { ...deployment, queuePosition: await queuePosition(deployment) } });
   })
   .get("/:id/logs", validate("query", logsQuerySchema), async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -255,17 +242,17 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ logs });
   })
   .post("/:id/stop", async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
 
     await stopContainer(containerName(app.slug));
     const updated = await prisma.app.update({ where: { id: app.id }, data: { status: "STOPPED" } });
-    return c.json({ app: withUrl(updated) });
+    return c.json({ app: withAppUrl(updated) });
   })
   .post("/:id/start", async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -275,14 +262,17 @@ export const appRoutes = new Hono<UserEnv>()
 
     await startContainer(containerName(app.slug));
     const updated = await prisma.app.update({ where: { id: app.id }, data: { status: "RUNNING" } });
-    return c.json({ app: withUrl(updated) });
+    return c.json({ app: withAppUrl(updated) });
   })
   .delete("/:id", async (c) => {
-    const app = await findApp(c.get("user").id, c.req.param("id"));
+    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
 
-    await deleteProject(app);
-    return c.json({ message: "Project deleted" });
+    const result = await deleteApp(app);
+    if (!result.ok) {
+      return c.json({ error: result.error }, 409);
+    }
+    return c.json({ message: "App deleted" });
   });

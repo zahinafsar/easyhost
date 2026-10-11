@@ -9,17 +9,15 @@ export type NodeVersion = (typeof NODE_VERSIONS)[number];
 
 const DEFAULT_NODE_VERSION: NodeVersion = "24";
 
-const DEFAULT_START = "next start -H 0.0.0.0 -p $PORT";
-
-const MANAGERS: Record<string, { install: string; build: string }> = {
-  "pnpm-lock.yaml": { install: "corepack enable pnpm && pnpm install --frozen-lockfile", build: "pnpm run build" },
-  "yarn.lock": { install: "corepack enable yarn && yarn install --frozen-lockfile", build: "yarn run build" },
-  "bun.lock": { install: "npm install -g bun && bun install --frozen-lockfile", build: "bun run build" },
-  "bun.lockb": { install: "npm install -g bun && bun install --frozen-lockfile", build: "bun run build" },
-  "package-lock.json": { install: "npm ci", build: "npm run build" },
+const MANAGERS: Record<string, { install: string; run: string }> = {
+  "pnpm-lock.yaml": { install: "corepack enable pnpm && pnpm install --frozen-lockfile", run: "pnpm run" },
+  "yarn.lock": { install: "corepack enable yarn && yarn install --frozen-lockfile", run: "yarn run" },
+  "bun.lock": { install: "npm install -g bun && bun install --frozen-lockfile", run: "bun run" },
+  "bun.lockb": { install: "npm install -g bun && bun install --frozen-lockfile", run: "bun run" },
+  "package-lock.json": { install: "npm ci", run: "npm run" },
 };
 
-const FALLBACK_MANAGER = { install: "npm install", build: "npm run build" };
+const FALLBACK_MANAGER = { install: "npm install", run: "npm run" };
 
 const LOCKFILES = Object.keys(MANAGERS);
 
@@ -36,7 +34,7 @@ export type BuildPlan = {
   installDir: string;
   appDir: string;
   install: string;
-  build: string;
+  build: string | null;
   start: string;
 };
 
@@ -72,18 +70,26 @@ const readSource = async (artifact: Buffer, wanted: Set<string>) => {
   return { names, contents };
 };
 
-const readEngines = (file: string, content: string | undefined) => {
+type PackageManifest = {
+  engines?: { node?: string };
+  scripts?: Record<string, string>;
+  main?: string;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+};
+
+const readPackage = (file: string, content: string | undefined): PackageManifest => {
   if (!content) {
-    return undefined;
+    return {};
   }
   try {
-    const engines = (JSON.parse(content) as { engines?: { node?: unknown } }).engines;
-    if (typeof engines?.node === "string") {
-      return engines.node;
+    const manifest = JSON.parse(content);
+    if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+      throw new Error();
     }
-    return undefined;
+    return manifest;
   } catch {
-    throw new Error(`${file} is not valid JSON`);
+    throw new Error(`${file} is not a valid package.json`);
   }
 };
 
@@ -122,12 +128,33 @@ export const resolveBuildPlan = async (artifact: Buffer, settings: BuildSettings
     manager = MANAGERS[lockfile];
   }
 
+  const manifest = readPackage(appPackage, contents.get(appPackage));
+  const rootManifest = readPackage("package.json", contents.get("package.json"));
+
   let nodeVersion: NodeVersion;
   if (isNodeVersion(settings.nodeVersion)) {
     nodeVersion = settings.nodeVersion;
   } else {
-    const engines = readEngines(appPackage, contents.get(appPackage)) ?? readEngines("package.json", contents.get("package.json"));
+    const engines = manifest.engines?.node ?? rootManifest.engines?.node;
     nodeVersion = nodeFromEngines(engines);
+  }
+
+  let start = settings.startCommand;
+  if (!start && manifest.scripts?.start) {
+    start = `${manager.run} start`;
+  }
+  if (!start && (manifest.dependencies?.next || manifest.devDependencies?.next)) {
+    start = "next start -H 0.0.0.0 -p $PORT";
+  }
+  if (!start) {
+    const candidates = [manifest.main, "index.js", "server.js"].filter((file): file is string => typeof file === "string");
+    const entry = candidates.find((file) => names.has(inDir(appDir, file)));
+    if (entry) {
+      start = `node -- '${entry.replaceAll("'", "'\\''")}'`;
+    }
+  }
+  if (!start) {
+    throw new Error("No start script or Node.js entry file found. Add scripts.start to package.json or set a start command in Build settings.");
   }
 
   return {
@@ -135,7 +162,7 @@ export const resolveBuildPlan = async (artifact: Buffer, settings: BuildSettings
     installDir,
     appDir,
     install: settings.installCommand ?? manager.install,
-    build: settings.buildCommand ?? manager.build,
-    start: settings.startCommand ?? DEFAULT_START,
+    build: settings.buildCommand ?? (manifest.scripts?.build ? `${manager.run} build` : null),
+    start,
   };
 };

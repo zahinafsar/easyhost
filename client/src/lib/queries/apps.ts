@@ -1,11 +1,12 @@
 import { queryOptions } from "@tanstack/react-query";
+import { selectedProjectId } from "@/lib/project";
 import { api, createKey, unwrap } from "@/lib/api";
 
 const ACTIVE_STATUSES = ["QUEUED", "BUILDING"];
 
 export const appsQuery = () => {
   const query = {
-    all: ["apps"],
+    all: ["apps", selectedProjectId()],
 
     list: () =>
       queryOptions({

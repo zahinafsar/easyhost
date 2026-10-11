@@ -1,61 +1,50 @@
 import { input, select } from "@inquirer/prompts";
 import path from "node:path";
-import { request, type Project, type ProjectDetail } from "./api.js";
+import { json, request, setProjectScope, type App, type AppDetail, type Project } from "./api.js";
 import { readLinkedProject, writeLinkedProject } from "./config.js";
 import { fail, isInteractive, log } from "./ui.js";
 
-export type ProjectOption = { project?: string };
+export type ProjectOption = { project?: string; app?: string };
 
-const slugify = (value: string) => {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+const fetchProject = async (idOrSlug: string) => {
+  const { project } = await request<{ project: Project }>(`/projects/${encodeURIComponent(idOrSlug)}`);
+  setProjectScope(project.id);
+  return project;
 };
 
-export const fetchProject = (idOrSlug: string) => request<ProjectDetail>(`/apps/${idOrSlug}`);
-
 const chooseProject = async () => {
-  const { apps } = await request<{ apps: Project[] }>("/apps");
-  const NEW_PROJECT = "__new__";
-
-  let choice = NEW_PROJECT;
-  if (apps.length) {
-    choice = await select({
-      message: "Which project should this folder use?",
-      choices: [
-        { name: "Create a new project", value: NEW_PROJECT },
-        ...apps.map((project) => ({ name: `${project.name} (${project.url})`, value: project.id })),
-      ],
-    });
+  const { projects } = await request<{ projects: Project[] }>("/projects");
+  let choice = "__new__";
+  if (projects.length) {
+    choice = await select({ message: "Which project should this folder use?", choices: [{ name: "Create a new project", value: "__new__" }, ...projects.map((project) => ({ name: `${project.name} (${project.slug})`, value: project.id }))] });
   }
-
-  const existing = apps.find((project) => project.id === choice);
+  const existing = projects.find((project) => project.id === choice);
   if (existing) {
+    setProjectScope(existing.id);
     return existing;
   }
-
-  const name = await input({ message: "Project name (used as subdomain)", default: slugify(path.basename(process.cwd())) });
-  const { app } = await request<{ app: Project }>("/apps", { method: "POST", body: JSON.stringify({ name }) });
-  log.success(`Created project ${app.name} (${app.url})`);
-  return app;
+  const name = await input({ message: "Project name", default: path.basename(process.cwd()) });
+  const { project } = await request<{ project: Project }>("/projects", json("POST", { name }));
+  setProjectScope(project.id);
+  log.success(`Created project ${project.name}`);
+  return project;
 };
 
 export const linkProject = async (slug?: string) => {
   let project: Project;
   if (slug) {
-    project = (await fetchProject(slug)).app;
+    project = await fetchProject(slug);
   } else if (isInteractive()) {
     project = await chooseProject();
   } else {
     return fail("Missing --project <slug>. List projects with `ezhst projects list`.");
   }
   writeLinkedProject({ projectId: project.id, slug: project.slug });
-  log.dim("Saved link in .easyhost.json");
+  log.dim("Saved project link in .easyhost.json");
   return project;
 };
 
-export const resolveProjectDetail = async (options: ProjectOption) => {
+export const resolveProject = async (options: ProjectOption) => {
   if (options.project) {
     return fetchProject(options.project);
   }
@@ -66,10 +55,42 @@ export const resolveProjectDetail = async (options: ProjectOption) => {
   if (!isInteractive()) {
     return fail("No project linked. Pass --project <slug> or run `ezhst link --project <slug>`.");
   }
-  const project = await linkProject();
-  return fetchProject(project.id);
+  return linkProject();
 };
 
-export const resolveProject = async (options: ProjectOption) => {
-  return (await resolveProjectDetail(options)).app;
+export const resolveApp = async (options: ProjectOption, create = false): Promise<App> => {
+  const project = await resolveProject(options);
+  const { apps } = await request<{ apps: App[] }>("/apps");
+  const linked = readLinkedProject();
+  let selected = options.app;
+  if (!selected && linked?.projectId === project.id) {
+    selected = linked.appId;
+  }
+  let app = apps.find((item) => item.id === selected || item.slug === selected || item.name === selected);
+  if (!app && selected) {
+    return fail(`App "${selected}" not found in this project. List apps with \`ezhst apps list\`.`);
+  }
+  if (!app && !selected && apps.length === 1) {
+    app = apps[0];
+  }
+  if (!app && !selected && apps.length > 1) {
+    if (!isInteractive()) {
+      return fail("This project has multiple apps. Pass --app <slug>.");
+    }
+    const id = await select({ message: "Which app?", choices: apps.map((item) => ({ name: `${item.name} (${item.slug})`, value: item.id })) });
+    app = apps.find((item) => item.id === id);
+  }
+  if (!app && create && apps.length === 0) {
+    const name = path.basename(process.cwd());
+    app = (await request<{ app: App }>("/apps", json("POST", { name }))).app;
+  }
+  if (!app) {
+    return fail("This project has no apps. Create one with `ezhst apps create <name>`.");
+  }
+  return app;
+};
+
+export const resolveAppDetail = async (options: ProjectOption) => {
+  const app = await resolveApp(options);
+  return request<AppDetail>(`/apps/${app.id}`);
 };

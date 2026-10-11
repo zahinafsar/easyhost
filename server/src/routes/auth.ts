@@ -25,6 +25,7 @@ export const authRoutes = new Hono()
         apps: {
           create: {
             name: "Default project",
+            appEnabled: false,
             slug: `project-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`,
           },
         },

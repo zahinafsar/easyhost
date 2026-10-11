@@ -57,7 +57,7 @@ const describePlan = (plan: BuildPlan) => {
   return [
     `Node ${plan.nodeVersion}`,
     `Install in /${plan.installDir}: ${plan.install}`,
-    `Build in /${plan.appDir}: ${plan.build}`,
+    `Build in /${plan.appDir}: ${plan.build ?? "No build script; skipped"}`,
     `Start: ${plan.start}`,
   ].join("\n");
 };
