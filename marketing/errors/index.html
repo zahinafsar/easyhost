@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Node.js Deployment Errors and Fixes | EasyHost</title>
+    <meta name="description" content="Fixes for common Node.js deployment errors: lockfile failures, missing modules, memory limits, database connections, S3 signatures and domain verification." />
+    <link rel="canonical" href="https://easyhost.fun/errors" />
+    <link rel="alternate" type="text/markdown" href="/errors.md" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="EasyHost" />
+    <meta property="og:url" content="https://easyhost.fun/errors" />
+    <meta property="og:title" content="Node.js Deployment Errors and Fixes | EasyHost" />
+    <meta property="og:description" content="Fixes for common Node.js deployment errors: lockfile failures, missing modules, memory limits, database connections, S3 signatures and domain verification." />
+    <meta property="og:image" content="https://easyhost.fun/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://easyhost.fun/og.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Deployment errors","description":"Fixes for common Node.js deployment errors: lockfile failures, missing modules, memory limits, database connections, S3 signatures and domain verification.","url":"https://easyhost.fun/errors","image":"https://easyhost.fun/og.png","datePublished":"2026-10-31","dateModified":"2026-10-31","author":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/"},"publisher":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/","logo":"https://easyhost.fun/icon-512.png"},"mainEntityOfPage":"https://easyhost.fun/errors"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"EasyHost","item":"https://easyhost.fun/"},{"@type":"ListItem","position":2,"name":"Deployment errors","item":"https://easyhost.fun/errors"}]}]}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a href="/" class="logo">
+          <img src="/logo.svg" alt="" width="18" height="24" />
+          EasyHost
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="/">Home</a>
+          <a href="/frameworks">Frameworks</a>
+          <a href="/guides">Guides</a>
+          <a href="/docs" class="keep">Docs</a>
+        </nav>
+        <div class="nav-actions">
+          <a href="https://app.easyhost.fun/login" class="btn btn-ghost">Log in</a>
+          <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="container docs">
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <ol><li><a href="#all-errors">All errors</a></li></ol>
+      </aside>
+
+      <main class="doc">
+        <div class="doc-head">
+          <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/">EasyHost</a></li><li aria-current="page">Deployment errors</li></ol>
+          <h1>Deployment errors</h1>
+          <p class="lead">Find your error message, why it happens and the commands that fix it.</p>
+          <p class="doc-meta">Last updated October 31, 2026</p>
+        </div>
+<section id="all-errors">
+<h2>All errors</h2>
+<ul><li><a href="/errors/no-package-json">No package.json found</a></li><li><a href="/errors/no-start-script">No start script or Node.js entry file found</a></li><li><a href="/errors/invalid-package-json">package.json is not valid</a></li><li><a href="/errors/artifact-too-large">Build artifact is larger than 500 MB</a></li><li><a href="/errors/no-successful-deployment">No successful deployment to redeploy</a></li><li><a href="/errors/deploy-the-app-first">Deploy the app first</a></li><li><a href="/errors/too-many-apps">Each project can have at most 5 apps</a></li><li><a href="/errors/domain-already-connected">Domain is already connected to an app</a></li><li><a href="/errors/easyhost-domain-rejected">Domain is an EasyHost domain and can't be added</a></li><li><a href="/errors/email-paused">Email service temporarily paused</a></li><li><a href="/errors/npm-ci-out-of-sync">npm ci: package.json and package-lock.json are not in sync</a></li><li><a href="/errors/npm-lockfile-node-version">npm ci rejects a lockfile made by a newer npm</a></li><li><a href="/errors/command-not-found">sh: next: not found</a></li><li><a href="/errors/cannot-find-module">Error: Cannot find module</a></li><li><a href="/errors/err-module-not-found">ERR_MODULE_NOT_FOUND on startup</a></li><li><a href="/errors/eaddrinuse">EADDRINUSE: address already in use</a></li><li><a href="/errors/app-not-listening">Build succeeds, but the app is unreachable</a></li><li><a href="/errors/heap-out-of-memory">JavaScript heap out of memory</a></li><li><a href="/errors/exit-code-137">Container exits with code 137</a></li><li><a href="/errors/ebadengine">npm warn EBADENGINE unsupported engine</a></li><li><a href="/errors/prisma-client-not-generated">@prisma/client did not initialize yet</a></li><li><a href="/errors/prisma-p1001">Prisma P1001: Can't reach database server</a></li><li><a href="/errors/prisma-p3014">Prisma P3014: could not create the shadow database</a></li><li><a href="/errors/too-many-connections">Too many database connections</a></li><li><a href="/errors/pg-ssl-required">Postgres connection rejected without TLS</a></li><li><a href="/errors/statement-timeout">Query timed out in the CLI</a></li><li><a href="/errors/s3-signature-mismatch">SignatureDoesNotMatch from S3</a></li><li><a href="/errors/s3-bucket-hostname">S3 client cannot resolve the bucket hostname</a></li><li><a href="/errors/s3-no-such-bucket">NoSuchBucket from S3</a></li><li><a href="/errors/s3-access-denied">AccessDenied from S3</a></li><li><a href="/errors/domain-verify-failed">Domain verification fails</a></li><li><a href="/errors/env-missing-at-runtime">Environment variable is undefined</a></li><li><a href="/errors/public-env-undefined">NEXT_PUBLIC variable is undefined in the browser</a></li><li><a href="/errors/sharp-musl">sharp fails to load on Alpine</a></li><li><a href="/errors/node-gyp-python">node-gyp fails: could not find Python</a></li><li><a href="/errors/tsc-not-found">tsc: not found</a></li><li><a href="/errors/husky-prepare">husky fails during install</a></li><li><a href="/errors/file-disappeared">Uploaded files disappear after deploy</a></li><li><a href="/errors/nextjs-app-unreachable">Next.js deploys, but the app is unreachable</a></li><li><a href="/errors/nuxt-app-unreachable">Nuxt deploys, but the app is unreachable</a></li><li><a href="/errors/express-app-unreachable">Express deploys, but the app is unreachable</a></li><li><a href="/errors/fastify-app-unreachable">Fastify deploys, but the app is unreachable</a></li><li><a href="/errors/nestjs-app-unreachable">NestJS deploys, but the app is unreachable</a></li><li><a href="/errors/hono-app-unreachable">Hono deploys, but the app is unreachable</a></li><li><a href="/errors/koa-app-unreachable">Koa deploys, but the app is unreachable</a></li><li><a href="/errors/adonisjs-app-unreachable">AdonisJS deploys, but the app is unreachable</a></li><li><a href="/errors/remix-app-unreachable">Remix deploys, but the app is unreachable</a></li><li><a href="/errors/sveltekit-app-unreachable">SvelteKit deploys, but the app is unreachable</a></li><li><a href="/errors/astro-app-unreachable">Astro deploys, but the app is unreachable</a></li><li><a href="/errors/strapi-app-unreachable">Strapi deploys, but the app is unreachable</a></li></ul>
+</section>
+
+        <section id="start">
+          <h2>Start for free</h2>
+          <p>Install the skill, choose Global or Local, then tell your agent to deploy. No credit card, no config files.</p>
+          <div class="code"><pre>npx ezhst skill install</pre></div>
+          <div class="doc-cta">
+            <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up free</a>
+            <a href="/docs" class="btn btn-outline">Read the docs</a>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-brand">
+          <a href="/" class="logo">
+            <img src="/logo.svg" alt="" width="18" height="24" />
+            EasyHost
+          </a>
+          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+        </div>
+        <nav class="footer-columns" aria-label="Footer">
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Migrate</p><ul><li><a href="/migrate/vercel">From Vercel</a></li><li><a href="/migrate/render">From Render</a></li><li><a href="/migrate/railway">From Railway</a></li><li><a href="/migrate/netlify">From Netlify</a></li><li><a href="/migrate/fly">From Fly.io</a></li><li><a href="/migrate/heroku">From Heroku</a></li><li><a href="/migrate/koyeb">From Koyeb</a></li><li><a href="/migrate/postgres">Move a Postgres database</a></li><li><a href="/migrate/storage">Move S3 files</a></li><li><a href="/migrate">All migrations</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Resources</p><ul><li><a href="/docs">Documentation</a></li><li><a href="/docs/cli">CLI reference</a></li><li><a href="/errors">Deployment errors</a></li><li><a href="/learn">Learn hosting</a></li><li><a href="/skill.md">skill.md</a></li><li><a href="/llms.txt">llms.txt</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="https://app.easyhost.fun/login">Log in</a></li><li><a href="https://app.easyhost.fun/register">Sign up</a></li><li><a href="mailto:hello@easyhost.fun">Contact</a></li></ul></div>
+        </nav>
+        <div class="footer-bottom">
+          <span>&copy; 2026 EasyHost</span>
+          <code>npx ezhst skill install</code>
+        </div>
+      </div>
+    </footer>
+    <script>
+      const copyIcon = '<svg class="icon icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="icon icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+      document.querySelectorAll(".code").forEach((block) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "copy";
+        button.setAttribute("aria-label", "Copy code");
+        button.innerHTML = copyIcon;
+        button.addEventListener("click", () => {
+          navigator.clipboard.writeText(block.querySelector("pre").textContent).then(() => {
+            button.classList.add("copied");
+            setTimeout(() => {
+              button.classList.remove("copied");
+            }, 1500);
+          });
+        });
+        block.appendChild(button);
+      });
+    </script>
+  </body>
+</html>

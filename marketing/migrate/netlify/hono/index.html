@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Migrate Hono From Netlify | EasyHost</title>
+    <meta name="description" content="Move a Hono app from Netlify to EasyHost: export variables, change the adapter if needed, deploy, test and switch your domain." />
+    <link rel="canonical" href="https://easyhost.fun/migrate/netlify/hono" />
+    <link rel="alternate" type="text/markdown" href="/migrate/netlify/hono.md" />
+    <meta name="robots" content="noindex, follow" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="EasyHost" />
+    <meta property="og:url" content="https://easyhost.fun/migrate/netlify/hono" />
+    <meta property="og:title" content="Migrate Hono From Netlify | EasyHost" />
+    <meta property="og:description" content="Move a Hono app from Netlify to EasyHost: export variables, change the adapter if needed, deploy, test and switch your domain." />
+    <meta property="og:image" content="https://easyhost.fun/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://easyhost.fun/og.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Migrate Hono from Netlify to EasyHost","description":"Move a Hono app from Netlify to EasyHost: export variables, change the adapter if needed, deploy, test and switch your domain.","url":"https://easyhost.fun/migrate/netlify/hono","image":"https://easyhost.fun/og.png","datePublished":"2026-10-31","dateModified":"2026-10-31","author":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/"},"publisher":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/","logo":"https://easyhost.fun/icon-512.png"},"mainEntityOfPage":"https://easyhost.fun/migrate/netlify/hono"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"EasyHost","item":"https://easyhost.fun/"},{"@type":"ListItem","position":2,"name":"Migrate","item":"https://easyhost.fun/migrate"},{"@type":"ListItem","position":3,"name":"Netlify","item":"https://easyhost.fun/migrate/netlify"},{"@type":"ListItem","position":4,"name":"Hono","item":"https://easyhost.fun/migrate/netlify/hono"}]}]}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a href="/" class="logo">
+          <img src="/logo.svg" alt="" width="18" height="24" />
+          EasyHost
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="/">Home</a>
+          <a href="/frameworks">Frameworks</a>
+          <a href="/guides">Guides</a>
+          <a href="/docs" class="keep">Docs</a>
+        </nav>
+        <div class="nav-actions">
+          <a href="https://app.easyhost.fun/login" class="btn btn-ghost">Log in</a>
+          <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="container docs">
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <ol><li><a href="#export-your-variables">Export your variables</a></li><li><a href="#change-the-hono-setup">Change the Hono setup</a></li><li><a href="#deploy-and-test">Deploy and test</a></li><li><a href="#switch-your-domain">Switch your domain</a></li></ol>
+      </aside>
+
+      <main class="doc">
+        <div class="doc-head">
+          <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/">EasyHost</a></li><li><a href="/migrate">Migrate</a></li><li><a href="/migrate/netlify">Netlify</a></li><li aria-current="page">Hono</li></ol>
+          <h1>Migrate Hono from Netlify to EasyHost</h1>
+          <p class="lead">Move your Hono app in four steps, and keep Netlify running until the new deployment works.</p>
+          <p class="doc-meta">Last updated October 31, 2026</p>
+        </div>
+<section id="export-your-variables">
+<h2>Export your variables</h2>
+<div class="code"><pre>netlify env:list --plain &gt; .env</pre></div>
+<p>Then import them into EasyHost.</p>
+<div class="code"><pre>npx ezhst env import .env</pre></div>
+</section>
+<section id="change-the-hono-setup">
+<h2>Change the Hono setup</h2>
+<p>Replace the Workers or serverless export with <code>serve</code> from <code>@hono/node-server</code>.</p>
+<p><code>netlify.toml</code> is not read by EasyHost, so its build and routing rules need moving into your app or into build settings.</p>
+<p>Use the <code>@hono/node-server</code> adapter so Hono runs as a Node.js server.</p>
+</section>
+<section id="deploy-and-test">
+<h2>Deploy and test</h2>
+<div class="code"><pre>npx ezhst projects create my-project --link
+npx ezhst apps create my-app
+npx ezhst link --project &lt;project-slug&gt; --app &lt;app-slug&gt;
+npx ezhst env import .env
+npx ezhst deploy</pre></div>
+<p>Test your <code>easyhost.fun</code> URL before changing DNS. Netlify runs your app on a CDN with serverless functions, so check anything that depends on it, such as platform functions or cron configuration. Schedules move to <a href="/guides/hono-cron-jobs">EasyHost schedules</a>.</p>
+</section>
+<section id="switch-your-domain">
+<h2>Switch your domain</h2>
+<div class="code"><pre>npx ezhst domains add www.example.com
+npx ezhst domains list
+npx ezhst domains verify www.example.com</pre></div>
+<p>Follow the <a href="/guides">custom domain guides</a> for your DNS provider. Keep Netlify running until traffic has moved. Also read <a href="/errors/hono-app-unreachable">why Hono may be unreachable</a> and the <a href="/migrate/netlify">Netlify overview</a>.</p>
+</section>
+
+        <section id="start">
+          <h2>Start for free</h2>
+          <p>Install the skill, choose Global or Local, then tell your agent to deploy. No credit card, no config files.</p>
+          <div class="code"><pre>npx ezhst skill install</pre></div>
+          <div class="doc-cta">
+            <a href="https://app.easyhost.fun/register" class="btn btn-primary">Sign up free</a>
+            <a href="/docs" class="btn btn-outline">Read the docs</a>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-brand">
+          <a href="/" class="logo">
+            <img src="/logo.svg" alt="" width="18" height="24" />
+            EasyHost
+          </a>
+          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+        </div>
+        <nav class="footer-columns" aria-label="Footer">
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Migrate</p><ul><li><a href="/migrate/vercel">From Vercel</a></li><li><a href="/migrate/render">From Render</a></li><li><a href="/migrate/railway">From Railway</a></li><li><a href="/migrate/netlify">From Netlify</a></li><li><a href="/migrate/fly">From Fly.io</a></li><li><a href="/migrate/heroku">From Heroku</a></li><li><a href="/migrate/koyeb">From Koyeb</a></li><li><a href="/migrate/postgres">Move a Postgres database</a></li><li><a href="/migrate/storage">Move S3 files</a></li><li><a href="/migrate">All migrations</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Resources</p><ul><li><a href="/docs">Documentation</a></li><li><a href="/docs/cli">CLI reference</a></li><li><a href="/errors">Deployment errors</a></li><li><a href="/learn">Learn hosting</a></li><li><a href="/skill.md">skill.md</a></li><li><a href="/llms.txt">llms.txt</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="https://app.easyhost.fun/login">Log in</a></li><li><a href="https://app.easyhost.fun/register">Sign up</a></li><li><a href="mailto:hello@easyhost.fun">Contact</a></li></ul></div>
+        </nav>
+        <div class="footer-bottom">
+          <span>&copy; 2026 EasyHost</span>
+          <code>npx ezhst skill install</code>
+        </div>
+      </div>
+    </footer>
+    <script>
+      const copyIcon = '<svg class="icon icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="icon icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+      document.querySelectorAll(".code").forEach((block) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "copy";
+        button.setAttribute("aria-label", "Copy code");
+        button.innerHTML = copyIcon;
+        button.addEventListener("click", () => {
+          navigator.clipboard.writeText(block.querySelector("pre").textContent).then(() => {
+            button.classList.add("copied");
+            setTimeout(() => {
+              button.classList.remove("copied");
+            }, 1500);
+          });
+        });
+        block.appendChild(button);
+      });
+    </script>
+  </body>
+</html>

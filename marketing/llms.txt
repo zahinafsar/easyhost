@@ -24,3 +24,15 @@ Key facts:
 - [Free Next.js hosting](https://easyhost.fun/free-nextjs-hosting): What the free plan includes and how apps run
 - [Free Postgres hosting](https://easyhost.fun/free-postgres-hosting): The included Postgres database
 - [Vercel alternative](https://easyhost.fun/vercel-alternative): Differences between EasyHost and Vercel Hobby
+
+## Generated guides
+
+Every generated page has a Markdown copy at the same path with `.md` appended. The full list is at https://easyhost.fun/llms-index.json.
+
+- [Frameworks](https://easyhost.fun/frameworks): Guides for each framework
+- [Products](https://easyhost.fun/products): What is included
+- [Pricing and limits](https://easyhost.fun/pricing): Every limit
+- [CLI reference](https://easyhost.fun/docs/cli): One page per command
+- [Deployment errors](https://easyhost.fun/errors): Error messages and fixes
+- [Migration guides](https://easyhost.fun/migrate): Moving apps and data to EasyHost
+- [Concepts](https://easyhost.fun/learn): Short explanations

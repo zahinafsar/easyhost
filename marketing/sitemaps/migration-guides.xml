@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://easyhost.fun/migrate/vercel</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/render</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/railway</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/netlify</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/fly</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/heroku</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/koyeb</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/postgres-from-supabase</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/postgres-from-neon</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/postgres-from-render</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/postgres-from-railway</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/postgres-from-heroku</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/postgres</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/storage-from-aws-s3</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/storage-from-cloudflare-r2</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/storage-from-backblaze-b2</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/migrate/storage</loc><lastmod>2026-10-31</lastmod></url>
+</urlset>

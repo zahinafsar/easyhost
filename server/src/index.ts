@@ -54,6 +54,9 @@ const marketing = serveStatic({
     } else {
       c.header("Cache-Control", "public, max-age=86400");
     }
+    if (path.includes(".md") && !path.includes("skill.md")) {
+      c.header("X-Robots-Tag", "noindex");
+    }
   },
 });
 const dashboard = serveStatic({ root: "/app/public/dashboard" });
