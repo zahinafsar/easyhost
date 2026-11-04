@@ -75,7 +75,7 @@
               {
                 "@type": "Question",
                 "name": "Which AI coding agents can deploy to EasyHost?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Any agent that can run shell commands. Run npx ezhst skill install and choose Global or Local. Both install into .agents/skills. If your agent does not discover that folder, ask it to read the installed SKILL.md or https://easyhost.fun/skill.md before deploying." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Any agent that can run shell commands. Run npx ezhst skill install, pick Claude Code, Codex or Cursor, then Global or Local. For any other agent, ask it to read the installed SKILL.md or https://easyhost.fun/skill.md before deploying." }
               },
               {
                 "@type": "Question",
@@ -258,7 +258,7 @@
               </div>
             </div>
             <p class="skill-foot">
-              Choose Global for all projects or Local for this project. Both use <code>.agents/skills</code>. Add <code>--global</code> or <code>--local</code> to skip the prompt. If your agent does not discover the skill, ask it to read <a href="/skill.md">/skill.md</a>.
+              Pick Claude Code, Codex or Cursor, then Global for all projects or Local for this project. Add <code>--agent</code> and <code>--global</code> or <code>--local</code> to skip the prompts. If your agent does not discover the skill, ask it to read <a href="/skill.md">/skill.md</a>.
             </p>
           </div>
         </div>
@@ -367,7 +367,7 @@
             <li>
               <span class="step-number">01</span>
               <h3>Install the skill</h3>
-              <p>Run <code>npx ezhst skill install</code> and choose Global or Local.</p>
+              <p>Run <code>npx ezhst skill install</code>, pick your agent, then Global or Local.</p>
             </li>
             <li>
               <span class="step-number">02</span>
@@ -429,7 +429,7 @@
             </div>
             <div>
               <h3>Which AI coding agents can deploy to EasyHost?</h3>
-              <p>Any agent that can run shell commands. Run <code>npx ezhst skill install</code> and choose Global or Local. Both install into <code>.agents/skills</code>. If your agent does not discover that folder, ask it to read the installed <code>SKILL.md</code> or <a href="/skill.md">skill.md</a> before deploying. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> has the steps for each.</p>
+              <p>Any agent that can run shell commands. Run <code>npx ezhst skill install</code> , pick Claude Code, Codex or Cursor, then Global or Local. For any other agent, ask it to read the installed <code>SKILL.md</code> or <a href="/skill.md">skill.md</a> before deploying. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> has the steps for each.</p>
             </div>
             <div>
               <h3>Do I need to connect GitHub or change my project?</h3>

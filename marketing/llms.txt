@@ -10,8 +10,8 @@ Key facts:
 - Node 20, 22 and 24. npm, pnpm, yarn and bun. Supported frameworks include Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. Any framework works when it builds and starts as a Node.js service; adapter-based frameworks need their Node adapter.
 - Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
 - There is no Git integration, no preview deployments and no edge network.
-- Install the agent skill with `npx ezhst skill install` and choose Global or Local. Global writes `~/.agents/skills/easyhost/SKILL.md`; Local writes `.agents/skills/easyhost/SKILL.md` in the current directory. For noninteractive use, including `--json`, pass exactly one of `--global` or `--local`.
-- Ask the agent to "Deploy this to EasyHost". If it does not discover `.agents/skills`, ask it to read the installed `SKILL.md` or https://easyhost.fun/skill.md first.
+- Install the agent skill with `npx ezhst skill install` and choose the agent (Claude Code, Codex or Cursor), then Global or Local. Claude Code uses `.claude/skills`, Codex uses `.agents/skills`, Cursor uses `.cursor/skills` (under `~` for Global, the current directory for Local). For noninteractive use, including `--json`, pass `--agent <claude|codex|cursor>` and exactly one of `--global` or `--local`.
+- Ask the agent to "Deploy this to EasyHost". If it does not discover the skill, ask it to read the installed `SKILL.md` or https://easyhost.fun/skill.md first.
 
 ## Docs
 

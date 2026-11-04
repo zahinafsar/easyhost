@@ -704,9 +704,9 @@ export const PRODUCTS = [
     name: "Agent skill",
     title: "An Agent Skill for Deploying to EasyHost",
     summary: "A single `SKILL.md` file that teaches Claude Code, Cursor, Codex and other agents to deploy and manage your app.",
-    points: ["Global install at `~/.agents/skills/easyhost/SKILL.md`", "Local install at `.agents/skills/easyhost/SKILL.md`", "Raw file at `https://easyhost.fun/skill.md` for any agent", "Covers deploys, env vars, domains, storage, Postgres, email and schedules"],
-    commands: "npx ezhst skill install\nnpx ezhst skill install --global\nnpx ezhst skill install --local",
-    limits: "If your agent does not discover `.agents/skills`, ask it to read the file directly.",
+    points: ["Installs for Claude Code (`.claude/skills`), Codex (`.agents/skills`) or Cursor (`.cursor/skills`)", "Global in your home folder or Local in the current project", "Raw file at `https://easyhost.fun/skill.md` for any agent", "Covers deploys, env vars, domains, storage, Postgres, email and schedules"],
+    commands: "npx ezhst skill install\nnpx ezhst skill install --agent claude --global\nnpx ezhst skill install --agent cursor --local",
+    limits: "For other agents, ask them to read the file directly.",
     docs: "/docs#skill",
   },
 ];

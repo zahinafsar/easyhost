@@ -61,7 +61,7 @@ export const CLI_COMMANDS = [
   ["keys", "keys list", "ezhst keys list", "List API keys.", "Key values are not shown again."],
   ["keys", "keys create", "ezhst keys create <name>", "Create an API key.", "It is shown only once, so store it with `ezhst env set EASYHOST_API_KEY=<key>`."],
   ["keys", "keys revoke", "ezhst keys revoke <id>", "Revoke an API key.", "Requests using it stop working."],
-  ["skill", "skill install", "ezhst skill install [--global | --local]", "Install the EasyHost agent skill.", "Without a TTY or with `--json`, pass exactly one of `--global` or `--local`."],
+  ["skill", "skill install", "ezhst skill install [--agent <claude|codex|cursor>] [--global | --local]", "Install the EasyHost agent skill for Claude Code, Codex or Cursor.", "Without a TTY or with `--json`, pass `--agent` and exactly one of `--global` or `--local`."],
 ];
 
 export const ERRORS = [

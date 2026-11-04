@@ -43,7 +43,7 @@ ezhst deploy --project <project-slug> --app <app-slug>
 
 The CLI covers everything the dashboard does (projects, apps, schedules, deploys, build logs, env, build settings, domains, storage, database, email, API keys). App commands accept `--app <slug-or-id>`; use `ezhst link --project <slug> --app <slug>` to save both selections. A project with multiple apps requires an explicit or linked app. Every command takes `--json`, never prompts without a TTY, and accepts `EZHST_TOKEN` instead of a saved login, so AI agents can drive it. `ezhst --help` lists all commands; the agent skill lives in `cli/skill/SKILL.md` (installed with `ezhst skill install`, served at `https://easyhost.fun/skill.md`).
 
-`ezhst skill install` asks whether to install globally or locally. Global installs to `~/.agents/skills/easyhost/SKILL.md`; Local installs to `.agents/skills/easyhost/SKILL.md` in the current directory. Pass `--global` or `--local` to skip the prompt; one is required for noninteractive use, including `--json`.
+`ezhst skill install` asks which agent to install for (Claude Code, Codex or Cursor), then whether to install globally or locally. Claude Code uses `.claude/skills`, Codex uses `.agents/skills`, Cursor uses `.cursor/skills` (under `~` for Global, the current directory for Local), each at `skills/easyhost/SKILL.md`. Pass `--agent <claude|codex|cursor>` and `--global` or `--local` to skip the prompts; both are required for noninteractive use, including `--json`.
 
 Locally apps run as containers without routing. In production they are served at `https://<app-name>.easyhost.fun`.
 

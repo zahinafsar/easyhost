@@ -127,7 +127,7 @@ ${fence("npx ezhst skill install")}
 
 ${agent.hint}
 
-If ${agent.name} does not discover ${q(".agents/skills")}, ask it to read the installed ${q("SKILL.md")} or [skill.md](/skill.md) first.
+If ${agent.name} does not discover the skill, ask it to read the installed ${q("SKILL.md")} or [skill.md](/skill.md) first.
 
 ## Tell ${agent.name} to deploy
 

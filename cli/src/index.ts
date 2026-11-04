@@ -184,8 +184,9 @@ const skill = program.command("skill").description("Agent skill");
 skill
   .command("install")
   .description("Install the EasyHost agent skill")
-  .option("--global", "Install to ~/.agents/skills for all projects")
-  .option("--local", "Install to .agents/skills in the current project")
+  .option("--agent <agent>", "Target agent: claude, codex or cursor")
+  .option("--global", "Install to the agent's home skills folder for all projects")
+  .option("--local", "Install to the agent's skills folder in the current project")
   .action(installSkill);
 
 program.parseAsync().catch((error) => {
