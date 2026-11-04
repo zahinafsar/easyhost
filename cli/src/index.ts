@@ -22,6 +22,7 @@ import {
 import { createDatabase, databaseInfo, deleteDatabase, queryDatabase, resetDatabasePassword, tableRows } from "./commands/db.js";
 import { createSender, deleteSender, emailInfo, emailLogs, sendEmail } from "./commands/email.js";
 import { createKey, listKeys, revokeKey } from "./commands/keys.js";
+import { aiAppStatus, createAiApp, listAiApps, listAiFiles, promptAiApp, pullAiApp } from "./commands/ai.js";
 import { acceptInvite, inviteMember, leaveProject, listMembers, removeMember, revokeInvite } from "./commands/members.js";
 import { installSkill } from "./commands/skill.js";
 import { fail, setJsonMode } from "./lib/ui.js";
@@ -180,6 +181,21 @@ const keys = program.command("keys").description("API keys for the HTTP API");
 scoped(keys.command("list").description("List API keys")).action(listKeys);
 scoped(keys.command("create").description("Create an API key").argument("<name>")).action(createKey);
 scoped(keys.command("revoke").description("Revoke an API key").argument("<id>")).action(revokeKey);
+
+const ai = program.command("ai").description("AI apps built from prompts (live at <name>.easyhost.fun)");
+scoped(ai.command("list").description("List AI apps")).action(listAiApps);
+scoped(ai.command("create").description("Create an AI app; the name becomes its address").argument("<name>")).action(createAiApp);
+scoped(
+  ai
+    .command("prompt")
+    .description("Ask the AI to build or change the app and wait for it to finish")
+    .argument("<name>")
+    .argument("<text>")
+    .option("--no-wait", "Return right after sending the prompt"),
+).action(promptAiApp);
+scoped(ai.command("status").description("Show AI progress and recent messages").argument("<name>")).action(aiAppStatus);
+scoped(ai.command("files").description("List the app's files").argument("<name>")).action(listAiFiles);
+scoped(ai.command("pull").description("Download the app's files").argument("<name>").argument("[dir]")).action(pullAiApp);
 
 const members = program.command("members").description("Project members and invites");
 scoped(members.command("list").description("List the owner, members and pending invites")).action(listMembers);

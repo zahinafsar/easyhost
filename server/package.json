@@ -9,9 +9,11 @@
     "prisma": "node --env-file=../.env node_modules/prisma/build/index.js"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.111",
     "@hono/node-server": "^2.1.1",
     "@hono/zod-validator": "^0.9.1",
     "@prisma/client": "^5.22.0",
+    "ai": "^7.0.162",
     "bcryptjs": "^3.0.3",
     "dockerode": "^5.0.1",
     "hono": "^4.13.9",

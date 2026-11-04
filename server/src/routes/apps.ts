@@ -14,6 +14,9 @@ import { requireUser } from "../middleware/require-user.js";
 import type { UserEnv } from "../lib/types.js";
 import { LIMITS } from "../lib/limits.js";
 import { NODE_VERSIONS } from "../lib/build-plan.js";
+import { startAiApp } from "../lib/ai-apps.js";
+
+const AI_APP_ERROR = "AI apps are changed from the Builder, not deployed.";
 
 const MAX_ARTIFACT_BYTES = 500 * 1024 * 1024;
 
@@ -167,12 +170,19 @@ export const appRoutes = new Hono<UserEnv>()
     }
 
     const updated = await prisma.app.update({ where: { id: app.id }, data: { env: c.req.valid("json").env } });
+    if (updated.kind === "AI") {
+      const restarted = await startAiApp(updated);
+      return c.json({ app: withAppUrl(restarted), message: "Environment saved and applied." });
+    }
     return c.json({ app: withAppUrl(updated), message: "Environment saved. Redeploy to apply changes." });
   })
   .put("/:id/build", validate("json", updateBuildSchema), async (c) => {
     const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
+    }
+    if (app.kind === "AI") {
+      return c.json({ error: AI_APP_ERROR }, 400);
     }
 
     const updated = await prisma.app.update({ where: { id: app.id }, data: c.req.valid("json") });
@@ -182,6 +192,9 @@ export const appRoutes = new Hono<UserEnv>()
     const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
+    }
+    if (app.kind === "AI") {
+      return c.json({ error: AI_APP_ERROR }, 400);
     }
 
     const body = await c.req.parseBody();
@@ -205,6 +218,9 @@ export const appRoutes = new Hono<UserEnv>()
     const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
+    }
+    if (app.kind === "AI") {
+      return c.json({ error: AI_APP_ERROR }, 400);
     }
 
     const latest = await prisma.deployment.findFirst({
@@ -255,6 +271,10 @@ export const appRoutes = new Hono<UserEnv>()
     const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
+    }
+    if (app.kind === "AI") {
+      const started = await startAiApp(app);
+      return c.json({ app: withAppUrl(started) });
     }
     if (!app.containerId) {
       return c.json({ error: "Deploy the app first" }, 400);

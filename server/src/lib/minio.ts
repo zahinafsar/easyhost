@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { Client } from "minio";
 import { env } from "./env.js";
+import { prisma } from "./prisma.js";
 
 const run = promisify(execFile);
 
@@ -157,4 +158,20 @@ export const emptyAndRemoveBucket = async (minioName: string) => {
     await minio.removeObjects(minioName, keys);
   }
   await minio.removeBucket(minioName);
+};
+
+export const createProjectBucket = async (projectId: string, name: string) => {
+  const id = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
+  const minioName = minioBucketName(id);
+  await createPublicBucket(minioName);
+
+  let credentials: Awaited<ReturnType<typeof createBucketCredentials>>;
+  try {
+    credentials = await createBucketCredentials(minioName);
+  } catch (error) {
+    await emptyAndRemoveBucket(minioName);
+    throw error;
+  }
+
+  return prisma.bucket.create({ data: { id, projectId, name, minioName, ...credentials } });
 };

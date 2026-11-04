@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { InferRequestType } from "hono/client";
-import { CheckCircle2, ExternalLink, FileText, List, Play, Plus, RefreshCw, Square, Trash2, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileText, List, Play, Plus, RefreshCw, Sparkles, Square, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,8 +49,8 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
       return unwrap(api.apps[":id"].env.$put({ param: { id: appId }, json: { env } }));
     },
     invalidate: [appsQuery().all],
-    success: "Environment saved. Redeploy to apply.",
-    onSuccess: () => {
+    onSuccess: (result) => {
+      toast.success(result.message);
       if (mode === "text") {
         setRows(parseEnv(text));
         setMode("table");
@@ -445,6 +445,11 @@ export const AppDetailPage = () => {
 
   const { app, deployments } = data;
   const activeDeployment = selected ?? deployments[0]?.id;
+  const isAi = app.kind === "AI";
+  let defaultTab = "deployments";
+  if (isAi) {
+    defaultTab = "logs";
+  }
 
   return (
     <>
@@ -459,10 +464,20 @@ export const AppDetailPage = () => {
                 Visit
               </a>
             </Button>
-            <Button variant="outline" onClick={() => redeploy.mutate(undefined)} disabled={redeploy.isPending}>
-              <RefreshCw className="size-4" />
-              Redeploy
-            </Button>
+            {isAi && (
+              <Button variant="outline" asChild>
+                <Link to={`/builder/${app.id}`}>
+                  <Sparkles className="size-4" />
+                  Open builder
+                </Link>
+              </Button>
+            )}
+            {!isAi && (
+              <Button variant="outline" onClick={() => redeploy.mutate(undefined)} disabled={redeploy.isPending}>
+                <RefreshCw className="size-4" />
+                Redeploy
+              </Button>
+            )}
             {app.status === "STOPPED" && (
               <Button variant="outline" onClick={() => start.mutate(undefined)} disabled={start.isPending}>
                 <Play className="size-4" />
@@ -492,14 +507,14 @@ export const AppDetailPage = () => {
         <StatusBadge status={app.status} />
         <span className="text-sm text-muted-foreground">Updated {formatDate(app.updatedAt)}</span>
       </div>
-      <Tabs defaultValue="deployments">
+      <Tabs defaultValue={defaultTab}>
         <TabsList>
-          <TabsTrigger value="deployments">Deployments</TabsTrigger>
+          {!isAi && <TabsTrigger value="deployments">Deployments</TabsTrigger>}
           <TabsTrigger value="logs" onClick={() => logs.refetch()}>
             Runtime logs
           </TabsTrigger>
           <TabsTrigger value="env">Environment</TabsTrigger>
-          <TabsTrigger value="build">Build</TabsTrigger>
+          {!isAi && <TabsTrigger value="build">Build</TabsTrigger>}
           <TabsTrigger value="domains">Domains</TabsTrigger>
         </TabsList>
         <TabsContent value="deployments" className="mt-4">

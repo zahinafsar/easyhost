@@ -64,6 +64,8 @@ const RESERVED_EMAIL_USERNAMES = [
   "billing", "root", "webmaster", "hostmaster", "info", "team", "mail", "mailer-daemon", "easyhost", "help",
 ];
 
+export const isReservedEmailUsername = (username: string) => RESERVED_EMAIL_USERNAMES.includes(username);
+
 const emailUsernameSchema = z
   .string()
   .min(2, "Username must be at least 2 characters")
@@ -189,3 +191,22 @@ export const scheduleStateSchema = z.object({ enabled: z.boolean() });
 export const inviteMemberSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
 });
+
+export const aiAppNameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2, "Name must be at least 2 characters")
+  .max(40, "Name must be at most 40 characters")
+  .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, "Use lowercase letters, numbers and dashes, starting and ending with a letter or number")
+  .refine((name) => !isReservedAppName(name), "This name is reserved");
+
+export const createAiAppSchema = z.object({ name: aiAppNameSchema });
+
+export const aiAppAvailabilitySchema = z.object({ name: z.string() });
+
+export const aiPromptSchema = z.object({
+  prompt: z.string().trim().min(1, "Describe what to build").max(8000, "Prompt is too long"),
+});
+
+export const aiFileQuerySchema = z.object({ path: z.string().min(1) });

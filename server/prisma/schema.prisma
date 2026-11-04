@@ -25,6 +25,17 @@ enum AppStatus {
   FAILED
 }
 
+enum AppKind {
+  NODE
+  AI
+}
+
+enum AiStatus {
+  IDLE
+  GENERATING
+  FAILED
+}
+
 enum DomainStatus {
   PENDING
   ACTIVE
@@ -121,6 +132,7 @@ model Bucket {
   accessKey String   @unique
   secretKey String
   createdAt DateTime @default(now())
+  aiApps    App[]    @relation("AiAppBucket")
 
   @@map("buckets")
 }
@@ -135,6 +147,7 @@ model Database {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  aiApps    App[]    @relation("AiAppDatabase")
 
   @@map("databases")
 }
@@ -197,6 +210,17 @@ model App {
   emailSender     EmailSender?
   members         ProjectMember[]
   invites         ProjectInvite[]
+  kind            AppKind         @default(NODE)
+  aiStatus        AiStatus        @default(IDLE)
+  aiProgress      String?
+  aiError         String?
+  aiAuthSecret    String?
+  aiSteps         Json            @default("[]")
+  aiDatabaseId    String?
+  aiDatabase      Database?       @relation("AiAppDatabase", fields: [aiDatabaseId], references: [id], onDelete: SetNull)
+  aiBucketId      String?
+  aiBucket        Bucket?         @relation("AiAppBucket", fields: [aiBucketId], references: [id], onDelete: SetNull)
+  aiMessages      AiMessage[]
 
   @@index([parentProjectId])
   @@map("apps")
@@ -269,4 +293,17 @@ model ScheduleRun {
 
   @@index([scheduleId, startedAt])
   @@map("schedule_runs")
+}
+
+model AiMessage {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  role      String
+  content   String   @db.Text
+  steps     Json     @default("[]")
+  createdAt DateTime @default(now())
+
+  @@index([appId, createdAt])
+  @@map("ai_messages")
 }

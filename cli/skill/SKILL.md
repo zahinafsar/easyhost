@@ -99,6 +99,10 @@ Schedules (up to five per project, intervals in minutes):
 API keys:
 - `keys list | create <name> | revoke <id>` (a key is shown only once)
 
+AI apps:
+- `ai create <name>` makes an app live at `https://<name>.easyhost.fun` (name must be unique). `ai prompt <name> "<text>"` asks the AI to build or change it and waits until it is live. Also `ai list | status <name> | files <name> | pull <name> [dir]`.
+- AI apps are plain JavaScript Hono servers edited only through prompts. Do not run `deploy` on them. Env vars, logs, domains, start, stop and delete use the normal app commands with `--app <name>`.
+
 Members:
 - `members list | invite <email> | revoke <email> | remove <email> --yes | leave --yes`. Only the owner can invite, revoke, remove, rename or delete the project. Members can do everything else.
 - `accept-invite <link-or-token>` joins a project. The logged-in email must match the invited email.

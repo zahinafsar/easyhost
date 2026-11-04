@@ -1,7 +1,7 @@
 import Docker from "dockerode";
 import { pack } from "tar-stream";
 import path from "node:path";
-import type { Readable } from "node:stream";
+import { PassThrough, type Readable } from "node:stream";
 import type { BuildPlan } from "./build-plan.js";
 
 export const docker = new Docker();
@@ -120,6 +120,138 @@ export const runContainer = async (name: string, image: string, env: Record<stri
 
   await container.start();
   return container.id;
+};
+
+export const AI_RUNTIME_IMAGE = "easyhost/ai-runtime";
+const AI_APP_DIR = "/srv/app";
+const NPM_CACHE_VOLUME = "easyhost-npm-cache";
+
+export type ContainerFile = { path: string; content: string };
+
+const tarBuffer = async (files: ContainerFile[]) => {
+  const tar = pack();
+  for (const file of files) {
+    tar.entry({ name: file.path }, file.content);
+  }
+  tar.finalize();
+  const chunks: Buffer[] = [];
+  for await (const chunk of tar) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks);
+};
+
+export const runAiContainer = async (
+  name: string,
+  env: Record<string, string>,
+  files: ContainerFile[],
+  options: { publishPort: boolean },
+) => {
+  await ensureNetwork();
+  await removeContainer(name);
+
+  const portKey = `${APP_PORT}/tcp`;
+  const hostConfig: Docker.HostConfig = {
+    NetworkMode: DOCKER_NETWORK,
+    RestartPolicy: { Name: "unless-stopped" },
+    Memory: 512 * 1024 * 1024,
+    NanoCpus: 1_000_000_000,
+    Binds: [`${NPM_CACHE_VOLUME}:/root/.npm`],
+  };
+  let exposedPorts: Record<string, object> | undefined;
+  if (options.publishPort) {
+    hostConfig.PortBindings = { [portKey]: [{ HostIp: "127.0.0.1", HostPort: "" }] };
+    hostConfig.ExtraHosts = ["host.docker.internal:host-gateway"];
+    exposedPorts = { [portKey]: {} };
+  }
+
+  const container = await docker.createContainer({
+    name,
+    Image: AI_RUNTIME_IMAGE,
+    Env: Object.entries(env).map(([key, value]) => `${key}=${value}`),
+    ExposedPorts: exposedPorts,
+    HostConfig: hostConfig,
+    Labels: { "easyhost.app": name },
+  });
+
+  if (files.length) {
+    await container.putArchive(await tarBuffer(files), { path: AI_APP_DIR });
+  }
+  await container.start();
+  return container.id;
+};
+
+export const putContainerFiles = async (name: string, files: ContainerFile[]) => {
+  await docker.getContainer(name).putArchive(await tarBuffer(files), { path: AI_APP_DIR });
+};
+
+export const removeContainerFiles = async (name: string, paths: string[]) => {
+  const exec = await docker.getContainer(name).exec({
+    Cmd: ["rm", "-f", ...paths.map((item) => path.posix.join(AI_APP_DIR, item))],
+    AttachStdout: false,
+    AttachStderr: false,
+  });
+  await exec.start({ Detach: true });
+};
+
+export const execInContainer = async (name: string, cmd: string[], timeoutMs: number) => {
+  const container = docker.getContainer(name);
+  const exec = await container.exec({ Cmd: cmd, WorkingDir: AI_APP_DIR, AttachStdout: true, AttachStderr: true });
+  const stream = await exec.start({ hijack: true, stdin: false });
+  const chunks: Buffer[] = [];
+  const collector = new PassThrough();
+  collector.on("data", (chunk: Buffer) => chunks.push(chunk));
+  docker.modem.demuxStream(stream, collector, collector);
+
+  let timer: NodeJS.Timeout | undefined;
+  const finished = new Promise<void>((resolve) => {
+    stream.on("end", () => resolve());
+    stream.on("close", () => resolve());
+  });
+  const timedOut = new Promise<"timeout">((resolve) => {
+    timer = setTimeout(() => resolve("timeout"), timeoutMs);
+  });
+  const outcome = await Promise.race([finished, timedOut]);
+  clearTimeout(timer);
+  const output = Buffer.concat(chunks).toString("utf8");
+  if (outcome === "timeout") {
+    stream.destroy();
+    return { exitCode: null, output: `${output}\nTimed out after ${Math.round(timeoutMs / 1000)}s` };
+  }
+  const { ExitCode } = await exec.inspect();
+  return { exitCode: ExitCode, output };
+};
+
+export const restartContainer = async (name: string) => {
+  await docker.getContainer(name).restart();
+};
+
+export const publishedPort = async (name: string) => {
+  try {
+    const info = await docker.getContainer(name).inspect();
+    const binding = info.NetworkSettings.Ports?.[`${APP_PORT}/tcp`]?.[0];
+    if (!binding?.HostPort) {
+      return null;
+    }
+    return Number(binding.HostPort);
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode === 404) {
+      return null;
+    }
+    throw error;
+  }
+};
+
+export const containerExists = async (name: string) => {
+  try {
+    await docker.getContainer(name).inspect();
+    return true;
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode === 404) {
+      return false;
+    }
+    throw error;
+  }
 };
 
 export const stopContainer = async (name: string) => {

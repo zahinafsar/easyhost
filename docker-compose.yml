@@ -43,6 +43,12 @@ services:
       echo 'minio ready'
       "
 
+  ai-runtime:
+    build: ./server/ai-runtime
+    image: easyhost/ai-runtime
+    entrypoint: ["true"]
+    restart: "no"
+
 volumes:
   postgres_data:
   minio_data:

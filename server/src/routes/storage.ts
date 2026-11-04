@@ -3,11 +3,10 @@ import { prisma } from "../lib/prisma.js";
 import {
   S3_REGION,
   createBucketCredentials,
-  createPublicBucket,
+  createProjectBucket,
   emptyAndRemoveBucket,
   listAllObjects,
   minio,
-  minioBucketName,
   publicBaseUrl,
   publicObjectUrl,
   removeBucketCredentials,
@@ -60,19 +59,7 @@ export const storageRoutes = new Hono<UserEnv>()
       return c.json({ error: "This project already has storage" }, 400);
     }
 
-    const id = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
-    const minioName = minioBucketName(id);
-    await createPublicBucket(minioName);
-
-    let credentials: Awaited<ReturnType<typeof createBucketCredentials>>;
-    try {
-      credentials = await createBucketCredentials(minioName);
-    } catch (error) {
-      await emptyAndRemoveBucket(minioName);
-      throw error;
-    }
-
-    const bucket = await prisma.bucket.create({ data: { id, projectId, name, minioName, ...credentials } });
+    const bucket = await createProjectBucket(projectId, name);
     return c.json({ bucket: withCredentials(bucket) }, 201);
   })
   .delete("/buckets/:id", async (c) => {

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -69,6 +70,7 @@ export const AppsPage = () => {
                   <Link to={`/apps/${app.id}`} className="hover:underline focus-visible:outline-2 focus-visible:outline-ring">
                     {app.name}
                   </Link>
+                  {app.kind === "AI" && <Badge variant="secondary" className="ml-2">AI</Badge>}
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">{app.url}</TableCell>
                 <TableCell><StatusBadge status={app.status} /></TableCell>

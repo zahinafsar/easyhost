@@ -27,6 +27,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY server/package.json ./
+COPY server/ai-template ./ai-template
 COPY marketing ./public/marketing
 COPY cli/skill/SKILL.md ./public/marketing/skill.md
 RUN find public/marketing -type f \( -name "*.html" -o -name "*.css" -o -name "*.svg" -o -name "*.xml" -o -name "*.txt" -o -name "*.md" \) -exec gzip -9 -k {} +

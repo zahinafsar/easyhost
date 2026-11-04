@@ -66,6 +66,24 @@ export const createUserDatabase = async ({ dbName, roleName, password }: Databas
   });
 };
 
+export const restoreUserDatabase = async ({ dbName, roleName, password }: DatabaseCredentials) => {
+  await asAdmin(async (client) => {
+    const role = await client.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [roleName]);
+    if (!role.rowCount) {
+      await client.query(`CREATE ROLE "${roleName}" LOGIN PASSWORD '${password}' CONNECTION LIMIT ${CONNECTION_LIMIT}`);
+    } else {
+      await client.query(`ALTER ROLE "${roleName}" LOGIN PASSWORD '${password}'`);
+    }
+    for (const name of [dbName, shadowName(dbName)]) {
+      const existing = await client.query("SELECT 1 FROM pg_database WHERE datname = $1", [name]);
+      if (!existing.rowCount) {
+        await client.query(`CREATE DATABASE "${name}" OWNER "${roleName}"`);
+        await client.query(`REVOKE ALL ON DATABASE "${name}" FROM PUBLIC`);
+      }
+    }
+  });
+};
+
 export const dropUserDatabase = async ({ dbName, roleName }: Pick<DatabaseCredentials, "dbName" | "roleName">) => {
   await asAdmin(async (client) => {
     await client.query(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);

@@ -1,0 +1,383 @@
+import path from "node:path";
+import { randomBytes } from "node:crypto";
+import type { App, Database } from "@prisma/client";
+import { prisma } from "./prisma.js";
+import { S3_REGION, createProjectBucket, minio, publicBaseUrl, s3Endpoint } from "./minio.js";
+import { env } from "./env.js";
+import { appUrl } from "./domains.js";
+import { senderAddress } from "./email.js";
+import { generateApiKey } from "./api-key.js";
+import { isReservedEmailUsername } from "./validations.js";
+import { APP_PORT, containerExists, containerName, execInContainer, publishedPort, putContainerFiles, removeContainerFiles, restartContainer, runAiContainer } from "./docker.js";
+import { connectionString, createUserDatabase, generateCredentials, restoreUserDatabase } from "./userdb.js";
+import { LIMITS } from "./limits.js";
+
+export const AI_BUCKET = "easyhost-ai";
+
+let bucketReady: Promise<void> | null = null;
+
+const ensureBucket = () => {
+  if (!bucketReady) {
+    bucketReady = (async () => {
+      const exists = await minio.bucketExists(AI_BUCKET);
+      if (!exists) {
+        await minio.makeBucket(AI_BUCKET);
+      }
+    })().catch((error) => {
+      bucketReady = null;
+      throw error;
+    });
+  }
+  return bucketReady;
+};
+
+const objectKey = (appId: string, filePath: string) => `${appId}/${filePath}`;
+
+export class AiFileError extends Error {}
+
+export const normalizeFilePath = (input: string) => {
+  const trimmed = input.trim().replace(/\\/g, "/").replace(/^\.\//, "");
+  const normalized = path.posix.normalize(trimmed);
+  if (!normalized || normalized === "." || normalized.startsWith("/") || normalized.startsWith("..")) {
+    throw new AiFileError(`Invalid path: ${input}`);
+  }
+  if (normalized.split("/").some((part) => part === "node_modules" || part.startsWith(".env"))) {
+    throw new AiFileError(`Path not allowed: ${input}`);
+  }
+  if (!/^[A-Za-z0-9._\-/]+$/.test(normalized)) {
+    throw new AiFileError(`Path has unsupported characters: ${input}`);
+  }
+  return normalized;
+};
+
+export const listAiFiles = async (appId: string) => {
+  await ensureBucket();
+  const prefix = `${appId}/`;
+  return new Promise<{ path: string; size: number }[]>((resolve, reject) => {
+    const files: { path: string; size: number }[] = [];
+    const stream = minio.listObjectsV2(AI_BUCKET, prefix, true);
+    stream.on("data", (item) => {
+      if (item.name) {
+        files.push({ path: item.name.slice(prefix.length), size: item.size });
+      }
+    });
+    stream.on("error", reject);
+    stream.on("end", () => resolve(files.sort((a, b) => a.path.localeCompare(b.path))));
+  });
+};
+
+export const readAiFile = async (appId: string, filePath: string) => {
+  await ensureBucket();
+  const stream = await minio.getObject(AI_BUCKET, objectKey(appId, normalizeFilePath(filePath)));
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+};
+
+export const readAllAiFiles = async (appId: string) => {
+  const files = await listAiFiles(appId);
+  return Promise.all(files.map(async (file) => ({ path: file.path, content: await readAiFile(appId, file.path) })));
+};
+
+const INSTALL_TIMEOUT_MS = 180_000;
+const PACKAGE_SPEC = /^(@[a-z0-9][a-z0-9._~-]*\/)?[a-z0-9][a-z0-9._~-]*(@[A-Za-z0-9.^~<>=*|+-]+)?$/;
+
+const dependenciesOf = (content: string | null) => {
+  if (content === null) {
+    return "";
+  }
+  try {
+    const parsed = JSON.parse(content) as { dependencies?: unknown };
+    return JSON.stringify(parsed.dependencies ?? {});
+  } catch {
+    return "invalid";
+  }
+};
+
+const readAiFileOrNull = async (appId: string, filePath: string) => {
+  try {
+    return await readAiFile(appId, filePath);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NoSuchKey") {
+      return null;
+    }
+    throw error;
+  }
+};
+
+export const writeAiFile = async (app: Pick<App, "id" | "slug">, filePath: string, content: string) => {
+  const normalized = normalizeFilePath(filePath);
+  let previous: string | null = null;
+  if (normalized === "package.json") {
+    previous = await readAiFileOrNull(app.id, normalized);
+  }
+  const size = Buffer.byteLength(content);
+  if (size > LIMITS.aiFileBytes) {
+    throw new AiFileError(`${normalized} is larger than ${LIMITS.aiFileBytes / 1024} KB`);
+  }
+  const files = await listAiFiles(app.id);
+  if (!files.some((file) => file.path === normalized) && files.length >= LIMITS.aiFiles) {
+    throw new AiFileError(`An AI app can have at most ${LIMITS.aiFiles} files`);
+  }
+  await minio.putObject(AI_BUCKET, objectKey(app.id, normalized), Buffer.from(content), size);
+  const name = containerName(app.slug);
+  if (await containerExists(name)) {
+    await putContainerFiles(name, [{ path: normalized, content }]);
+    if (normalized === "package.json" && dependenciesOf(previous) !== dependenciesOf(content)) {
+      await restartContainer(name);
+    }
+  }
+  return normalized;
+};
+
+export const deleteAiFile = async (app: Pick<App, "id" | "slug">, filePath: string) => {
+  const normalized = normalizeFilePath(filePath);
+  await ensureBucket();
+  await minio.removeObject(AI_BUCKET, objectKey(app.id, normalized));
+  const name = containerName(app.slug);
+  if (await containerExists(name)) {
+    await removeContainerFiles(name, [normalized]);
+  }
+  return normalized;
+};
+
+export const removeAllAiFiles = async (appId: string) => {
+  const files = await listAiFiles(appId);
+  if (files.length) {
+    await minio.removeObjects(AI_BUCKET, files.map((file) => objectKey(appId, file.path)));
+  }
+};
+
+export const generateAuthSecret = () => randomBytes(32).toString("hex");
+
+const DEV_API_ORIGIN = "http://host.docker.internal:48710";
+
+const emailApiOrigin = () => {
+  if (env.isProduction) {
+    return env.appUrl;
+  }
+  return DEV_API_ORIGIN;
+};
+
+const forContainer = (url: string) => {
+  if (env.isProduction) {
+    return url;
+  }
+  const parsed = new URL(url);
+  if (parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
+    return url;
+  }
+  parsed.hostname = "host.docker.internal";
+  return parsed.toString();
+};
+
+type AiEnvApp = Pick<App, "env" | "aiAuthSecret" | "parentProjectId" | "id" | "aiDatabaseId" | "aiBucketId">;
+
+const findLinked = async (app: AiEnvApp) => {
+  const projectId = app.parentProjectId ?? app.id;
+  let database = null;
+  if (app.aiDatabaseId) {
+    database = await prisma.database.findUnique({ where: { id: app.aiDatabaseId } });
+  }
+  let bucket = null;
+  if (app.aiBucketId) {
+    bucket = await prisma.bucket.findUnique({ where: { id: app.aiBucketId } });
+  }
+  let sender = null;
+  if ((app.env as Record<string, string>).EASYHOST_API_KEY) {
+    sender = await prisma.emailSender.findUnique({ where: { projectId } });
+  }
+  return { database, bucket, sender };
+};
+
+export const connectedServices = async (app: AiEnvApp) => {
+  const { database, bucket, sender } = await findLinked(app);
+  return { database: !!database, storage: !!bucket, email: !!sender };
+};
+
+export const aiAppEnv = async (app: AiEnvApp) => {
+  const { database, bucket, sender } = await findLinked(app);
+  const values: Record<string, string> = { ...(app.env as Record<string, string>), PORT: String(APP_PORT) };
+  if (app.aiAuthSecret) {
+    values.AUTH_SECRET = app.aiAuthSecret;
+  }
+  if (database) {
+    values.DATABASE_URL = forContainer(connectionString(database));
+  }
+  if (bucket) {
+    values.S3_ENDPOINT = forContainer(s3Endpoint());
+    values.S3_REGION = S3_REGION;
+    values.S3_BUCKET = bucket.minioName;
+    values.S3_ACCESS_KEY_ID = bucket.accessKey;
+    values.S3_SECRET_ACCESS_KEY = bucket.secretKey;
+    values.S3_PUBLIC_URL = publicBaseUrl(bucket.minioName);
+  }
+  if (sender) {
+    values.EMAIL_FROM = senderAddress(sender.username);
+    values.EASYHOST_EMAIL_URL = `${emailApiOrigin()}/api/v1/email/send`;
+  }
+  return values;
+};
+
+const READY_TIMEOUT_MS = 20_000;
+const READY_INTERVAL_MS = 300;
+
+const internalUrl = async (slug: string) => {
+  if (env.isProduction) {
+    return `http://${containerName(slug)}:${APP_PORT}`;
+  }
+  const port = await publishedPort(containerName(slug));
+  if (!port) {
+    return null;
+  }
+  return `http://127.0.0.1:${port}`;
+};
+
+const waitUntilReady = async (slug: string) => {
+  const deadline = Date.now() + READY_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const url = await internalUrl(slug);
+    if (url) {
+      const answered = await fetch(url, { signal: AbortSignal.timeout(2000) }).then(() => true, () => false);
+      if (answered) {
+        return true;
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, READY_INTERVAL_MS));
+  }
+  return false;
+};
+
+export const startAiApp = async (app: App) => {
+  const files = await readAllAiFiles(app.id);
+  const containerId = await runAiContainer(containerName(app.slug), await aiAppEnv(app), files, { publishPort: !env.isProduction });
+  await waitUntilReady(app.slug);
+  return prisma.app.update({ where: { id: app.id }, data: { containerId, status: "RUNNING" } });
+};
+
+export const aiPreviewUrl = async (app: Pick<App, "slug">) => {
+  if (env.isProduction) {
+    return appUrl(app.slug);
+  }
+  const port = await publishedPort(containerName(app.slug));
+  if (!port) {
+    return null;
+  }
+  return `http://localhost:${port}`;
+};
+
+const senderUsername = (slug: string) => {
+  return slug.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32).replace(/-+$/, "");
+};
+
+const ensureProjectSender = async (projectId: string, slug: string) => {
+  const existing = await prisma.emailSender.findUnique({ where: { projectId } });
+  if (existing) {
+    return existing;
+  }
+  const base = senderUsername(slug);
+  const candidates = [base, `${base.slice(0, 27)}-app`, `app-${randomBytes(3).toString("hex")}`];
+  for (const username of candidates) {
+    if (username.length < 2 || isReservedEmailUsername(username)) {
+      continue;
+    }
+    const taken = await prisma.emailSender.findUnique({ where: { username } });
+    if (!taken) {
+      return prisma.emailSender.create({ data: { projectId, username } });
+    }
+  }
+  throw new Error("Could not create an email sender address for this app");
+};
+
+export const setupAiEmail = async (app: App) => {
+  const projectId = app.parentProjectId ?? app.id;
+  const sender = await ensureProjectSender(projectId, app.slug);
+  let current = app;
+  if (!(app.env as Record<string, string>).EASYHOST_API_KEY) {
+    const { key, prefix, hash } = generateApiKey();
+    await prisma.apiKey.create({ data: { projectId, name: `ai-${app.slug}`, prefix, hash } });
+    current = await prisma.app.update({
+      where: { id: app.id },
+      data: { env: { ...(app.env as Record<string, string>), EASYHOST_API_KEY: key } },
+    });
+  }
+  await startAiApp(current);
+  return senderAddress(sender.username);
+};
+
+export const connectProjectDatabase = async (app: App) => {
+  const projectId = app.parentProjectId ?? app.id;
+  const { database } = await ensureProjectDatabase(projectId);
+  const updated = await prisma.app.update({ where: { id: app.id }, data: { aiDatabaseId: database.id } });
+  await startAiApp(updated);
+  return database;
+};
+
+export const connectProjectStorage = async (app: App) => {
+  const projectId = app.parentProjectId ?? app.id;
+  let bucket = await prisma.bucket.findUnique({ where: { projectId } });
+  if (!bucket) {
+    bucket = await createProjectBucket(projectId, "app");
+  }
+  const updated = await prisma.app.update({ where: { id: app.id }, data: { aiBucketId: bucket.id } });
+  await startAiApp(updated);
+  return bucket;
+};
+
+const verifiedDatabases = new Set<string>();
+
+export const verifyDatabase = async (database: Database) => {
+  if (!verifiedDatabases.has(database.id)) {
+    await restoreUserDatabase(database);
+    verifiedDatabases.add(database.id);
+  }
+};
+
+export const ensureProjectDatabase = async (projectId: string) => {
+  const existing = await prisma.database.findUnique({ where: { projectId } });
+  if (existing) {
+    await verifyDatabase(existing);
+    return { database: existing, created: false };
+  }
+  const credentials = generateCredentials();
+  await createUserDatabase(credentials);
+  const database = await prisma.database.create({ data: { projectId, name: "app", ...credentials } });
+  return { database, created: true };
+};
+
+export const installAiPackages = async (app: App, packages: string[]) => {
+  const invalid = packages.filter((item) => !PACKAGE_SPEC.test(item));
+  if (invalid.length) {
+    throw new AiFileError(`Invalid package names: ${invalid.join(", ")}`);
+  }
+  const name = containerName(app.slug);
+  if (!(await containerExists(name))) {
+    await startAiApp(app);
+  }
+  const result = await execInContainer(
+    name,
+    ["npm", "install", "--no-audit", "--no-fund", "--prefer-offline", "--loglevel=error", ...packages],
+    INSTALL_TIMEOUT_MS,
+  );
+  if (result.exitCode !== 0) {
+    return { ok: false, output: result.output.trim() || "npm install failed" };
+  }
+  const packageJson = await execInContainer(name, ["cat", "package.json"], 10_000);
+  if (packageJson.exitCode === 0 && packageJson.output.trim()) {
+    const content = packageJson.output;
+    await minio.putObject(AI_BUCKET, objectKey(app.id, "package.json"), Buffer.from(content), Buffer.byteLength(content));
+  }
+  await restartContainer(name);
+  return { ok: true, output: result.output.trim() || `Installed ${packages.join(", ")}` };
+};
+
+export const restartAiApps = async (databaseId: string) => {
+  const apps = await prisma.app.findMany({
+    where: { kind: "AI", deleting: false, status: "RUNNING", aiDatabaseId: databaseId },
+  });
+  for (const app of apps) {
+    await startAiApp(app).catch((error) => console.error(`Failed to restart AI app ${app.slug}`, error));
+  }
+};

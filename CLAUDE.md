@@ -15,7 +15,7 @@ Hosting platform: Node.js app hosting (containers routed by Nginx Proxy Manager)
 ## Commands
 - `npm start` (repo root) - Production: validates `.env`, builds and starts everything via `docker-compose.prod.yml`
 - `npm stop` / `npm run logs` - Stop / tail production stack
-- `docker compose up -d` - Dev infra: postgres 127.0.0.1:54329, minio 127.0.0.1:19000 (console 19001)
+- `docker compose up -d` - Dev infra: postgres 127.0.0.1:54329, minio 127.0.0.1:19000 (console 19001), and builds the `easyhost/ai-runtime` image AI apps run on (the `ai-runtime` service exits right away; after editing `server/ai-runtime/` run `docker compose up -d --build ai-runtime`)
 - `cd server && npm run dev` - API on :48710
 - `cd client && npm run dev` - Dashboard on :51730 (proxies /api to :48710)
 - `cd cli && npm run dev -- <command>` - Run CLI (`ezhst`) from source
@@ -37,6 +37,7 @@ Hosting platform: Node.js app hosting (containers routed by Nginx Proxy Manager)
 - `/server/src/routes/v1/*` - Public service API (API key: email). Storage is plain S3: each bucket has its own MinIO service account (created via `mc` in `server/src/lib/minio.ts`)
 - `/server/src/lib/*` - prisma, auth, email, minio, userdb (customer Postgres), docker, domains (app URLs, custom domains), npm (NPM API), deploy, build-queue, validations
 - `/server/src/middleware/*` - require-user, require-admin, require-api-key
+- `/server/src/routes/ai-apps.ts` + `/server/src/lib/ai-apps.ts` + `/server/src/lib/ai-agent.ts` + `/client/src/pages/builder*.tsx` - AI apps: App rows with kind AI, slug = exact name. Files live in MinIO `easyhost-ai/<appId>/` and are pushed into the running `eh-app-<slug>` container (image `server/ai-runtime`, `node --watch server.js`, plain JS + Hono). Generation is a background job (AI SDK `ToolLoopAgent`, Gemini via `@ai-sdk/google`, tools write_file, delete_file, run_sql, read_logs); dashboard and CLI poll `aiStatus`. AI apps reject deploy/redeploy/build settings. New AI apps start from `/server/ai-template` (Hono serving a static welcome page, plus lib/db, auth, storage, email helpers). Nothing is provisioned at creation: `run_sql` connects the project database on first use (creating it if needed), `connect_storage` does the same for the bucket and `setup_email` for email; each links the resource (App.aiDatabaseId / aiBucketId) and restarts the app. `/builder/:id` renders full screen (AppShell skips its chrome). Locally AI containers publish port 3000 on 127.0.0.1 and reach host services through host.docker.internal, so the preview works without routing
 - `/server/src/routes/members.ts` + `/client/src/pages/members.tsx` + `/client/src/pages/invite.tsx` - Project members: owner is the root App row's userId, members in ProjectMember, email invites in ProjectInvite (7 days). Access goes through `projectAccessWhere` + `requireProject` (sets projectId, projectOwnerId). Owner only: invite, revoke, remove, rename, delete project
 - `/server/src/routes/admin.ts` + `/client/src/pages/admin.tsx` - Admin at `/admin` (role ADMIN): impersonation, health, analytics, usage
 - `/client/src/pages/*` - Route pages

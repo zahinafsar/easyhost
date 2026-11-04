@@ -4,7 +4,7 @@ import { projectAccessWhere } from "../lib/project-apps.js";
 import type { UserEnv } from "../lib/types.js";
 
 export const requireProject = createMiddleware<UserEnv>(async (c, next) => {
-  const requestedId = c.req.header("x-project-id");
+  const requestedId = c.req.header("x-project-id") ?? c.req.query("projectId");
   const project = await prisma.app.findFirst({
     where: {
       ...projectAccessWhere(c.get("user").id),

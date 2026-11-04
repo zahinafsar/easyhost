@@ -13,6 +13,7 @@ const REQUIRED = [
   "APPS_DOMAIN",
   "APPS_PROTOCOL",
   "PUBLIC_IP",
+  "GOOGLE_GENERATIVE_AI_API_KEY",
 ] as const;
 
 const NPM_REQUIRED = ["NPM_API_URL", "NPM_API_EMAIL", "NPM_API_PASSWORD"] as const;
@@ -82,6 +83,7 @@ const readNpm = () => {
 };
 
 export const env = {
+  isProduction: process.env.NODE_ENV === "production",
   jwtSecret: raw("JWT_SECRET"),
   appUrl: raw("APP_URL"),
   resendApiKey: raw("RESEND_API_KEY"),
@@ -100,5 +102,6 @@ export const env = {
   appsDomain: raw("APPS_DOMAIN"),
   appsProtocol: oneOf("APPS_PROTOCOL", ["http", "https"] as const),
   publicIp: raw("PUBLIC_IP"),
+  googleAiApiKey: raw("GOOGLE_GENERATIVE_AI_API_KEY"),
   npm: readNpm(),
 };

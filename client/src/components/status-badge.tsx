@@ -13,6 +13,7 @@ const styles: Record<string, string> = {
   IDLE: "bg-slate-100 text-slate-700",
   ACTIVE: "bg-emerald-100 text-emerald-800",
   PENDING: "bg-amber-100 text-amber-800",
+  GENERATING: "bg-blue-100 text-blue-800",
 };
 
 export const StatusBadge = ({ status }: { status: string }) => {

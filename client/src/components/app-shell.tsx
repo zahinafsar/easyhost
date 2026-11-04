@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Clock3, Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings, ShieldCheck, Users } from "lucide-react";
+import { Clock3, Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/apps", label: "Apps", icon: Rocket },
+  { to: "/builder", label: "Builder", icon: Sparkles },
   { to: "/schedules", label: "Schedules", icon: Clock3 },
   { to: "/storage", label: "Storage", icon: HardDrive },
   { to: "/databases", label: "Databases", icon: Database },
@@ -57,7 +58,7 @@ export const AppShell = () => {
       navigate("/apps");
       return;
     }
-    if (section === "storage" || section === "databases") {
+    if (section === "storage" || section === "databases" || section === "builder") {
       navigate(`/${section}`);
     }
   };
@@ -104,6 +105,11 @@ export const AppShell = () => {
   );
 
   const projectNavItems = navItems;
+  const projectReady = !!activeProject && selectedProjectId() === activeProject.id;
+
+  if (/^\/builder\/[^/]+/.test(location.pathname)) {
+    return <div className="h-dvh overflow-hidden">{projectReady && <Outlet key={activeProject?.id} />}</div>;
+  }
 
   return (
     <div className="flex min-h-screen">

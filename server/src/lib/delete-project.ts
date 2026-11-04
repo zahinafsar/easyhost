@@ -4,6 +4,7 @@ import { DEPLOY_BUCKET, emptyAndRemoveBucket, minio, removeBucketCredentials } f
 import { containerName, removeContainer, removeImage } from "./docker.js";
 import { releaseDomain } from "./domains.js";
 import { dropUserDatabase } from "./userdb.js";
+import { removeAllAiFiles } from "./ai-apps.js";
 
 type DeleteResult = { ok: true } | { ok: false; error: string };
 
@@ -21,6 +22,7 @@ const removeAppResources = async (app: Pick<App, "id" | "slug">) => {
       await removeImage(deployment.imageTag);
     }
   }
+  await removeAllAiFiles(app.id);
   const artifactKeys = [...new Set(deployments.map((deployment) => deployment.artifactKey))];
   if (artifactKeys.length) {
     await minio.removeObjects(DEPLOY_BUCKET, artifactKeys);

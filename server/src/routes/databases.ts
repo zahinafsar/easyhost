@@ -16,6 +16,7 @@ import {
 import { validate } from "../lib/validator.js";
 import { createDatabaseSchema, runQuerySchema, tableRowsQuerySchema, updateCellSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
+import { restartAiApps } from "../lib/ai-apps.js";
 import { requireProject } from "../middleware/require-project.js";
 import type { UserEnv } from "../lib/types.js";
 
@@ -131,6 +132,7 @@ export const databaseRoutes = new Hono<UserEnv>()
 
     const password = await rotatePassword(database.roleName);
     const updated = await prisma.database.update({ where: { id: database.id }, data: { password } });
+    await restartAiApps(database.id);
     return c.json({ connectionString: connectionString(updated) });
   })
   .delete("/:id", async (c) => {

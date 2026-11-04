@@ -51,6 +51,12 @@ services:
     environment:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
 
+  ai-runtime:
+    build: ./server/ai-runtime
+    image: easyhost/ai-runtime
+    entrypoint: ["true"]
+    restart: "no"
+
   api:
     build:
       context: .
@@ -68,6 +74,8 @@ services:
       postgres:
         condition: service_healthy
       minio-init:
+        condition: service_completed_successfully
+      ai-runtime:
         condition: service_completed_successfully
     env_file:
       - .env
