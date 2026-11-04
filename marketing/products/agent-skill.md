@@ -4,8 +4,8 @@ A single `SKILL.md` file that teaches Claude Code, Cursor, Codex and other agent
 
 ## What you get
 
-- Global install at `~/.agents/skills/easyhost/SKILL.md`
-- Local install at `.agents/skills/easyhost/SKILL.md`
+- Installs for Claude Code (`.claude/skills`), Codex (`.agents/skills`) or Cursor (`.cursor/skills`)
+- Global in your home folder or Local in the current project
 - Raw file at `https://easyhost.fun/skill.md` for any agent
 - Covers deploys, env vars, domains, storage, Postgres, email and schedules
 
@@ -13,13 +13,13 @@ A single `SKILL.md` file that teaches Claude Code, Cursor, Codex and other agent
 
 ```
 npx ezhst skill install
-npx ezhst skill install --global
-npx ezhst skill install --local
+npx ezhst skill install --agent claude --global
+npx ezhst skill install --agent cursor --local
 ```
 
 ## Limits
 
-If your agent does not discover `.agents/skills`, ask it to read the file directly. See [pricing and limits](/pricing) for everything.
+For other agents, ask them to read the file directly. See [pricing and limits](/pricing) for everything.
 
 ## Learn more
 

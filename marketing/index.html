@@ -74,6 +74,11 @@
               },
               {
                 "@type": "Question",
+                "name": "Can I build an app without writing code?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the AI Builder in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres, storage and email at its own address." }
+              },
+              {
+                "@type": "Question",
                 "name": "Which AI coding agents can deploy to EasyHost?",
                 "acceptedAnswer": { "@type": "Answer", "text": "Any agent that can run shell commands. Run npx ezhst skill install, pick Claude Code, Codex or Cursor, then Global or Local. For any other agent, ask it to read the installed SKILL.md or https://easyhost.fun/skill.md before deploying." }
               },
@@ -355,6 +360,14 @@
                 <code>ezhst keys create production</code>
               </div>
             </article>
+            <article class="cap">
+              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+              <div>
+                <h3>Team members</h3>
+                <p>Invite people to a project by email. Members manage everything in it.</p>
+                <code>ezhst members invite you@team.com</code>
+              </div>
+            </article>
           </div>
         </div>
       </section>
@@ -381,7 +394,7 @@
             </li>
           </ol>
           <div class="human">
-            <p><strong>Humans get a dashboard too.</strong> Manage projects, deployments, storage, databases and email from the browser.</p>
+            <p><strong>Humans get a dashboard too.</strong> Manage projects, deployments, storage, databases and email from the browser, or describe an app to the <a href="/products/ai-builder">AI Builder</a> and watch it build the frontend and backend live.</p>
             <a href="https://app.easyhost.fun/register" class="btn btn-outline">Open the dashboard</a>
           </div>
         </div>
@@ -404,6 +417,8 @@
             <div class="limit-row"><span>Postgres databases</span><b>1 per project</b></div>
             <div class="limit-row"><span>Email senders</span><b>1 per project</b></div>
             <div class="limit-row"><span>Emails</span><b>20 / day</b></div>
+            <div class="limit-row"><span>Team members</span><b>10 per project</b></div>
+            <div class="limit-row"><span>AI Builder prompts</span><b>30 / day</b></div>
             <div class="limit-row"><span>Concurrent builds</span><b>1</b></div>
             <div class="limit-row"><span>App container</span><b>512 MB RAM, 1 CPU</b></div>
           </div>
@@ -444,6 +459,10 @@
               <p>Vercel runs Next.js on serverless functions behind a global CDN. EasyHost runs each app as one always-on container in a single region and includes Postgres, S3 storage and email in the same free account, all scriptable by a coding agent through one CLI. EasyHost has no preview deployments, Git integration or edge network. Read the full <a href="/vercel-alternative">comparison</a>.</p>
             </div>
             <div>
+              <h3>Can I build an app without writing code?</h3>
+              <p>Yes. Open the <a href="/products/ai-builder">AI Builder</a> in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres, storage and email at its own address.</p>
+            </div>
+            <div>
               <h3>Is the database a real Postgres?</h3>
               <p>Yes. Each project can have one Postgres 16 database with its own role, reachable over TLS with a standard connection string, plus a shadow database for <code>prisma migrate dev</code>. More on the <a href="/free-postgres-hosting">free Postgres hosting</a> page.</p>
             </div>
@@ -475,7 +494,7 @@
           <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
         </div>
         <nav class="footer-columns" aria-label="Footer">
-          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>

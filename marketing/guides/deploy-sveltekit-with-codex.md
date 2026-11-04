@@ -12,7 +12,7 @@ npx ezhst skill install
 
 Run Codex in your project folder with network access enabled, because `ezhst` must reach the EasyHost API.
 
-If Codex does not discover `.agents/skills`, ask it to read the installed `SKILL.md` or [skill.md](/skill.md) first.
+If Codex does not discover the skill, ask it to read the installed `SKILL.md` or [skill.md](/skill.md) first.
 
 ## Tell Codex to deploy
 

@@ -10,7 +10,23 @@ export type AiToolStep = {
   detail: string | null;
   output: string | null;
 };
-export type AiStep = AiTextStep | AiToolStep;
+export type AiQuestion = { id: string; text: string; options: string[] };
+export type AiQuestionsStep = {
+  id: string;
+  type: "questions";
+  questions: AiQuestion[];
+  answers: Record<string, string> | null;
+};
+export type AiPlanStep = {
+  id: string;
+  type: "plan";
+  summary: string;
+  items: string[];
+  status: "pending" | "approved" | "changes";
+};
+export type AiThemeStep = { id: string; type: "theme"; chosen: string | null };
+export type AiInteractiveStep = AiQuestionsStep | AiPlanStep | AiThemeStep;
+export type AiStep = AiTextStep | AiToolStep | AiInteractiveStep;
 
 export type AiLiveEvent =
   | { type: "step"; step: AiStep }

@@ -17,7 +17,7 @@ const readLimits = (file) => {
   for (const [, key, value] of source.matchAll(/(\w+):\s*(\d+)/g)) {
     limits[key] = Number(value);
   }
-  for (const key of ["projects", "apps", "schedules", "emailSenders", "emailsPerDay", "concurrentBuilds"]) {
+  for (const key of ["projects", "apps", "schedules", "emailSenders", "emailsPerDay", "concurrentBuilds", "projectMembers", "aiPromptsPerDay"]) {
     if (limits[key] === undefined) {
       throw new Error(`${file} does not define ${key}`);
     }

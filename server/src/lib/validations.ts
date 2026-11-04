@@ -210,3 +210,10 @@ export const aiPromptSchema = z.object({
 });
 
 export const aiFileQuerySchema = z.object({ path: z.string().min(1) });
+
+export const aiRespondSchema = z.object({
+  stepId: z.string().min(1),
+  answers: z.record(z.string(), z.string().trim().max(500)).optional(),
+  approve: z.literal(true).optional(),
+  theme: z.string().optional(),
+});

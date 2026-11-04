@@ -5,7 +5,9 @@
 Key facts:
 
 - Each app runs in an always-on Node.js container (512 MB RAM, 1 CPU) using package build/start scripts or a Node.js entry file. Apps do not sleep when idle.
-- Limits: 10 projects per account. Per project: five Node.js apps, five schedules, one Postgres 16 database, one storage bucket, one email sender, 20 emails per day. One build at a time.
+- Limits: 10 projects per account. Per project: five Node.js apps, five schedules, one Postgres 16 database, one storage bucket, one email sender, 20 emails per day, 10 team members (including pending invites), 30 AI Builder prompts per day. One build at a time.
+- Projects can be shared: the owner invites people by email (`ezhst members invite <email>`), and members manage everything except inviting, removing, renaming or deleting.
+- The AI Builder in the dashboard builds an app from a description: it asks a few questions, shows a plan, offers 9 themes, then writes a plain JavaScript Hono app that runs at `https://<name>.easyhost.fun` and uses the project's Postgres, storage and email. It is not part of the CLI.
 - Schedules call public HTTP/HTTPS APIs every 1 to 43200 minutes, with method, headers and body; 30-second timeout, no redirects, latest 100 runs retained.
 - Node 20, 22 and 24. npm, pnpm, yarn and bun. Supported frameworks include Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. Any framework works when it builds and starts as a Node.js service; adapter-based frameworks need their Node adapter.
 - Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
@@ -16,13 +18,14 @@ Key facts:
 ## Docs
 
 - [Agent skill](https://easyhost.fun/skill.md): Complete instructions for an agent using the ezhst CLI
-- [CLI reference](https://easyhost.fun/docs): Every command for deploys, env vars, build settings, logs, domains, storage, Postgres, email and API keys
+- [CLI reference](https://easyhost.fun/docs): Every command for deploys, env vars, build settings, logs, domains, storage, Postgres, email, API keys and team members
 - [Deploy with an AI agent](https://easyhost.fun/guides/deploy-nextjs-with-ai-agents): Step by step guide for Claude Code, Cursor and Codex
 
 ## Product
 
 - [Free Next.js hosting](https://easyhost.fun/free-nextjs-hosting): What the free plan includes and how apps run
 - [Free Postgres hosting](https://easyhost.fun/free-postgres-hosting): The included Postgres database
+- [AI Builder](https://easyhost.fun/products/ai-builder): Build an app from a description in the dashboard
 - [Vercel alternative](https://easyhost.fun/vercel-alternative): Differences between EasyHost and Vercel Hobby
 
 ## Generated guides

@@ -5,6 +5,9 @@ import {
   Check,
   ChevronDown,
   ChevronLeft,
+  CircleHelp,
+  ListChecks,
+  Palette,
   Database,
   ExternalLink,
   FileCode2,
@@ -21,6 +24,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/status-badge";
@@ -40,7 +44,25 @@ type ToolStep = {
   detail: string | null;
   output: string | null;
 };
-type Step = TextStep | ToolStep;
+type QuestionsStep = {
+  id: string;
+  type: "questions";
+  questions: { id: string; text: string; options: string[] }[];
+  answers: Record<string, string> | null;
+};
+type PlanStep = { id: string; type: "plan"; summary: string; items: string[]; status: "pending" | "approved" | "changes" };
+type ThemeStep = { id: string; type: "theme"; chosen: string | null };
+type Step = TextStep | ToolStep | QuestionsStep | PlanStep | ThemeStep;
+type Theme = {
+  id: string;
+  name: string;
+  dark: boolean;
+  colors: { background: string; surface: string; foreground: string; muted: string; border: string; primary: string; primaryForeground: string };
+  radius: string;
+  font: string;
+};
+type Respond = (body: { stepId: string; answers?: Record<string, string>; approve?: true; theme?: string }) => void;
+type CardProps = { respond?: Respond; pending: boolean };
 type LiveEvent =
   | { type: "snapshot"; steps: Step[]; generating: boolean }
   | { type: "step"; step: Step }
@@ -147,11 +169,188 @@ const Markdown = ({ text }: { text: string }) => (
   </div>
 );
 
-const StepsView = ({ steps }: { steps: Step[] }) => (
+const CardShell = ({ icon: Icon, title, children }: { icon: typeof FileCode2; title: string; children: React.ReactNode }) => (
+  <div className="space-y-3 border bg-background p-3">
+    <p className="flex items-center gap-2 text-sm font-medium">
+      <Icon className="size-4 text-primary" />
+      {title}
+    </p>
+    {children}
+  </div>
+);
+
+const QuestionsCard = ({ step, respond, pending }: { step: QuestionsStep } & CardProps) => {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  if (step.answers) {
+    const given = step.answers;
+    return (
+      <CardShell icon={CircleHelp} title="Questions">
+        <ul className="space-y-1 text-sm">
+          {step.questions.map((question) => (
+            <li key={question.id}>
+              <span className="text-muted-foreground">{question.text}</span> {given[question.id]}
+            </li>
+          ))}
+        </ul>
+      </CardShell>
+    );
+  }
+  return (
+    <CardShell icon={CircleHelp} title="A few questions first">
+      <div className="space-y-4">
+        {step.questions.map((question) => (
+          <div key={question.id} className="space-y-2">
+            <p className="text-sm">{question.text}</p>
+            <div className="flex flex-wrap gap-2">
+              {question.options.map((option) => (
+                <Button
+                  key={option}
+                  type="button"
+                  size="sm"
+                  variant={answers[question.id] === option ? "default" : "outline"}
+                  disabled={!respond || pending}
+                  onClick={() => setAnswers((current) => ({ ...current, [question.id]: option }))}
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+            <Input
+              placeholder="Or type your own answer"
+              disabled={!respond || pending}
+              value={question.options.includes(answers[question.id] ?? "") ? "" : (answers[question.id] ?? "")}
+              onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))}
+            />
+          </div>
+        ))}
+      </div>
+      <Button
+        size="sm"
+        disabled={!respond || pending || !step.questions.every((question) => answers[question.id]?.trim())}
+        onClick={() => respond?.({ stepId: step.id, answers })}
+      >
+        Submit answers
+      </Button>
+    </CardShell>
+  );
+};
+
+const PlanCard = ({ step, respond, pending, onChange }: { step: PlanStep; onChange: () => void } & CardProps) => (
+  <CardShell icon={ListChecks} title="Plan">
+    <p className="text-sm">{step.summary}</p>
+    <ul className="space-y-1.5">
+      {step.items.map((item) => (
+        <li key={item} className="flex items-start gap-2 text-sm">
+          <Check className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+          {item}
+        </li>
+      ))}
+    </ul>
+    {step.status === "approved" && (
+      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Check className="size-3.5 text-emerald-600" />
+        Approved
+      </p>
+    )}
+    {step.status === "pending" && respond && (
+      <div className="flex gap-2">
+        <Button size="sm" disabled={pending} onClick={() => respond({ stepId: step.id, approve: true })}>
+          Approve
+        </Button>
+        <Button size="sm" variant="outline" disabled={pending} onClick={onChange}>
+          Change something
+        </Button>
+      </div>
+    )}
+  </CardShell>
+);
+
+const ThemePreview = ({ theme, selected, disabled, onPick }: { theme: Theme; selected: boolean; disabled: boolean; onPick: () => void }) => (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={onPick}
+    className={cn("flex flex-col border text-left disabled:cursor-default", selected && "border-primary ring-2 ring-primary/30")}
+  >
+    <p className="truncate border-b px-2.5 py-1.5 text-xs font-medium">{theme.name}</p>
+    <div
+      className="flex-1 space-y-2 p-2.5"
+      style={{ background: theme.colors.background, color: theme.colors.foreground, fontFamily: `"${theme.font}", sans-serif` }}
+    >
+      <div className="flex gap-1">
+        {[theme.colors.primary, theme.colors.surface, theme.colors.muted, theme.colors.border].map((color) => (
+          <span key={color} className="size-3 border border-black/10" style={{ background: color, borderRadius: theme.radius }} />
+        ))}
+      </div>
+      <p className="text-lg leading-none font-semibold">Aa</p>
+      <span
+        className="inline-block px-2 py-0.5 text-[10px] font-medium"
+        style={{ background: theme.colors.primary, color: theme.colors.primaryForeground, borderRadius: theme.radius }}
+      >
+        Button
+      </span>
+    </div>
+    <p className="truncate border-t px-2.5 py-1.5 text-[11px] text-muted-foreground">{theme.font}</p>
+  </button>
+);
+
+const ThemeCard = ({ step, themes, respond, pending }: { step: ThemeStep; themes: Theme[] } & CardProps) => {
+  useEffect(() => {
+    const id = "builder-theme-fonts";
+    if (document.getElementById(id)) {
+      return;
+    }
+    const families = [...new Set(themes.map((theme) => theme.font))].map((font) => `family=${font.replace(/ /g, "+")}:wght@400;600`).join("&");
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
+    document.head.appendChild(link);
+  }, [themes]);
+
+  return (
+    <CardShell icon={Palette} title={step.chosen ? "Theme" : "Pick a theme"}>
+      <div className="grid grid-cols-3 gap-2">
+        {themes.map((theme) => (
+          <ThemePreview
+            key={theme.id}
+            theme={theme}
+            selected={step.chosen === theme.id}
+            disabled={!!step.chosen || !respond || pending}
+            onPick={() => respond?.({ stepId: step.id, theme: theme.id })}
+          />
+        ))}
+      </div>
+    </CardShell>
+  );
+};
+
+const StepsView = ({
+  steps,
+  themes = [],
+  respond,
+  pending = false,
+  onChangePlan = () => undefined,
+}: {
+  steps: Step[];
+  themes?: Theme[];
+  respond?: Respond;
+  pending?: boolean;
+  onChangePlan?: () => void;
+}) => (
   <div className="space-y-2">
     {steps.map((step) => {
       if (step.type === "text") {
         return <Markdown key={step.id} text={step.text} />;
+      }
+      if (step.type === "questions") {
+        return <QuestionsCard key={step.id} step={step} respond={respond} pending={pending} />;
+      }
+      if (step.type === "plan") {
+        return <PlanCard key={step.id} step={step} respond={respond} pending={pending} onChange={onChangePlan} />;
+      }
+      if (step.type === "theme") {
+        return <ThemeCard key={step.id} step={step} themes={themes} respond={respond} pending={pending} />;
       }
       return <ToolStepView key={step.id} step={step} />;
     })}
@@ -169,6 +368,7 @@ export const BuilderAppPage = () => {
   const [now, setNow] = useState(() => Date.now());
   const wasGenerating = useRef(false);
   const chatEnd = useRef<HTMLDivElement>(null);
+  const composer = useRef<HTMLTextAreaElement>(null);
 
   const generating = data?.app.aiStatus === "GENERATING";
   const messageCount = data?.messages.length ?? 0;
@@ -234,6 +434,12 @@ export const BuilderAppPage = () => {
     },
   });
 
+  const respondMutation = useApiMutation({
+    mutationFn: (body: Parameters<Respond>[0]) => unwrap(api["ai-apps"][":id"].respond.$post({ param: { id }, json: body })),
+    invalidate: [aiAppsQuery().all],
+    onSuccess: () => setLiveSteps([]),
+  });
+
   const start = useApiMutation({
     mutationFn: () => unwrap(api.apps[":id"].start.$post({ param: { id } })),
     invalidate: [aiAppsQuery().all, appsQuery().all],
@@ -248,7 +454,14 @@ export const BuilderAppPage = () => {
     return <Skeleton className="m-6 h-96" />;
   }
 
-  const { app, messages, previewUrl } = data;
+  const { app, messages, previewUrl, themes } = data;
+  const lastAssistantId = [...messages].reverse().find((message) => message.role === "assistant")?.id;
+  const respond: Respond = (body) => {
+    respondMutation.mutate(body);
+  };
+  const focusComposer = () => {
+    composer.current?.focus();
+  };
   const lastLive = liveSteps[liveSteps.length - 1];
   let activity = "Thinking";
   if (lastLive && lastLive.type === "tool" && lastLive.status === "running") {
@@ -308,11 +521,24 @@ export const BuilderAppPage = () => {
                 );
               }
               if (message.steps.length) {
-                return <StepsView key={message.id} steps={message.steps as Step[]} />;
+                let handler: Respond | undefined = undefined;
+                if (message.id === lastAssistantId && !generating) {
+                  handler = respond;
+                }
+                return (
+                  <StepsView
+                    key={message.id}
+                    steps={message.steps as Step[]}
+                    themes={themes}
+                    respond={handler}
+                    pending={respondMutation.isPending}
+                    onChangePlan={focusComposer}
+                  />
+                );
               }
               return <Markdown key={message.id} text={message.content} />;
             })}
-            {(generating || app.aiStatus === "FAILED") && <StepsView steps={currentSteps} />}
+            {(generating || app.aiStatus === "FAILED") && <StepsView steps={currentSteps} themes={themes} />}
             {generating && (
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="size-3.5 animate-spin" />
@@ -331,6 +557,7 @@ export const BuilderAppPage = () => {
             }}
           >
             <Textarea
+              ref={composer}
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
               onKeyDown={(event) => {

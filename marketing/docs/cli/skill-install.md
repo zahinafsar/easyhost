@@ -1,14 +1,14 @@
 # ezhst skill install
 
-Install the EasyHost agent skill.
+Install the EasyHost agent skill for Claude Code, Codex or Cursor.
 
 ## Usage
 
 ```
-ezhst skill install [--global | --local]
+ezhst skill install [--agent <claude|codex|cursor>] [--global | --local]
 ```
 
-Without a TTY or with `--json`, pass exactly one of `--global` or `--local`.
+Without a TTY or with `--json`, pass `--agent` and exactly one of `--global` or `--local`.
 
 ## In scripts and agents
 

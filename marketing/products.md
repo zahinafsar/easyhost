@@ -10,5 +10,7 @@ Everything is free within the [published limits](/pricing).
 - [Transactional email](/products/email)
 - [Scheduled API calls](/products/schedules)
 - [Custom domains](/products/custom-domains)
+- [AI Builder](/products/ai-builder)
+- [Team members](/products/team-members)
 - [ezhst CLI](/products/cli)
 - [Agent skill](/products/agent-skill)

@@ -12,7 +12,7 @@ npx ezhst skill install
 
 Claude Code runs in your terminal, so it can run `ezhst` directly and read the JSON output.
 
-If Claude Code does not discover `.agents/skills`, ask it to read the installed `SKILL.md` or [skill.md](/skill.md) first.
+If Claude Code does not discover the skill, ask it to read the installed `SKILL.md` or [skill.md](/skill.md) first.
 
 ## Tell Claude Code to deploy
 

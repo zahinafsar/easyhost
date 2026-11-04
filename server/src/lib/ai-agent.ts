@@ -7,7 +7,8 @@ import { env } from "./env.js";
 import { containerLogs, containerName } from "./docker.js";
 import { connectedServices, connectProjectDatabase, connectProjectStorage, deleteAiFile, installAiPackages, readAllAiFiles, setupAiEmail, verifyDatabase, writeAiFile } from "./ai-apps.js";
 import { runQuery } from "./userdb.js";
-import { endLiveSession, liveSession, startLiveSession, upsertStep, type AiTextStep, type AiToolStep } from "./ai-live.js";
+import { endLiveSession, liveSession, startLiveSession, upsertStep, type AiInteractiveStep, type AiTextStep, type AiToolStep } from "./ai-live.js";
+import { findTheme, themeSummary } from "./ai-themes.js";
 
 const MODEL_ID = "gemini-3.8-flash";
 const MAX_STEPS = 40;
@@ -23,6 +24,13 @@ When to change the app:
 - Only call tools when the user asks you to build, change, fix or remove something.
 - For greetings, questions, or anything unclear, reply in plain text without calling any tool. If a request is vague, ask a short question or suggest what you could build instead of guessing.
 - Change only what the request needs. Do not rewrite, restore or tidy up files the user did not ask about.
+- Never add features, pages or content the user did not ask for. Keep apps simple.
+
+Planning (for a new app or a big new feature only; small edits and fixes go straight to code):
+1. If key details are unclear, call ask_questions with at most 3 short questions, each with 2 to 4 short options, then stop. Skip this when the request is clear.
+2. Call propose_plan with a one-sentence summary and at most 6 short items describing only what was asked, then stop and wait for approval.
+3. After the plan is approved, if no theme is chosen yet (see the Theme line in the request), call choose_theme and stop. If the user asks to change the theme later, call choose_theme again.
+4. Once the plan is approved and a theme is chosen, build it.
 
 Runtime:
 - Node.js 22, plain JavaScript ES modules (no TypeScript, no build step). The entry file is server.js and is started with node --watch, so every file change restarts the server within a second.
@@ -30,7 +38,9 @@ Runtime:
 - Preinstalled packages you can import without installing: hono, @hono/node-server, pg, bcryptjs, jose, zod, @aws-sdk/client-s3.
 - For any other npm package, call install_packages before writing code that imports it. Never add dependencies to package.json by hand. Packages that compile native code on install are not supported; prefer pure JavaScript packages. package.json must keep "type": "module".
 - Environment (already set): DATABASE_URL, AUTH_SECRET, S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_PUBLIC_URL, EMAIL_FROM, EASYHOST_API_KEY, EASYHOST_EMAIL_URL, plus any variables the user configured.
-- Frontend: plain HTML, CSS and JavaScript in public/. Load libraries from a CDN with pinned versions if needed. Make pages responsive, modern and polished.
+- Frontend: plain HTML, CSS and JavaScript in public/. Load libraries from a CDN with pinned versions if needed. Make pages responsive, clean and polished.
+- Styling: every page links /theme.css and uses only its CSS variables for colors, corner radius and font. Never overwrite public/theme.css.
+- Icons: always use Lucide. Load <script src="https://unpkg.com/lucide@1.68.0/dist/umd/lucide.min.js"></script>, write icons as <i data-lucide="icon-name"></i> and call lucide.createIcons() after rendering. Never use emojis or arrow characters as icons.
 
 Starter helpers (new apps start with a simple welcome page in public/index.html and these helper files; when they exist, reuse them instead of rewriting, and replace the welcome page with the user's app):
 - lib/db.js: query(text, params) for parameterized SQL against DATABASE_URL.
@@ -230,6 +240,26 @@ const buildTools = (app: App) => {
         return { ok: true, path: removed };
       },
     }),
+    ask_questions: tool({
+      description: "Ask the user up to 3 short questions with clickable options before planning a new app or big feature. Stops and waits for the answers.",
+      inputSchema: z.object({
+        questions: z
+          .array(z.object({ text: z.string(), options: z.array(z.string()).min(2).max(4) }))
+          .min(1)
+          .max(3),
+      }),
+    }),
+    propose_plan: tool({
+      description: "Show the user a short build plan to approve. Stops and waits for approval.",
+      inputSchema: z.object({
+        summary: z.string().describe("One sentence describing what will be built"),
+        items: z.array(z.string()).min(1).max(6).describe("Short items covering only what the user asked for"),
+      }),
+    }),
+    choose_theme: tool({
+      description: "Show the user the predefined themes to choose from. Stops and waits for the choice.",
+      inputSchema: z.object({}),
+    }),
     connect_storage: tool({
       description: "Connect the project's file storage bucket to this app, creating it if needed. Restarts the server with the S3_* variables set.",
       inputSchema: z.object({}),
@@ -303,6 +333,49 @@ const servicesLine = (services: { database: boolean; storage: boolean; email: bo
   return `Connected services: database ${label(services.database)}, storage ${label(services.storage)}, email ${label(services.email)}.`;
 };
 
+const PAUSING_TOOLS = new Set(["ask_questions", "propose_plan", "choose_theme"]);
+
+const interactiveStep = (toolName: string, id: string, input: Record<string, unknown>): AiInteractiveStep | null => {
+  if (toolName === "ask_questions") {
+    let questions: unknown[] = [];
+    if (Array.isArray(input.questions)) {
+      questions = input.questions;
+    }
+    return {
+      id,
+      type: "questions",
+      questions: questions.slice(0, 3).map((question, index) => {
+        const item = question as { text?: unknown; options?: unknown };
+        let options: string[] = [];
+        if (Array.isArray(item.options)) {
+          options = item.options.filter((option): option is string => typeof option === "string").slice(0, 4);
+        }
+        return { id: `q${index + 1}`, text: String(item.text ?? ""), options };
+      }),
+      answers: null,
+    };
+  }
+  if (toolName === "propose_plan") {
+    let items: string[] = [];
+    if (Array.isArray(input.items)) {
+      items = input.items.filter((item): item is string => typeof item === "string").slice(0, 6);
+    }
+    return { id, type: "plan", summary: String(input.summary ?? ""), items, status: "pending" };
+  }
+  if (toolName === "choose_theme") {
+    return { id, type: "theme", chosen: null };
+  }
+  return null;
+};
+
+const themeLine = (themeId: string | null) => {
+  const theme = findTheme(themeId);
+  if (!theme) {
+    return "Theme: not chosen yet.";
+  }
+  return themeSummary(theme);
+};
+
 const runGeneration = async (appId: string) => {
   const app = await prisma.app.findUniqueOrThrow({ where: { id: appId } });
   const history = await prisma.aiMessage.findMany({
@@ -312,7 +385,7 @@ const runGeneration = async (appId: string) => {
   });
   history.reverse();
   const files = await readAllAiFiles(appId);
-  const services = servicesLine(await connectedServices(app));
+  const services = `${servicesLine(await connectedServices(app))}\n${themeLine(app.aiTheme)}`;
 
   const messages: ModelMessage[] = history.map((message, index) => {
     if (message.role === "assistant") {
@@ -389,6 +462,20 @@ const runGeneration = async (appId: string) => {
       progress = "Thinking";
       upsertStep(session, step);
       persist(false);
+      continue;
+    }
+    if ((part.type === "tool-input-start" && PAUSING_TOOLS.has(part.toolName)) || (part.type === "tool-input-delta" && PAUSING_TOOLS.has(toolInputs.get(part.id)?.tool ?? ""))) {
+      if (part.type === "tool-input-start") {
+        toolInputs.set(part.id, { tool: part.toolName, raw: "", lastEmit: 0 });
+      }
+      continue;
+    }
+    if (part.type === "tool-call" && PAUSING_TOOLS.has(part.toolName)) {
+      const step = interactiveStep(part.toolName, part.toolCallId, (part.input ?? {}) as Record<string, unknown>);
+      if (step) {
+        upsertStep(session, step);
+        persist(true);
+      }
       continue;
     }
     if (part.type === "tool-input-start") {

@@ -27,6 +27,8 @@ const FOOTER_COLUMNS = [
       ["/products/custom-domains", "Custom domains"],
       ["/products/cli", "ezhst CLI"],
       ["/products/agent-skill", "Agent skill"],
+      ["/products/ai-builder", "AI Builder"],
+      ["/products/team-members", "Team members"],
       ["/pricing", "Pricing and limits"],
     ],
   },

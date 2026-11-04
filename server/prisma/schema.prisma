@@ -219,6 +219,7 @@ model App {
   aiDatabaseId    String?
   aiDatabase      Database?       @relation("AiAppDatabase", fields: [aiDatabaseId], references: [id], onDelete: SetNull)
   aiBucketId      String?
+  aiTheme         String?
   aiBucket        Bucket?         @relation("AiAppBucket", fields: [aiBucketId], references: [id], onDelete: SetNull)
   aiMessages      AiMessage[]
 

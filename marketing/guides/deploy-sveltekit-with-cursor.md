@@ -12,7 +12,7 @@ npx ezhst skill install
 
 Use Cursor's agent mode with terminal access, so it can run `ezhst` commands in your project.
 
-If Cursor does not discover `.agents/skills`, ask it to read the installed `SKILL.md` or [skill.md](/skill.md) first.
+If Cursor does not discover the skill, ask it to read the installed `SKILL.md` or [skill.md](/skill.md) first.
 
 ## Tell Cursor to deploy
 

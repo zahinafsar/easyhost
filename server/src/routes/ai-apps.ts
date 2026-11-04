@@ -4,7 +4,8 @@ import { liveSession, subscribeLive, type AiLiveEvent, type AiStep } from "../li
 import { prisma } from "../lib/prisma.js";
 import { LIMITS } from "../lib/limits.js";
 import { validate } from "../lib/validator.js";
-import { aiAppAvailabilitySchema, aiAppNameSchema, aiFileQuerySchema, aiPromptSchema, createAiAppSchema } from "../lib/validations.js";
+import { aiAppAvailabilitySchema, aiAppNameSchema, aiFileQuerySchema, aiPromptSchema, aiRespondSchema, createAiAppSchema } from "../lib/validations.js";
+import { AI_THEMES, findTheme, themeCss } from "../lib/ai-themes.js";
 import { projectAppsWhere, withAppUrl } from "../lib/project-apps.js";
 import { appUrl } from "../lib/domains.js";
 import { env } from "../lib/env.js";
@@ -131,6 +132,7 @@ export const aiAppRoutes = new Hono<UserEnv>()
     return c.json({
       app: { ...withAppUrl(summary), steps: summary.aiSteps as AiStep[] },
       previewUrl: await aiPreviewUrl(app),
+      themes: AI_THEMES,
       messages: messages.map((message) => ({ ...message, steps: message.steps as AiStep[] })),
       files,
     });
@@ -184,6 +186,78 @@ export const aiAppRoutes = new Hono<UserEnv>()
     });
     startGeneration(app.id);
     return c.json({ message }, 202);
+  })
+  .post("/:id/respond", validate("json", aiRespondSchema), async (c) => {
+    const app = await findAiApp(c.get("projectId"), c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "AI app not found" }, 404);
+    }
+    const body = c.req.valid("json");
+    const message = await prisma.aiMessage.findFirst({
+      where: { appId: app.id, role: "assistant" },
+      orderBy: { createdAt: "desc" },
+    });
+    const steps = (message?.steps ?? []) as AiStep[];
+    const step = steps.find((item) => item.id === body.stepId);
+    if (!message || !step || (step.type !== "questions" && step.type !== "plan" && step.type !== "theme")) {
+      return c.json({ error: "This card can no longer be answered" }, 400);
+    }
+
+    let updated: AiStep = step;
+    let reply = "";
+    if (step.type === "questions") {
+      if (step.answers || !body.answers) {
+        return c.json({ error: "These questions were already answered" }, 400);
+      }
+      const answers: Record<string, string> = {};
+      for (const question of step.questions) {
+        answers[question.id] = body.answers[question.id]?.trim() || "No preference";
+      }
+      updated = { ...step, answers };
+      reply = ["Answers:", ...step.questions.map((question) => `- ${question.text} ${answers[question.id]}`)].join("\n");
+    } else if (step.type === "plan") {
+      if (step.status !== "pending" || !body.approve) {
+        return c.json({ error: "This plan was already handled" }, 400);
+      }
+      updated = { ...step, status: "approved" };
+      reply = "Plan approved.";
+    } else {
+      const theme = findTheme(body.theme);
+      if (step.chosen || !theme) {
+        return c.json({ error: "Choose one of the listed themes" }, 400);
+      }
+      updated = { ...step, chosen: theme.id };
+      reply = `Theme: ${theme.name}. Build it now.`;
+    }
+
+    const { count } = await prisma.app.updateMany({
+      where: { id: app.id, aiStatus: { not: "GENERATING" } },
+      data: { aiStatus: "GENERATING", aiProgress: "Starting", aiError: null, aiSteps: [] },
+    });
+    if (!count) {
+      return c.json({ error: "The AI is still working on the previous request" }, 409);
+    }
+    if (updated.type === "theme" && updated.chosen) {
+      const theme = findTheme(updated.chosen);
+      if (theme) {
+        await prisma.app.update({ where: { id: app.id }, data: { aiTheme: theme.id } });
+        await writeAiFile(app, "public/theme.css", themeCss(theme));
+      }
+    }
+    await prisma.aiMessage.update({
+      where: { id: message.id },
+      data: {
+        steps: steps.map((item) => {
+          if (item.id === updated.id) {
+            return updated;
+          }
+          return item;
+        }),
+      },
+    });
+    await prisma.aiMessage.create({ data: { appId: app.id, role: "user", content: reply } });
+    startGeneration(app.id);
+    return c.json({ ok: true });
   })
   .get("/:id/events", async (c) => {
     const app = await findAiApp(c.get("projectId"), c.req.param("id"));

@@ -13,6 +13,8 @@ EasyHost costs $0 per month, with no credit card and no trial period. These are 
 | Databases | 1 per project |
 | Email senders | 1 per project |
 | Emails | 20 per day, per project |
+| Project members | 10 per project, including pending invites |
+| AI Builder prompts | 30 per day, per project |
 | Concurrent builds | 1 |
 | App container | 512 MB RAM, 1 CPU |
 

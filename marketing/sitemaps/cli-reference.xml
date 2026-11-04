@@ -62,5 +62,11 @@
   <url><loc>https://easyhost.fun/docs/cli/keys-list</loc><lastmod>2026-10-31</lastmod></url>
   <url><loc>https://easyhost.fun/docs/cli/keys-create</loc><lastmod>2026-10-31</lastmod></url>
   <url><loc>https://easyhost.fun/docs/cli/keys-revoke</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/docs/cli/members-list</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/docs/cli/members-invite</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/docs/cli/members-revoke</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/docs/cli/members-remove</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/docs/cli/members-leave</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://easyhost.fun/docs/cli/accept-invite</loc><lastmod>2026-10-31</lastmod></url>
   <url><loc>https://easyhost.fun/docs/cli/skill-install</loc><lastmod>2026-10-31</lastmod></url>
 </urlset>

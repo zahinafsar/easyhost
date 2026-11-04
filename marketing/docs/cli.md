@@ -100,6 +100,15 @@ One page per `ezhst` command. The [main docs](/docs) cover the same commands on 
 - [`ezhst keys create`](/docs/cli/keys-create)
 - [`ezhst keys revoke`](/docs/cli/keys-revoke)
 
+## members
+
+- [`ezhst members list`](/docs/cli/members-list)
+- [`ezhst members invite`](/docs/cli/members-invite)
+- [`ezhst members revoke`](/docs/cli/members-revoke)
+- [`ezhst members remove`](/docs/cli/members-remove)
+- [`ezhst members leave`](/docs/cli/members-leave)
+- [`ezhst accept-invite`](/docs/cli/accept-invite)
+
 ## skill
 
 - [`ezhst skill install`](/docs/cli/skill-install)
