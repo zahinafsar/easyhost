@@ -21,6 +21,7 @@ export type Project = {
   id: string;
   name: string;
   slug: string;
+  role?: "owner" | "member";
   createdAt: string;
   updatedAt: string;
 };

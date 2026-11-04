@@ -37,6 +37,7 @@ Hosting platform: Node.js app hosting (containers routed by Nginx Proxy Manager)
 - `/server/src/routes/v1/*` - Public service API (API key: email). Storage is plain S3: each bucket has its own MinIO service account (created via `mc` in `server/src/lib/minio.ts`)
 - `/server/src/lib/*` - prisma, auth, email, minio, userdb (customer Postgres), docker, domains (app URLs, custom domains), npm (NPM API), deploy, build-queue, validations
 - `/server/src/middleware/*` - require-user, require-admin, require-api-key
+- `/server/src/routes/members.ts` + `/client/src/pages/members.tsx` + `/client/src/pages/invite.tsx` - Project members: owner is the root App row's userId, members in ProjectMember, email invites in ProjectInvite (7 days). Access goes through `projectAccessWhere` + `requireProject` (sets projectId, projectOwnerId). Owner only: invite, revoke, remove, rename, delete project
 - `/server/src/routes/admin.ts` + `/client/src/pages/admin.tsx` - Admin at `/admin` (role ADMIN): impersonation, health, analytics, usage
 - `/client/src/pages/*` - Route pages
 - `/client/src/components/ui/*` - shadcn components

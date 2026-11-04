@@ -105,6 +105,26 @@ export const sendProjectDeletedEmail = async (email: string, name: string, proje
   });
 };
 
+export const inviteUrl = (token: string) => `${APP_URL}/invite/${token}`;
+
+export const sendProjectInviteEmail = async (email: string, inviterName: string, projectName: string, token: string) => {
+  await resend.emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: `${inviterName} invited you to "${projectName}" on EasyHost`,
+    html: emailLayout(`
+      <h1 style="margin: 0 0 8px; font-size: 20px; color: #111;">You're invited</h1>
+      <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+        ${escapeHtml(inviterName)} invited you to join the project <strong>${escapeHtml(projectName)}</strong> on EasyHost. Members can manage its apps, deploys, storage, database, email and API keys.
+      </p>
+      ${button(inviteUrl(token), "Accept invite")}
+      <p style="color: #9ca3af; font-size: 12px; margin-top: 24px; margin-bottom: 0;">
+        This invite expires in 7 days. Log in or sign up with ${escapeHtml(email)} to accept it. If you weren't expecting it, you can ignore this email.
+      </p>
+    `),
+  });
+};
+
 export const EMAIL_DOMAIN = "easyhost.fun";
 
 export const senderAddress = (username: string) => `${username}@${EMAIL_DOMAIN}`;

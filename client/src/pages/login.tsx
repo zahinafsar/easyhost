@@ -24,6 +24,12 @@ export const LoginPage = () => {
     },
   });
 
+  const redirect = searchParams.get("redirect");
+  let registerHref = "/register";
+  if (redirect) {
+    registerHref = `/register?redirect=${encodeURIComponent(redirect)}`;
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -57,7 +63,7 @@ export const LoginPage = () => {
           </Button>
           <p className="text-sm text-muted-foreground">
             No account?{" "}
-            <Link to="/register" className="text-foreground hover:underline">
+            <Link to={registerHref} className="text-foreground hover:underline">
               Sign up
             </Link>
           </p>

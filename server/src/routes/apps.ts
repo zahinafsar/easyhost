@@ -31,7 +31,7 @@ export const appRoutes = new Hono<UserEnv>()
   .use(requireProject)
   .get("/", async (c) => {
     const apps = await prisma.app.findMany({
-      where: { userId: c.get("user").id, ...projectAppsWhere(c.get("projectId")) },
+      where: projectAppsWhere(c.get("projectId")),
       orderBy: { createdAt: "desc" },
       include: { deployments: { select: deploymentSummary, orderBy: { createdAt: "desc" }, take: 1 } },
     });
@@ -51,7 +51,7 @@ export const appRoutes = new Hono<UserEnv>()
       if (count >= LIMITS.apps) {
         return null;
       }
-      return tx.app.create({ data: { userId: c.get("user").id, parentProjectId: projectId, name, slug: resourceSlug(name) } });
+      return tx.app.create({ data: { userId: project.userId, parentProjectId: projectId, name, slug: resourceSlug(name) } });
     });
     if (!app) {
       return c.json({ error: `Each project can have at most ${LIMITS.apps} apps.` }, 400);
@@ -59,7 +59,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ app: withAppUrl(app) }, 201);
   })
   .put("/:id", validate("json", updateProjectSchema), async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -68,7 +68,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ app: withAppUrl(updated) });
   })
   .get("/:id", async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -89,7 +89,7 @@ export const appRoutes = new Hono<UserEnv>()
     });
   })
   .post("/:id/domains", validate("json", addDomainSchema), async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -107,7 +107,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ domain }, 201);
   })
   .post("/:id/domains/:domainId/verify", async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -147,7 +147,7 @@ export const appRoutes = new Hono<UserEnv>()
     }
   })
   .delete("/:id/domains/:domainId", async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -161,7 +161,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ message: "Domain removed" });
   })
   .put("/:id/env", validate("json", updateEnvSchema), async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -170,7 +170,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ app: withAppUrl(updated), message: "Environment saved. Redeploy to apply changes." });
   })
   .put("/:id/build", validate("json", updateBuildSchema), async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -179,7 +179,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ app: withAppUrl(updated), message: "Build settings saved. Redeploy to apply changes." });
   })
   .post("/:id/deploy", async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -202,7 +202,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ deployment, url: appUrl(app.slug) }, 201);
   })
   .post("/:id/redeploy", async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -219,7 +219,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ deployment, url: appUrl(app.slug) }, 201);
   })
   .get("/:id/deployments/:deploymentId", async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -233,7 +233,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ deployment: { ...deployment, queuePosition: await queuePosition(deployment) } });
   })
   .get("/:id/logs", validate("query", logsQuerySchema), async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -242,7 +242,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ logs });
   })
   .post("/:id/stop", async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -252,7 +252,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ app: withAppUrl(updated) });
   })
   .post("/:id/start", async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }
@@ -265,7 +265,7 @@ export const appRoutes = new Hono<UserEnv>()
     return c.json({ app: withAppUrl(updated) });
   })
   .delete("/:id", async (c) => {
-    const app = await findProjectApp(c.get("user").id, c.get("projectId"), c.req.param("id"));
+    const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
     }

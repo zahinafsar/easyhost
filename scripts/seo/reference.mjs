@@ -61,6 +61,12 @@ export const CLI_COMMANDS = [
   ["keys", "keys list", "ezhst keys list", "List API keys.", "Key values are not shown again."],
   ["keys", "keys create", "ezhst keys create <name>", "Create an API key.", "It is shown only once, so store it with `ezhst env set EASYHOST_API_KEY=<key>`."],
   ["keys", "keys revoke", "ezhst keys revoke <id>", "Revoke an API key.", "Requests using it stop working."],
+  ["members", "members list", "ezhst members list", "List the project owner, members and pending invites.", "Any member can run it."],
+  ["members", "members invite", "ezhst members invite <email>", "Email an invite to join the project.", "Owner only. The invite link is valid for 7 days and is also printed."],
+  ["members", "members revoke", "ezhst members revoke <email>", "Revoke a pending invite.", "Owner only."],
+  ["members", "members remove", "ezhst members remove <email> --yes", "Remove a member from the project.", "Owner only."],
+  ["members", "members leave", "ezhst members leave --yes", "Leave a project you were invited to.", "The owner can't leave their own project."],
+  ["members", "accept-invite", "ezhst accept-invite <link-or-token>", "Join a project from an invite.", "Log in with the invited email first."],
   ["skill", "skill install", "ezhst skill install [--agent <claude|codex|cursor>] [--global | --local]", "Install the EasyHost agent skill for Claude Code, Codex or Cursor.", "Without a TTY or with `--json`, pass `--agent` and exactly one of `--global` or `--local`."],
 ];
 

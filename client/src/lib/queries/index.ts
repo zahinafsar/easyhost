@@ -7,3 +7,4 @@ export { storageQuery } from "./storage";
 export { userQuery } from "./user";
 export { projectsQuery } from "./projects";
 export { schedulesQuery } from "./schedules";
+export { membersQuery } from "./members";

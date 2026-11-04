@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
 import { LIMITS } from "../lib/limits.js";
-import { projectSummary, resourceSlug } from "../lib/project-apps.js";
+import { projectAccessWhere, projectSummary, resourceSlug } from "../lib/project-apps.js";
 import { deleteProject } from "../lib/delete-project.js";
 import { validate } from "../lib/validator.js";
 import { createAppSchema, updateProjectSchema } from "../lib/validations.js";
@@ -9,19 +9,34 @@ import { requireUser } from "../middleware/require-user.js";
 import type { UserEnv } from "../lib/types.js";
 
 const findProject = (userId: string, idOrSlug: string) => prisma.app.findFirst({
-  where: { userId, parentProjectId: null, deleting: false, OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
-  select: projectSummary,
+  where: { AND: [projectAccessWhere(userId), { OR: [{ id: idOrSlug }, { slug: idOrSlug }] }] },
+  select: { ...projectSummary, userId: true },
 });
+
+const projectRole = (ownerId: string, userId: string) => {
+  if (ownerId === userId) {
+    return "owner" as const;
+  }
+  return "member" as const;
+};
 
 export const projectRoutes = new Hono<UserEnv>()
   .use(requireUser)
   .get("/", async (c) => {
+    const userId = c.get("user").id;
     const projects = await prisma.app.findMany({
-      where: { userId: c.get("user").id, parentProjectId: null, deleting: false },
-      select: { ...projectSummary, appEnabled: true, projectApps: { where: { appEnabled: true, deleting: false }, select: { id: true } } },
+      where: projectAccessWhere(userId),
+      select: { ...projectSummary, userId: true, appEnabled: true, projectApps: { where: { appEnabled: true, deleting: false }, select: { id: true } } },
       orderBy: { createdAt: "asc" },
     });
-    return c.json({ projects: projects.map(({ appEnabled, projectApps, ...project }) => ({ ...project, appIds: [...(appEnabled ? [project.id] : []), ...projectApps.map((app) => app.id)] })), limit: LIMITS.projects });
+    return c.json({
+      projects: projects.map(({ appEnabled, projectApps, userId: ownerId, ...project }) => ({
+        ...project,
+        role: projectRole(ownerId, userId),
+        appIds: [...(appEnabled ? [project.id] : []), ...projectApps.map((app) => app.id)],
+      })),
+      limit: LIMITS.projects,
+    });
   })
   .post("/", validate("json", createAppSchema), async (c) => {
     const userId = c.get("user").id;
@@ -40,16 +55,21 @@ export const projectRoutes = new Hono<UserEnv>()
     return c.json({ project }, 201);
   })
   .get("/:id", async (c) => {
-    const project = await findProject(c.get("user").id, c.req.param("id"));
-    if (!project) {
+    const userId = c.get("user").id;
+    const found = await findProject(userId, c.req.param("id"));
+    if (!found) {
       return c.json({ error: "Project not found" }, 404);
     }
-    return c.json({ project });
+    const { userId: ownerId, ...project } = found;
+    return c.json({ project: { ...project, role: projectRole(ownerId, userId) } });
   })
   .put("/:id", validate("json", updateProjectSchema), async (c) => {
     const project = await findProject(c.get("user").id, c.req.param("id"));
     if (!project) {
       return c.json({ error: "Project not found" }, 404);
+    }
+    if (project.userId !== c.get("user").id) {
+      return c.json({ error: "Only the project owner can do this" }, 403);
     }
     const data = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM apps WHERE id = ${project.id} FOR UPDATE`;
@@ -72,6 +92,9 @@ export const projectRoutes = new Hono<UserEnv>()
     const project = await findProject(c.get("user").id, c.req.param("id"));
     if (!project) {
       return c.json({ error: "Project not found" }, 404);
+    }
+    if (project.userId !== c.get("user").id) {
+      return c.json({ error: "Only the project owner can do this" }, 403);
     }
     const result = await deleteProject(project);
     if (!result.ok) {

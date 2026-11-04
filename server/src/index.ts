@@ -9,6 +9,7 @@ import { storageRoutes } from "./routes/storage.js";
 import { databaseRoutes } from "./routes/databases.js";
 import { emailRoutes } from "./routes/emails.js";
 import { projectRoutes } from "./routes/projects.js";
+import { inviteRoutes, memberRoutes } from "./routes/members.js";
 import { scheduleRoutes } from "./routes/schedules.js";
 import { startScheduleWorker } from "./lib/schedule-worker.js";
 import { appRoutes } from "./routes/apps.js";
@@ -34,6 +35,8 @@ const routes = app
   .route("/databases", databaseRoutes)
   .route("/emails", emailRoutes)
   .route("/projects", projectRoutes)
+  .route("/members", memberRoutes)
+  .route("/invites", inviteRoutes)
   .route("/schedules", scheduleRoutes)
   .route("/apps", appRoutes)
   .route("/admin", adminRoutes)

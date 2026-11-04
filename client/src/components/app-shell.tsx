@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Clock3, Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings, ShieldCheck } from "lucide-react";
+import { Clock3, Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings, ShieldCheck, Users } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,7 @@ const navItems = [
   { to: "/databases", label: "Databases", icon: Database },
   { to: "/email", label: "Email", icon: Mail },
   { to: "/api-keys", label: "API Keys", icon: KeyRound },
+  { to: "/members", label: "Members", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 

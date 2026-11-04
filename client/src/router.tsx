@@ -16,6 +16,8 @@ import { DatabasePage } from "@/pages/database";
 import { EmailPage } from "@/pages/email";
 import { ApiKeysPage } from "@/pages/api-keys";
 import { SettingsPage } from "@/pages/settings";
+import { MembersPage } from "@/pages/members";
+import { InvitePage } from "@/pages/invite";
 import { AdminPage } from "@/pages/admin";
 
 export const router = createBrowserRouter([
@@ -43,7 +45,9 @@ export const router = createBrowserRouter([
       { path: "/databases/:id", element: <DatabasePage /> },
       { path: "/email", element: <EmailPage /> },
       { path: "/api-keys", element: <ApiKeysPage /> },
+      { path: "/members", element: <MembersPage /> },
       { path: "/settings", element: <SettingsPage /> },
+      { path: "/invite/:token", element: <InvitePage /> },
     ],
   },
 ]);

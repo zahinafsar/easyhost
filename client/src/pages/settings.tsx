@@ -52,6 +52,20 @@ export const SettingsPage = () => {
 
   const unchanged = name.trim() === project.name;
 
+  if (project.role !== "owner") {
+    return (
+      <>
+        <PageHeader title="Project settings" description={`Manage ${project.name} and its resources.`} />
+        <Card className="max-w-3xl">
+          <CardHeader>
+            <CardTitle>Owner only</CardTitle>
+            <CardDescription>Only the project owner can rename or delete this project. You can leave it from the Members page.</CardDescription>
+          </CardHeader>
+        </Card>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader title="Project settings" description={`Manage ${project.name} and its resources.`} />

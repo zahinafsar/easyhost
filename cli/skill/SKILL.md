@@ -99,6 +99,10 @@ Schedules (up to five per project, intervals in minutes):
 API keys:
 - `keys list | create <name> | revoke <id>` (a key is shown only once)
 
+Members:
+- `members list | invite <email> | revoke <email> | remove <email> --yes | leave --yes`. Only the owner can invite, revoke, remove, rename or delete the project. Members can do everything else.
+- `accept-invite <link-or-token>` joins a project. The logged-in email must match the invited email.
+
 Account:
 - `whoami`, `logout`, `resend-verification`, `forgot-password --email <email>`
 

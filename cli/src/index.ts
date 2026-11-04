@@ -22,6 +22,7 @@ import {
 import { createDatabase, databaseInfo, deleteDatabase, queryDatabase, resetDatabasePassword, tableRows } from "./commands/db.js";
 import { createSender, deleteSender, emailInfo, emailLogs, sendEmail } from "./commands/email.js";
 import { createKey, listKeys, revokeKey } from "./commands/keys.js";
+import { acceptInvite, inviteMember, leaveProject, listMembers, removeMember, revokeInvite } from "./commands/members.js";
 import { installSkill } from "./commands/skill.js";
 import { fail, setJsonMode } from "./lib/ui.js";
 
@@ -179,6 +180,14 @@ const keys = program.command("keys").description("API keys for the HTTP API");
 scoped(keys.command("list").description("List API keys")).action(listKeys);
 scoped(keys.command("create").description("Create an API key").argument("<name>")).action(createKey);
 scoped(keys.command("revoke").description("Revoke an API key").argument("<id>")).action(revokeKey);
+
+const members = program.command("members").description("Project members and invites");
+scoped(members.command("list").description("List the owner, members and pending invites")).action(listMembers);
+scoped(members.command("invite").description("Invite someone by email (owner only)").argument("<email>")).action(inviteMember);
+scoped(members.command("revoke").description("Revoke a pending invite (owner only)").argument("<email>")).action(revokeInvite);
+scoped(members.command("remove").description("Remove a member (owner only)").argument("<email>").option("--yes", "Confirm")).action(removeMember);
+scoped(members.command("leave").description("Leave a project you were invited to").option("--yes", "Confirm")).action(leaveProject);
+program.command("accept-invite").description("Accept a project invite").argument("<token-or-url>", "Invite link or token from the email").action(acceptInvite);
 
 const skill = program.command("skill").description("Agent skill");
 skill

@@ -4,6 +4,7 @@ export type UserEnv = {
   Variables: {
     user: AuthUser;
     projectId: string;
+    projectOwnerId: string;
   };
 };
 

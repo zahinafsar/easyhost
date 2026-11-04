@@ -185,3 +185,7 @@ export const scheduleSchema = z.object({
 }).refine((value) => !["GET", "HEAD"].includes(value.method) || !value.body, { message: "GET and HEAD requests cannot have a body", path: ["body"] });
 
 export const scheduleStateSchema = z.object({ enabled: z.boolean() });
+
+export const inviteMemberSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
+});

@@ -11,7 +11,7 @@ export const listProjects = async () => {
       log.info("No projects yet. Create one with `ezhst projects create <name>`.");
     }
     for (const project of projects) {
-      log.info(`${pc.bold(project.slug.padEnd(40))} ${project.name}`);
+      log.info(`${pc.bold(project.slug.padEnd(40))} ${project.name.padEnd(28)} ${pc.dim(project.role ?? "")}`);
     }
   });
 };

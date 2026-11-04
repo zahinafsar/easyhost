@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 export const RegisterPage = () => {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const queryClient = useQueryClient();
 
   const register = useApiMutation({
@@ -19,13 +21,18 @@ export const RegisterPage = () => {
     success: "Account created. Check your email to verify it.",
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: userQuery().all });
-      navigate("/");
+      navigate(redirect || "/");
     },
   });
 
   const update = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [field]: event.target.value });
   };
+
+  let loginHref = "/login";
+  if (redirect) {
+    loginHref = `/login?redirect=${encodeURIComponent(redirect)}`;
+  }
 
   return (
     <Card>
@@ -59,7 +66,7 @@ export const RegisterPage = () => {
           </Button>
           <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/login" className="text-foreground hover:underline">
+            <Link to={loginHref} className="text-foreground hover:underline">
               Log in
             </Link>
           </p>

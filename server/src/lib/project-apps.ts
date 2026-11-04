@@ -14,9 +14,14 @@ export const projectAppsWhere = (projectId: string) => ({
   OR: [{ id: projectId }, { parentProjectId: projectId }],
 });
 
-export const findProjectApp = (userId: string, projectId: string, idOrSlug: string) => prisma.app.findFirst({
+export const projectAccessWhere = (userId: string) => ({
+  parentProjectId: null,
+  deleting: false,
+  OR: [{ userId }, { members: { some: { userId } } }],
+});
+
+export const findProjectApp = (projectId: string, idOrSlug: string) => prisma.app.findFirst({
   where: {
-    userId,
     AND: [projectAppsWhere(projectId), { OR: [{ id: idOrSlug }, { slug: idOrSlug }] }],
   },
 });
