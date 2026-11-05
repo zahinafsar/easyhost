@@ -123,11 +123,39 @@ for (const file of staticHtml) {
   writeFileSync(file, source.replace(/<footer class="footer">[\s\S]*?<\/footer>/, footerHtml()));
 }
 
-const families = new Map();
-for (const page of pages.filter((item) => !HELD_BACK_FAMILIES.has(item.family))) {
-  families.set(page.family, [...(families.get(page.family) ?? []), page.path]);
-}
-families.set("core", staticPages);
+const SITEMAP_RULES = {
+  core: { changefreq: "monthly", priority: 0.9 },
+  indexes: { changefreq: "weekly", priority: 0.9 },
+  products: { changefreq: "monthly", priority: 0.8 },
+  hosting: { changefreq: "monthly", priority: 0.8 },
+  frameworks: { changefreq: "monthly", priority: 0.8 },
+  alternatives: { changefreq: "monthly", priority: 0.8 },
+  "cli-reference": { changefreq: "monthly", priority: 0.7 },
+  "migration-guides": { changefreq: "yearly", priority: 0.7 },
+  "domain-guides": { changefreq: "yearly", priority: 0.7 },
+  errors: { changefreq: "yearly", priority: 0.6 },
+  learn: { changefreq: "yearly", priority: 0.6 },
+};
+
+const sitemapRuleFor = (family) => {
+  const rule = SITEMAP_RULES[family];
+  if (!rule) {
+    throw new Error(`SITEMAP_RULES in scripts/seo/generate.mjs has no entry for family ${family}`);
+  }
+  return rule;
+};
+
+const sitemapPages = [
+  ...staticPages.map((pagePath) => {
+    if (pagePath === "/") {
+      return { path: pagePath, changefreq: "monthly", priority: 1 };
+    }
+    return { path: pagePath, ...sitemapRuleFor("core") };
+  }),
+  ...pages.filter((item) => !HELD_BACK_FAMILIES.has(item.family)).map((item) => {
+    return { path: item.path, ...sitemapRuleFor(item.family) };
+  }),
+].sort((a, b) => b.priority - a.priority || a.path.localeCompare(b.path));
 
 const urlFor = (pagePath) => {
   if (pagePath === "/") {
@@ -138,13 +166,10 @@ const urlFor = (pagePath) => {
 
 rmSync(path.join(outDir, "sitemaps"), { recursive: true, force: true });
 
-const sitemapEntries = [];
-for (const [family, paths] of families) {
-  const urls = paths.map((pagePath) => `  <url><loc>${urlFor(pagePath)}</loc><lastmod>${UPDATED}</lastmod></url>`).join("\n");
-  write(`sitemaps/${family}.xml`, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
-  sitemapEntries.push(`  <sitemap><loc>${SITE}/sitemaps/${family}.xml</loc><lastmod>${UPDATED}</lastmod></sitemap>`);
-}
-write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapEntries.join("\n")}\n</sitemapindex>\n`);
+const sitemapUrls = sitemapPages
+  .map((item) => `  <url><loc>${urlFor(item.path)}</loc><lastmod>${UPDATED}</lastmod><changefreq>${item.changefreq}</changefreq><priority>${item.priority.toFixed(1)}</priority></url>`)
+  .join("\n");
+write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls}\n</urlset>\n`);
 
 write(
   "llms-index.json",
@@ -178,4 +203,4 @@ Every generated page has a Markdown copy at the same path with \`.md\` appended.
 );
 
 const heldBack = pages.filter((page) => HELD_BACK_FAMILIES.has(page.family)).length;
-process.stdout.write(`Generated ${pages.length} pages: ${pages.length - heldBack} indexable, ${heldBack} noindex, ${families.size} sitemaps\n`);
+process.stdout.write(`Generated ${pages.length} pages: ${pages.length - heldBack} indexable, ${heldBack} noindex, ${sitemapPages.length} sitemap URLs\n`);
