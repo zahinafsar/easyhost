@@ -1,14 +1,14 @@
 import { escapeHtml, inline, renderMarkdown } from "./markdown.mjs";
 
 export const SITE = "https://easyhost.fun";
-export const UPDATED = "2026-10-31";
+export const UPDATED = "2026-11-09";
+const UPDATED_LABEL = new Date(UPDATED).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 export const HELD_BACK_FAMILIES = new Set([
   "agent-guides",
   "package-manager-guides",
   "database-guides",
   "storage-guides",
-  "email-guides",
   "schedule-guides",
   "env-guides",
   "monorepo-guides",
@@ -22,7 +22,7 @@ const FOOTER_COLUMNS = [
       ["/products/app-hosting", "Node.js hosting"],
       ["/products/postgres", "Postgres database"],
       ["/products/storage", "S3 storage"],
-      ["/products/email", "Transactional email"],
+      ["/products/email", "Email (coming soon)"],
       ["/products/schedules", "Cron schedules"],
       ["/products/custom-domains", "Custom domains"],
       ["/products/cli", "ezhst CLI"],
@@ -61,7 +61,6 @@ const FOOTER_COLUMNS = [
       ["/guides/nextjs-prisma-postgres", "Next.js with Prisma"],
       ["/guides/nestjs-typeorm-postgres", "NestJS with TypeORM"],
       ["/guides/express-file-uploads-aws-sdk", "Express file uploads"],
-      ["/guides/nextjs-send-email", "Send email from Next.js"],
       ["/guides/nextjs-cron-jobs", "Next.js cron jobs"],
       ["/guides/custom-domain-cloudflare", "Cloudflare custom domain"],
       ["/guides", "All guides"],
@@ -197,7 +196,7 @@ export const footerHtml = () => {
             <img src="/logo.svg" alt="" width="18" height="24" />
             EasyHost
           </a>
-          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+          <p>Free Node.js hosting with Postgres, S3 storage and schedules, built for AI coding agents. No credit card.</p>
         </div>
         <nav class="footer-columns" aria-label="Footer">
           ${columns}
@@ -262,6 +261,7 @@ export const renderPage = (page) => {
         <a href="/" class="logo">
           <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
+          <span class="beta">Beta</span>
         </a>
         <nav class="nav-links" aria-label="Main">
           <a href="/">Home</a>
@@ -287,7 +287,7 @@ export const renderPage = (page) => {
           <ol class="crumbs" aria-label="Breadcrumb">${crumbsHtml(page)}</ol>
           <h1>${inline(page.h1)}</h1>
           <p class="lead">${inline(page.lead)}</p>
-          <p class="doc-meta">Last updated October 31, 2026</p>
+          <p class="doc-meta">Last updated ${UPDATED_LABEL}</p>
         </div>
 ${html}
 ${faqHtml}

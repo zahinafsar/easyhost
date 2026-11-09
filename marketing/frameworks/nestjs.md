@@ -1,6 +1,6 @@
 # NestJS on EasyHost
 
-NestJS is a structured Node.js backend framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+NestJS is a structured Node.js backend framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ NestJS is a structured Node.js backend framework. These guides cover hosting it 
 - [AWS SDK v3](/guides/nestjs-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/nestjs-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/nestjs-send-email)
 - [Cron jobs](/guides/nestjs-cron-jobs)
 
 ## Migrate

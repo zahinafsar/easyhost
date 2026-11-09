@@ -8,4 +8,4 @@ SPF, DKIM and DMARC are DNS-based standards that help receivers trust email. SPF
 
 ## On EasyHost
 
-EasyHost senders use `easyhost.fun`, so you do not have to set these up. [Learn more](/products/email).
+Email on EasyHost is coming soon, so there is nothing to set up yet. [Learn more](/products/email).

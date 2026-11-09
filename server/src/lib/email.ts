@@ -1,9 +1,16 @@
 import { Resend } from "resend";
+import { createMiddleware } from "hono/factory";
 import { env } from "./env.js";
 
 const resend = new Resend(env.resendApiKey);
 const APP_URL = env.appUrl;
 const FROM_EMAIL = env.emailFrom;
+
+export const EMAIL_COMING_SOON = "Email is coming soon.";
+
+export const emailComingSoon = createMiddleware(async (c) => {
+  return c.json({ error: EMAIL_COMING_SOON, code: "EMAIL_COMING_SOON" }, 503);
+});
 
 export class EmailUsageLimitError extends Error {
   constructor() {
@@ -44,19 +51,17 @@ const escapeHtml = (value: string) => {
     .replaceAll("'", "&#039;");
 };
 
-export const sendVerificationEmail = async (email: string, name: string, token: string) => {
-  const verifyUrl = `${APP_URL}/verify?token=${token}`;
-
+export const sendVerificationEmail = async (email: string, name: string, code: string) => {
   await resend.emails.send({
     from: FROM_EMAIL,
     to: email,
-    subject: "Verify your EasyHost account",
+    subject: `${code} is your EasyHost verification code`,
     html: emailLayout(`
       <h1 style="margin: 0 0 8px; font-size: 20px; color: #111;">Welcome, ${escapeHtml(name)}!</h1>
       <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
-        Thanks for signing up. Please verify your email address to get started.
+        Enter this code to verify your email address. It expires in 10 minutes.
       </p>
-      ${button(verifyUrl, "Verify Email")}
+      <p style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111; font-family: monospace;">${code}</p>
       <p style="color: #9ca3af; font-size: 12px; margin-top: 24px; margin-bottom: 0;">
         If you didn't create an account, you can safely ignore this email.
       </p>

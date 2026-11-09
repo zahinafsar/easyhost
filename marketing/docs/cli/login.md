@@ -21,7 +21,8 @@ npx ezhst login --email --json
 ## Related commands
 
 - [`ezhst register`](/docs/cli/register): Create an EasyHost account from the terminal.
+- [`ezhst verify`](/docs/cli/verify): Verify your email with the 6-digit code.
 - [`ezhst logout`](/docs/cli/logout): Remove the saved token from this machine.
 - [`ezhst whoami`](/docs/cli/whoami): Show the logged in account.
-- [`ezhst resend-verification`](/docs/cli/resend-verification): Send the verification email again.
+- [`ezhst resend-verification`](/docs/cli/resend-verification): Email a new verification code.
 - [`ezhst forgot-password`](/docs/cli/forgot-password): Send a password reset link.

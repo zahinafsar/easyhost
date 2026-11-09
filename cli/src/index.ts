@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { readFileSync } from "node:fs";
-import { forgotPassword, login, logout, register, resendVerification, whoami } from "./commands/auth.js";
+import { forgotPassword, login, logout, register, resendVerification, verify, whoami } from "./commands/auth.js";
 import { createApp, deleteApp, listApps } from "./commands/apps.js";
 import { createSchedule, deleteSchedule, listSchedules, scheduleLogs, setScheduleState, updateSchedule } from "./commands/schedules.js";
 import { createProject, deleteProject, link, listProjects, logs, projectInfo, renameProject, start, stop } from "./commands/projects.js";
@@ -35,7 +35,7 @@ const program = new Command();
 
 program
   .name("ezhst")
-  .description("EasyHost from the terminal: deploy apps and manage storage, databases, email and API keys")
+  .description("EasyHost from the terminal: deploy apps and manage storage and databases")
   .version(packageMetadata.version)
   .option("--json", "Print machine-readable JSON")
   .hook("preAction", (_command, action) => {
@@ -62,7 +62,8 @@ program
   .action(login);
 program.command("logout").description("Log out").action(logout);
 program.command("whoami").description("Show the logged in user").action(whoami);
-program.command("resend-verification").description("Send the verification email again").action(resendVerification);
+program.command("verify").description("Verify your email with the 6-digit code").argument("<code>").action(verify);
+program.command("resend-verification").description("Email a new verification code").action(resendVerification);
 program.command("forgot-password").description("Email a password reset link").option("--email <email>").action(forgotPassword);
 
 const projects = program.command("projects").description("Manage projects");
@@ -118,7 +119,7 @@ appScoped(domains.command("add").description("Add a domain").argument("<hostname
 appScoped(domains.command("verify").description("Check DNS and issue HTTPS").argument("<hostname>")).action(verifyDomain);
 appScoped(domains.command("remove").description("Remove a domain").argument("<hostname>")).action(removeDomain);
 
-const apps = program.command("apps").description("Manage up to five Node.js apps per project");
+const apps = program.command("apps").description("Manage up to three apps per project");
 scoped(apps.command("list").description("List apps in a project")).action(listApps);
 scoped(apps.command("create").description("Create an app").argument("<name>")).action(createApp);
 appScoped(apps.command("delete").description("Delete one app and its deployments").option("--yes", "Confirm")).action(deleteApp);
@@ -159,7 +160,7 @@ scoped(db.command("rows").description("Browse a table").argument("<table>").opti
 scoped(db.command("reset-password").description("Rotate the database password")).action(resetDatabasePassword);
 scoped(db.command("delete").description("Delete the database and its data").option("--yes", "Confirm")).action(deleteDatabase);
 
-const email = program.command("email").description("Transactional email");
+const email = program.command("email", { hidden: true }).description("Transactional email (coming soon)");
 scoped(email.command("info").description("Show the sender address and usage")).action(emailInfo);
 const sender = email.command("sender").description("Sender address");
 scoped(sender.command("create").description("Create <username>@easyhost.fun").argument("<username>")).action(createSender);
@@ -176,7 +177,7 @@ scoped(
 ).action(sendEmail);
 scoped(email.command("logs").description("Show sent emails").option("--page <n>", "Page", "1")).action(emailLogs);
 
-const keys = program.command("keys").description("API keys for the HTTP API");
+const keys = program.command("keys", { hidden: true }).description("API keys for the HTTP API");
 scoped(keys.command("list").description("List API keys")).action(listKeys);
 scoped(keys.command("create").description("Create an API key").argument("<name>")).action(createKey);
 scoped(keys.command("revoke").description("Revoke an API key").argument("<id>")).action(revokeKey);

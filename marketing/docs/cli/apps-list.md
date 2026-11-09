@@ -8,7 +8,7 @@ List the apps in a project.
 ezhst apps list
 ```
 
-A project can have up to five apps.
+A project can have up to three apps, counting AI Builder apps.
 
 ## In scripts and agents
 

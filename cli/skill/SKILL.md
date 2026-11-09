@@ -1,11 +1,11 @@
 ---
 name: easyhost
-description: Deploy and manage apps on EasyHost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship a Node.js app to EasyHost, or to manage its environment variables, build settings, logs, custom domains, S3 storage, Postgres database, transactional email or API keys.
+description: Deploy and manage apps on EasyHost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship a Node.js app to EasyHost, or to manage its environment variables, build settings, logs, custom domains, S3 storage or Postgres database.
 ---
 
 # EasyHost
 
-EasyHost is free hosting for Node.js apps with built-in S3 storage, Postgres and email. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
+EasyHost is free hosting for Node.js apps with built-in S3 storage and Postgres (email is coming soon). It is in beta. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
 
 ## Rules for agents
 
@@ -21,12 +21,12 @@ EasyHost is free hosting for Node.js apps with built-in S3 storage, Postgres and
 Check first: `npx ezhst whoami --json`. If it fails with "Not logged in":
 
 - Existing account: ask the user for email and password, then `npx ezhst login --email <email> --password <password> --json`
-- New account: ask for name, email and password, then `npx ezhst register --name <name> --email <email> --password <password> --json`. Tell the user to click the verification link in their inbox.
+- New account: ask for name, email and password, then `npx ezhst register --name <name> --email <email> --password <password> --json`. Verification is mandatory: ask the user for the 6-digit code from their inbox and run `npx ezhst verify <code> --json` before any other command (`npx ezhst resend-verification` sends a new code).
 - CI: set `EZHST_TOKEN` instead of logging in.
 
 ## 2. Pick or create a project
 
-A project contains up to five Node.js apps, five schedules, and shared storage, database, email sender and API keys. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
+A project contains up to three apps, five schedules, and shared storage and database. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
 
 ```
 npx ezhst projects list --json
@@ -86,9 +86,7 @@ Database (Postgres, one per project):
 - `db create <name> | info | query "<sql>" | query --file <file.sql> | rows <table> [--page n] | reset-password | delete --yes`
 - `db info --json` returns `connectionString` and `shadowConnectionString` (for `prisma migrate dev`). Set `DATABASE_URL` with `env set`, and run migrations from the local machine against it (for Prisma: `prisma migrate deploy`).
 
-Email (from `<username>@easyhost.fun`, 20 emails a day):
-- `email sender create <username>`, `email info`, `email send --from <address> --to <address> --subject <text> --text <body>` (or `--html`), `email logs`, `email sender delete`
-- From app code: `POST https://api.easyhost.fun/api/v1/email/send` with header `Authorization: Bearer <api key>` and JSON `{ "from", "to", "subject", "text" | "html" }`. Create the key with `keys create <name>` and store it with `env set EASYHOST_API_KEY=...`.
+Email: coming soon. The `email` commands and the email API return "Email is coming soon." Do not set up or send email on EasyHost yet.
 
 Schedules (up to five per project, intervals in minutes):
 - `schedules list`, `schedules create <name> --url <url> --every <minutes> [--method POST] [--headers '<json>'] [--body '<text>'] [--paused]`
@@ -96,18 +94,17 @@ Schedules (up to five per project, intervals in minutes):
 - `schedules pause <id>`, `schedules resume <id>`, `schedules logs <id>`, `schedules delete <id> --yes`
 - Public HTTP/HTTPS URLs only, intervals 1 to 43200 minutes, 30-second timeout, no redirects. First call follows one interval; saving/resuming restarts it. Latest 100 runs retained, latest 10 shown. Missed intervals are skipped; execution has up to 10 seconds of polling delay. Requests in progress may finish after pausing/deleting.
 
-API keys:
-- `keys list | create <name> | revoke <id>` (a key is shown only once)
-
 Members:
 - `members list | invite <email> | revoke <email> | remove <email> --yes | leave --yes`. Only the owner can invite, revoke, remove, rename or delete the project. Members can do everything else.
 - `accept-invite <link-or-token>` joins a project. The logged-in email must match the invited email.
 
 Account:
-- `whoami`, `logout`, `resend-verification`, `forgot-password --email <email>`
+- `whoami`, `logout`, `verify <code>`, `resend-verification`, `forgot-password --email <email>`
+- If a command fails with "Your email is not verified", ask the user for the 6-digit code from their inbox and run `verify <code>`. Codes expire after 10 minutes; `resend-verification` sends a new one (once a minute).
+- Limit errors ("You can have at most 3 projects.", "Each project can have at most 3 apps.") are hard limits: suggest deleting something the user no longer needs.
 
 ## Limits
 
-Free: 10 projects. Per project: five Node.js apps, five schedules, one bucket, one database, one email sender and 20 emails a day. One build at a time; 512 MB RAM and 1 CPU per app.
+Free: 3 projects. Per project: three apps, five schedules, one bucket and one database. One build at a time; 512 MB RAM and 1 CPU per app.
 
 Docs: https://easyhost.fun/docs

@@ -3,17 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Send Email From Koa for Free | EasyHost</title>
-    <meta name="description" content="Send transactional email from a Koa app with one HTTP request and no SMTP setup. Includes a working route and the free plan's daily limit." />
-    <link rel="canonical" href="https://easyhost.fun/guides/koa-send-email" />
-    <link rel="alternate" type="text/markdown" href="/guides/koa-send-email.md" />
-    <meta name="robots" content="noindex, follow" />
+    <title>You can have at most 3 projects: How to Fix It | EasyHost</title>
+    <meta name="description" content="Delete a project you no longer need, or add the app to an existing project, which can hold up to three apps. Why this error happens on deploy, and the commands that fix it." />
+    <link rel="canonical" href="https://easyhost.fun/errors/too-many-projects" />
+    <link rel="alternate" type="text/markdown" href="/errors/too-many-projects.md" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="EasyHost" />
-    <meta property="og:url" content="https://easyhost.fun/guides/koa-send-email" />
-    <meta property="og:title" content="Send Email From Koa for Free | EasyHost" />
-    <meta property="og:description" content="Send transactional email from a Koa app with one HTTP request and no SMTP setup. Includes a working route and the free plan's daily limit." />
+    <meta property="og:url" content="https://easyhost.fun/errors/too-many-projects" />
+    <meta property="og:title" content="You can have at most 3 projects: How to Fix It | EasyHost" />
+    <meta property="og:description" content="Delete a project you no longer need, or add the app to an existing project, which can hold up to three apps. Why this error happens on deploy, and the commands that fix it." />
     <meta property="og:image" content="https://easyhost.fun/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://easyhost.fun/og.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Send email from Koa","description":"Send transactional email from a Koa app with one HTTP request and no SMTP setup. Includes a working route and the free plan's daily limit.","url":"https://easyhost.fun/guides/koa-send-email","image":"https://easyhost.fun/og.png","datePublished":"2026-10-31","dateModified":"2026-10-31","author":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/"},"publisher":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/","logo":"https://easyhost.fun/icon-512.png"},"mainEntityOfPage":"https://easyhost.fun/guides/koa-send-email"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"EasyHost","item":"https://easyhost.fun/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://easyhost.fun/guides"},{"@type":"ListItem","position":3,"name":"Koa","item":"https://easyhost.fun/frameworks/koa"},{"@type":"ListItem","position":4,"name":"Send email","item":"https://easyhost.fun/guides/koa-send-email"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Can I send from my own domain?","acceptedAnswer":{"@type":"Answer","text":"No. Senders use \u003cusername>@easyhost.fun."}}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"You can have at most 3 projects","description":"Delete a project you no longer need, or add the app to an existing project, which can hold up to three apps. Why this error happens on deploy, and the commands that fix it.","url":"https://easyhost.fun/errors/too-many-projects","image":"https://easyhost.fun/og.png","datePublished":"2026-11-09","dateModified":"2026-11-09","author":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/"},"publisher":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/","logo":"https://easyhost.fun/icon-512.png"},"mainEntityOfPage":"https://easyhost.fun/errors/too-many-projects"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"EasyHost","item":"https://easyhost.fun/"},{"@type":"ListItem","position":2,"name":"Errors","item":"https://easyhost.fun/errors"},{"@type":"ListItem","position":3,"name":"You can have at most 3 projects","item":"https://easyhost.fun/errors/too-many-projects"}]}]}</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -33,6 +33,7 @@
         <a href="/" class="logo">
           <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
+          <span class="beta">Beta</span>
         </a>
         <nav class="nav-links" aria-label="Main">
           <a href="/">Home</a>
@@ -50,52 +51,35 @@
     <div class="container docs">
       <aside class="toc">
         <p class="toc-title">On this page</p>
-        <ol><li><a href="#create-a-sender-and-api-key">Create a sender and API key</a></li><li><a href="#send-from-a-route">Send from a route</a></li><li><a href="#limits">Limits</a></li><li><a href="#faq">FAQ</a></li></ol>
+        <ol><li><a href="#the-error">The error</a></li><li><a href="#why-it-happens">Why it happens</a></li><li><a href="#how-to-fix-it">How to fix it</a></li><li><a href="#still-stuck">Still stuck</a></li></ol>
       </aside>
 
       <main class="doc">
         <div class="doc-head">
-          <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/">EasyHost</a></li><li><a href="/guides">Guides</a></li><li><a href="/frameworks/koa">Koa</a></li><li aria-current="page">Send email</li></ol>
-          <h1>Send email from Koa</h1>
-          <p class="lead">Send password resets and welcome emails from Koa with one HTTP request. There is no SMTP server or SDK to set up.</p>
-          <p class="doc-meta">Last updated October 31, 2026</p>
+          <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/">EasyHost</a></li><li><a href="/errors">Errors</a></li><li aria-current="page">You can have at most 3 projects</li></ol>
+          <h1>You can have at most 3 projects</h1>
+          <p class="lead">Your account already has three projects, which is the limit for every account.</p>
+          <p class="doc-meta">Last updated November 9, 2026</p>
         </div>
-<section id="create-a-sender-and-api-key">
-<h2>Create a sender and API key</h2>
-<div class="code"><pre>npx ezhst email sender create acme
-npx ezhst keys create production --json
-npx ezhst env set EASYHOST_API_KEY=&lt;key&gt;
-npx ezhst redeploy</pre></div>
-<p>Your address becomes <code>acme@easyhost.fun</code>. The key is shown only once.</p>
+<section id="the-error">
+<h2>The error</h2>
+<div class="code"><pre>You can have at most 3 projects.</pre></div>
 </section>
-<section id="send-from-a-route">
-<h2>Send from a route</h2>
-<div class="code"><div class="code-label">src/index.ts</div><pre>router.post(&quot;/api/welcome&quot;, async (ctx) =&gt; {
-  const res = await fetch(&quot;https://api.easyhost.fun/api/v1/email/send&quot;, {
-    method: &quot;POST&quot;,
-    headers: {
-      Authorization: `Bearer ${process.env.EASYHOST_API_KEY}`,
-      &quot;Content-Type&quot;: &quot;application/json&quot;,
-    },
-    body: JSON.stringify({
-      from: &quot;acme@easyhost.fun&quot;,
-      to: &quot;ada@example.com&quot;,
-      subject: &quot;Welcome&quot;,
-      text: &quot;Thanks for signing up.&quot;,
-    }),
-  });
-  ctx.body = { sent: res.ok };
-});</pre></div>
-<p>Protect this route in a real app, and take the recipient from your own data.</p>
+<section id="why-it-happens">
+<h2>Why it happens</h2>
+<p>Your account already has three projects, which is the limit for every account.</p>
 </section>
-<section id="limits">
-<h2>Limits</h2>
-<ul><li>20 successful sends per project over a rolling 24 hours</li><li>One sender per project, on the <code>easyhost.fun</code> domain</li><li>HTTP 503 with a pause message if the <a href="/errors/email-paused">shared provider quota is reached</a></li></ul>
-<p>See the <a href="/frameworks/koa">Koa hub</a> for every Koa guide, or <a href="/free-koa-hosting">free Koa hosting</a> for what is included. See also the <a href="/products/email">email product page</a>.</p>
+<section id="how-to-fix-it">
+<h2>How to fix it</h2>
+<p>Delete a project you no longer need, or add the app to an existing project, which can hold up to three apps.</p>
+<div class="code"><pre>ezhst projects list
+ezhst projects delete --project old-project --yes</pre></div>
 </section>
-<section id="faq"><h2>Frequently asked questions</h2>
-<h3>Can I send from my own domain?</h3>
-<p>No. Senders use <code>&lt;username&gt;@easyhost.fun</code>.</p></section>
+<section id="still-stuck">
+<h2>Still stuck</h2>
+<p>Read the <a href="/docs/cli/deployments-log">build log</a> and <a href="/docs/cli/logs">runtime logs</a>, or browse <a href="/errors">all errors</a>.</p>
+</section>
+
         <section id="start">
           <h2>Start for free</h2>
           <p>Install the skill, choose Global or Local, then tell your agent to deploy. No credit card, no config files.</p>
@@ -115,12 +99,12 @@ npx ezhst redeploy</pre></div>
             <img src="/logo.svg" alt="" width="18" height="24" />
             EasyHost
           </a>
-          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+          <p>Free Node.js hosting with Postgres, S3 storage and schedules, built for AI coding agents. No credit card.</p>
         </div>
         <nav class="footer-columns" aria-label="Footer">
-          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Email (coming soon)</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
-          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Migrate</p><ul><li><a href="/migrate/vercel">From Vercel</a></li><li><a href="/migrate/render">From Render</a></li><li><a href="/migrate/railway">From Railway</a></li><li><a href="/migrate/netlify">From Netlify</a></li><li><a href="/migrate/fly">From Fly.io</a></li><li><a href="/migrate/heroku">From Heroku</a></li><li><a href="/migrate/koyeb">From Koyeb</a></li><li><a href="/migrate/postgres">Move a Postgres database</a></li><li><a href="/migrate/storage">Move S3 files</a></li><li><a href="/migrate">All migrations</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Resources</p><ul><li><a href="/docs">Documentation</a></li><li><a href="/docs/cli">CLI reference</a></li><li><a href="/errors">Deployment errors</a></li><li><a href="/learn">Learn hosting</a></li><li><a href="/skill.md">skill.md</a></li><li><a href="/llms.txt">llms.txt</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="https://app.easyhost.fun/login">Log in</a></li><li><a href="https://app.easyhost.fun/register">Sign up</a></li><li><a href="mailto:hello@easyhost.fun">Contact</a></li></ul></div>

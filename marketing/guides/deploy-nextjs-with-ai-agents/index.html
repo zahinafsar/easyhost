@@ -31,7 +31,7 @@
             "url": "https://easyhost.fun/guides/deploy-nextjs-with-ai-agents",
             "image": "https://easyhost.fun/og.png",
             "datePublished": "2026-09-30",
-            "dateModified": "2026-10-11",
+            "dateModified": "2026-11-09",
             "author": {
               "@type": "Organization",
               "name": "EasyHost",
@@ -86,7 +86,7 @@
                 "name": "Is it free to deploy this way?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes. EasyHost is free with fixed limits: 10 projects, 512 MB of RAM and 1 CPU per app, and no credit card."
+                  "text": "Yes. EasyHost is free with fixed limits: 3 projects, 512 MB of RAM and 1 CPU per app, and no credit card."
                 }
               },
               {
@@ -113,6 +113,7 @@
         <a href="/" class="logo">
           <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
+          <span class="beta">Beta</span>
         </a>
         <nav class="nav-links" aria-label="Main">
           <a href="/">Home</a>
@@ -135,7 +136,7 @@
           <li><a href="#claude-code">Claude Code</a></li>
           <li><a href="#cursor-codex">Cursor, Codex and others</a></li>
           <li><a href="#what-happens">What the agent runs</a></li>
-          <li><a href="#backend">Database, storage, email</a></li>
+          <li><a href="#backend">Database, storage, domains</a></li>
           <li><a href="#failures">When a build fails</a></li>
           <li><a href="#ci">CI and sandboxes</a></li>
           <li><a href="#safety">What the agent will not do</a></li>
@@ -150,7 +151,7 @@
           </ol>
           <h1>How to deploy a Next.js app with Claude Code, Cursor or Codex</h1>
           <p class="lead">To have a coding agent deploy a Next.js app, give it a hosting CLI it can run without a browser and instructions for using it. On EasyHost that is one command, <code>npx ezhst skill install</code>, followed by one sentence: "Deploy this to EasyHost". The agent creates the account, sets environment variables, deploys and returns a live URL. It is free.</p>
-          <p class="doc-meta">Last updated October 11, 2026</p>
+          <p class="doc-meta">Last updated November 9, 2026</p>
         </div>
 
         <section id="short-answer">
@@ -186,11 +187,12 @@
           <p>A first deploy usually looks like this. Every command prints JSON on stdout, so the agent reads results instead of scraping text.</p>
           <div class="code"><pre>npx ezhst whoami --json
 npx ezhst register --name "Ada" --email ada@example.com --password "..." --json
+npx ezhst verify 123456 --json
 npx ezhst projects create my-app --link --json
 npx ezhst env import .env --json
 npx ezhst deploy --json</pre></div>
           <ol>
-            <li><strong>Check who is logged in.</strong> If nobody is, the agent asks you for an email and password and registers or logs in.</li>
+            <li><strong>Check who is logged in.</strong> If nobody is, the agent asks you for an email and password and registers or logs in. After registering, it asks for the 6-digit code emailed to you and runs <code>verify</code>, which is required before any other command.</li>
             <li><strong>Create and link a project.</strong> Each app has its own subdomain within the project. A <code>.easyhost.json</code> file records the link.</li>
             <li><strong>Import environment variables.</strong> <code>.env</code> files are never uploaded, so the agent imports them explicitly.</li>
             <li><strong>Deploy.</strong> The CLI packages the source (without <code>node_modules</code>, <code>.next</code>, <code>.git</code> and <code>.env*</code>), uploads it, and EasyHost installs, builds and starts the app.</li>
@@ -199,15 +201,14 @@ npx ezhst deploy --json</pre></div>
         </section>
 
         <section id="backend">
-          <h2>Ask for a database, storage or email</h2>
+          <h2>Ask for a database, storage or a domain</h2>
           <p>The same skill covers the rest of the platform, so follow-up prompts work without more setup:</p>
           <div class="cmds">
             <div class="cmd-row"><code>Add a Postgres database and run my Prisma migrations</code><span>Runs <code>db create</code>, reads the connection string, sets <code>DATABASE_URL</code>, migrates and redeploys.</span></div>
             <div class="cmd-row"><code>Store avatar uploads in a bucket</code><span>Runs <code>storage create</code> and sets the S3 endpoint, bucket and keys as env vars.</span></div>
-            <div class="cmd-row"><code>Send a welcome email on sign-up</code><span>Creates a sender and an API key, then calls the HTTP email API from your app.</span></div>
             <div class="cmd-row"><code>Put this on www.example.com</code><span>Runs <code>domains add</code>, tells you the DNS record to set, then verifies and issues HTTPS.</span></div>
           </div>
-          <p>The full command list is in the <a href="/docs">docs</a>.</p>
+          <p>Transactional email is coming soon. The full command list is in the <a href="/docs">docs</a>.</p>
         </section>
 
         <section id="failures">
@@ -251,7 +252,7 @@ npx ezhst deploy --json</pre></div>
           <h3>Does this work with Cursor and Codex?</h3>
           <p>Yes. Run <code>npx ezhst skill install</code> and choose Global or Local. Both install into <code>.agents/skills</code>. If the agent does not discover the skill, ask it to read the installed <code>SKILL.md</code> or <a href="/skill.md">skill.md</a>.</p>
           <h3>Is it free to deploy this way?</h3>
-          <p>Yes. EasyHost is free with fixed <a href="/free-nextjs-hosting">limits</a>: 10 projects, 512 MB of RAM and 1 CPU per app, and no credit card.</p>
+          <p>Yes. EasyHost is free with fixed <a href="/free-nextjs-hosting">limits</a>: 3 projects, 512 MB of RAM and 1 CPU per app, and no credit card.</p>
           <h3>Do I need an MCP server?</h3>
           <p>No. The agent uses a normal command line tool through its shell. There is nothing to run in the background.</p>
         </section>
@@ -275,12 +276,12 @@ npx ezhst deploy --json</pre></div>
             <img src="/logo.svg" alt="" width="18" height="24" />
             EasyHost
           </a>
-          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+          <p>Free Node.js hosting with Postgres, S3 storage and schedules, built for AI coding agents. No credit card.</p>
         </div>
         <nav class="footer-columns" aria-label="Footer">
-          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Email (coming soon)</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
-          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Migrate</p><ul><li><a href="/migrate/vercel">From Vercel</a></li><li><a href="/migrate/render">From Render</a></li><li><a href="/migrate/railway">From Railway</a></li><li><a href="/migrate/netlify">From Netlify</a></li><li><a href="/migrate/fly">From Fly.io</a></li><li><a href="/migrate/heroku">From Heroku</a></li><li><a href="/migrate/koyeb">From Koyeb</a></li><li><a href="/migrate/postgres">Move a Postgres database</a></li><li><a href="/migrate/storage">Move S3 files</a></li><li><a href="/migrate">All migrations</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Resources</p><ul><li><a href="/docs">Documentation</a></li><li><a href="/docs/cli">CLI reference</a></li><li><a href="/errors">Deployment errors</a></li><li><a href="/learn">Learn hosting</a></li><li><a href="/skill.md">skill.md</a></li><li><a href="/llms.txt">llms.txt</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="https://app.easyhost.fun/login">Log in</a></li><li><a href="https://app.easyhost.fun/register">Sign up</a></li><li><a href="mailto:hello@easyhost.fun">Contact</a></li></ul></div>

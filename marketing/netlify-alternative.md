@@ -12,7 +12,7 @@ According to [Netlify's own page](https://www.netlify.com/pricing/) as of Octobe
 | Runtime | CDN and functions | One always-on Node.js container per app |
 | Global CDN | Yes | No, one region |
 | Deploy previews | Yes | No |
-| Included with each app | Varies by plan | Postgres, S3 bucket, email and schedules per project |
+| Included with each app | Varies by plan | Postgres, S3 bucket and schedules per project |
 
 ## When EasyHost fits
 

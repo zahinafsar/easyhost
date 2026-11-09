@@ -58,7 +58,7 @@ If the build passes but nothing loads, see [why a AdonisJS app is unreachable](/
 
 ### Can Codex create an EasyHost account for me?
 
-Yes. The skill tells the agent to ask for your name, email and password and then register. You must click the verification link in your inbox.
+Yes. The skill tells the agent to ask for your name, email and password and then register. You then give the agent the 6-digit verification code from your inbox, and it runs `ezhst verify <code>` before anything else.
 
 ### Will Codex see my secrets?
 

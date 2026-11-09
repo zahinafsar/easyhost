@@ -1,6 +1,6 @@
 # Fastify on EasyHost
 
-Fastify is a high-performance Node.js web framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+Fastify is a high-performance Node.js web framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ Fastify is a high-performance Node.js web framework. These guides cover hosting 
 - [AWS SDK v3](/guides/fastify-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/fastify-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/fastify-send-email)
 - [Cron jobs](/guides/fastify-cron-jobs)
 
 ## Migrate

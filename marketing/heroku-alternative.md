@@ -11,8 +11,8 @@ According to [Heroku's own page](https://www.heroku.com/pricing/) as of October 
 | Cheapest app | Eco at $5 per month | $0 |
 | Idle behaviour | Eco sleeps after 30 minutes | Apps stay on |
 | Language support | Many languages | Node.js only |
-| Add-ons | Large marketplace | Postgres, storage, email and schedules built in |
-| Included with each app | Varies by plan | Postgres, S3 bucket, email and schedules per project |
+| Add-ons | Large marketplace | Postgres, storage and schedules built in |
+| Included with each app | Varies by plan | Postgres, S3 bucket and schedules per project |
 
 ## When EasyHost fits
 

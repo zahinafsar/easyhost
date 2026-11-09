@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ezhst CLI Reference: Every Command | EasyHost</title>
-    <meta name="description" content="Reference for every ezhst command: deploy, env, build, domains, storage, database, schedules, email and API keys, with usage and JSON output notes." />
+    <meta name="description" content="Reference for every ezhst command: account, deploy, env, build, domains, storage, database, schedules and members, with usage and JSON output notes." />
     <link rel="canonical" href="https://easyhost.fun/docs/cli" />
     <link rel="alternate" type="text/markdown" href="/docs/cli.md" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
@@ -13,7 +13,7 @@
     <meta property="og:site_name" content="EasyHost" />
     <meta property="og:url" content="https://easyhost.fun/docs/cli" />
     <meta property="og:title" content="ezhst CLI Reference: Every Command | EasyHost" />
-    <meta property="og:description" content="Reference for every ezhst command: deploy, env, build, domains, storage, database, schedules, email and API keys, with usage and JSON output notes." />
+    <meta property="og:description" content="Reference for every ezhst command: account, deploy, env, build, domains, storage, database, schedules and members, with usage and JSON output notes." />
     <meta property="og:image" content="https://easyhost.fun/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://easyhost.fun/og.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"CLI reference","description":"Reference for every ezhst command: deploy, env, build, domains, storage, database, schedules, email and API keys, with usage and JSON output notes.","url":"https://easyhost.fun/docs/cli","image":"https://easyhost.fun/og.png","datePublished":"2026-10-31","dateModified":"2026-10-31","author":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/"},"publisher":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/","logo":"https://easyhost.fun/icon-512.png"},"mainEntityOfPage":"https://easyhost.fun/docs/cli"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"EasyHost","item":"https://easyhost.fun/"},{"@type":"ListItem","position":2,"name":"CLI reference","item":"https://easyhost.fun/docs/cli"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"CLI reference","description":"Reference for every ezhst command: account, deploy, env, build, domains, storage, database, schedules and members, with usage and JSON output notes.","url":"https://easyhost.fun/docs/cli","image":"https://easyhost.fun/og.png","datePublished":"2026-11-09","dateModified":"2026-11-09","author":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/"},"publisher":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/","logo":"https://easyhost.fun/icon-512.png"},"mainEntityOfPage":"https://easyhost.fun/docs/cli"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"EasyHost","item":"https://easyhost.fun/"},{"@type":"ListItem","position":2,"name":"CLI reference","item":"https://easyhost.fun/docs/cli"}]}]}</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -33,6 +33,7 @@
         <a href="/" class="logo">
           <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
+          <span class="beta">Beta</span>
         </a>
         <nav class="nav-links" aria-label="Main">
           <a href="/">Home</a>
@@ -50,7 +51,7 @@
     <div class="container docs">
       <aside class="toc">
         <p class="toc-title">On this page</p>
-        <ol><li><a href="#auth">auth</a></li><li><a href="#projects">projects</a></li><li><a href="#apps">apps</a></li><li><a href="#deploy">deploy</a></li><li><a href="#env">env</a></li><li><a href="#build">build</a></li><li><a href="#domains">domains</a></li><li><a href="#storage">storage</a></li><li><a href="#database">database</a></li><li><a href="#schedules">schedules</a></li><li><a href="#email">email</a></li><li><a href="#keys">keys</a></li><li><a href="#members">members</a></li><li><a href="#skill">skill</a></li></ol>
+        <ol><li><a href="#auth">auth</a></li><li><a href="#projects">projects</a></li><li><a href="#apps">apps</a></li><li><a href="#deploy">deploy</a></li><li><a href="#env">env</a></li><li><a href="#build">build</a></li><li><a href="#domains">domains</a></li><li><a href="#storage">storage</a></li><li><a href="#database">database</a></li><li><a href="#schedules">schedules</a></li><li><a href="#members">members</a></li><li><a href="#skill">skill</a></li></ol>
       </aside>
 
       <main class="doc">
@@ -58,11 +59,11 @@
           <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/">EasyHost</a></li><li aria-current="page">CLI reference</li></ol>
           <h1>CLI reference</h1>
           <p class="lead">One page per <code>ezhst</code> command. The <a href="/docs">main docs</a> cover the same commands on a single page.</p>
-          <p class="doc-meta">Last updated October 31, 2026</p>
+          <p class="doc-meta">Last updated November 9, 2026</p>
         </div>
 <section id="auth">
 <h2>auth</h2>
-<ul><li><a href="/docs/cli/register"><code>ezhst register</code></a></li><li><a href="/docs/cli/login"><code>ezhst login</code></a></li><li><a href="/docs/cli/logout"><code>ezhst logout</code></a></li><li><a href="/docs/cli/whoami"><code>ezhst whoami</code></a></li><li><a href="/docs/cli/resend-verification"><code>ezhst resend-verification</code></a></li><li><a href="/docs/cli/forgot-password"><code>ezhst forgot-password</code></a></li></ul>
+<ul><li><a href="/docs/cli/register"><code>ezhst register</code></a></li><li><a href="/docs/cli/verify"><code>ezhst verify</code></a></li><li><a href="/docs/cli/login"><code>ezhst login</code></a></li><li><a href="/docs/cli/logout"><code>ezhst logout</code></a></li><li><a href="/docs/cli/whoami"><code>ezhst whoami</code></a></li><li><a href="/docs/cli/resend-verification"><code>ezhst resend-verification</code></a></li><li><a href="/docs/cli/forgot-password"><code>ezhst forgot-password</code></a></li></ul>
 </section>
 <section id="projects">
 <h2>projects</h2>
@@ -100,14 +101,6 @@
 <h2>schedules</h2>
 <ul><li><a href="/docs/cli/schedules-list"><code>ezhst schedules list</code></a></li><li><a href="/docs/cli/schedules-create"><code>ezhst schedules create</code></a></li><li><a href="/docs/cli/schedules-update"><code>ezhst schedules update</code></a></li><li><a href="/docs/cli/schedules-pause"><code>ezhst schedules pause</code></a></li><li><a href="/docs/cli/schedules-resume"><code>ezhst schedules resume</code></a></li><li><a href="/docs/cli/schedules-logs"><code>ezhst schedules logs</code></a></li><li><a href="/docs/cli/schedules-delete"><code>ezhst schedules delete</code></a></li></ul>
 </section>
-<section id="email">
-<h2>email</h2>
-<ul><li><a href="/docs/cli/email-info"><code>ezhst email info</code></a></li><li><a href="/docs/cli/email-sender-create"><code>ezhst email sender create</code></a></li><li><a href="/docs/cli/email-sender-delete"><code>ezhst email sender delete</code></a></li><li><a href="/docs/cli/email-send"><code>ezhst email send</code></a></li><li><a href="/docs/cli/email-logs"><code>ezhst email logs</code></a></li></ul>
-</section>
-<section id="keys">
-<h2>keys</h2>
-<ul><li><a href="/docs/cli/keys-list"><code>ezhst keys list</code></a></li><li><a href="/docs/cli/keys-create"><code>ezhst keys create</code></a></li><li><a href="/docs/cli/keys-revoke"><code>ezhst keys revoke</code></a></li></ul>
-</section>
 <section id="members">
 <h2>members</h2>
 <ul><li><a href="/docs/cli/members-list"><code>ezhst members list</code></a></li><li><a href="/docs/cli/members-invite"><code>ezhst members invite</code></a></li><li><a href="/docs/cli/members-revoke"><code>ezhst members revoke</code></a></li><li><a href="/docs/cli/members-remove"><code>ezhst members remove</code></a></li><li><a href="/docs/cli/members-leave"><code>ezhst members leave</code></a></li><li><a href="/docs/cli/accept-invite"><code>ezhst accept-invite</code></a></li></ul>
@@ -136,12 +129,12 @@
             <img src="/logo.svg" alt="" width="18" height="24" />
             EasyHost
           </a>
-          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+          <p>Free Node.js hosting with Postgres, S3 storage and schedules, built for AI coding agents. No credit card.</p>
         </div>
         <nav class="footer-columns" aria-label="Footer">
-          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Email (coming soon)</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
-          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Migrate</p><ul><li><a href="/migrate/vercel">From Vercel</a></li><li><a href="/migrate/render">From Render</a></li><li><a href="/migrate/railway">From Railway</a></li><li><a href="/migrate/netlify">From Netlify</a></li><li><a href="/migrate/fly">From Fly.io</a></li><li><a href="/migrate/heroku">From Heroku</a></li><li><a href="/migrate/koyeb">From Koyeb</a></li><li><a href="/migrate/postgres">Move a Postgres database</a></li><li><a href="/migrate/storage">Move S3 files</a></li><li><a href="/migrate">All migrations</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Resources</p><ul><li><a href="/docs">Documentation</a></li><li><a href="/docs/cli">CLI reference</a></li><li><a href="/errors">Deployment errors</a></li><li><a href="/learn">Learn hosting</a></li><li><a href="/skill.md">skill.md</a></li><li><a href="/llms.txt">llms.txt</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="https://app.easyhost.fun/login">Log in</a></li><li><a href="https://app.easyhost.fun/register">Sign up</a></li><li><a href="mailto:hello@easyhost.fun">Contact</a></li></ul></div>

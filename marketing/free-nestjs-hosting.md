@@ -6,8 +6,8 @@ EasyHost runs NestJS, a structured Node.js backend framework, in an always-on No
 
 - An always-on container with 512 MB of RAM and 1 CPU
 - A URL at `<app-slug>.easyhost.fun`, plus custom domains with HTTPS
-- One Postgres 16 database, one S3 bucket and one email sender per project
-- Up to five apps and five schedules per project
+- One Postgres 16 database and one S3 bucket per project
+- Up to 3 apps and 5 schedules per project
 
 ## How NestJS builds and runs
 
@@ -46,7 +46,7 @@ npx ezhst deploy
 
 The default `start` script runs `nest start`, which recompiles at boot. Use `node dist/main` so the 512 MB container is not spent on compiling.
 
-Apps run in one region, with no edge network, preview deployments or Git integration. Each project can send 20 emails per day, and one build runs at a time.
+Apps run in one region, with no edge network, preview deployments or Git integration. One build runs at a time.
 
 ## Next steps
 

@@ -82,7 +82,22 @@ export const request = async <T>(pathname: string, init: RequestInit = {}, proje
     if (res.status === 401 && !pathname.startsWith("/auth/")) {
       throw new ApiError("Not logged in. Run `ezhst login` or set EZHST_TOKEN.", 401);
     }
-    throw new ApiError(data.error ?? `Request failed with status ${res.status}`, res.status);
+    if (data.code === "EMAIL_NOT_VERIFIED") {
+      throw new ApiError(
+        "Your email is not verified. Run `ezhst verify <code>` with the 6-digit code from your inbox, or `ezhst resend-verification` to get a new code.",
+        res.status,
+      );
+    }
+    if (data.code === "EMAIL_COMING_SOON") {
+      throw new ApiError("Email is coming soon. It is not available on EasyHost yet.", res.status);
+    }
+    if (typeof data.error === "string") {
+      throw new ApiError(data.error, res.status);
+    }
+    if (res.status >= 500) {
+      throw new ApiError(`EasyHost is having trouble right now (status ${res.status}). Try again in a minute.`, res.status);
+    }
+    throw new ApiError(`Request failed with status ${res.status}.`, res.status);
   }
   return data as T;
 };

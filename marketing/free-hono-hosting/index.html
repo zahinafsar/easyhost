@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Free Hono Hosting With Postgres and S3 | EasyHost</title>
-    <meta name="description" content="Host a Hono app for $0 on an always-on container, with Postgres, S3 storage, email and custom domains. No credit card. See the exact limits." />
+    <meta name="description" content="Host a Hono app for $0 on an always-on container, with Postgres, S3 storage, schedules and custom domains. No credit card. See the exact limits." />
     <link rel="canonical" href="https://easyhost.fun/free-hono-hosting" />
     <link rel="alternate" type="text/markdown" href="/free-hono-hosting.md" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
@@ -13,7 +13,7 @@
     <meta property="og:site_name" content="EasyHost" />
     <meta property="og:url" content="https://easyhost.fun/free-hono-hosting" />
     <meta property="og:title" content="Free Hono Hosting With Postgres and S3 | EasyHost" />
-    <meta property="og:description" content="Host a Hono app for $0 on an always-on container, with Postgres, S3 storage, email and custom domains. No credit card. See the exact limits." />
+    <meta property="og:description" content="Host a Hono app for $0 on an always-on container, with Postgres, S3 storage, schedules and custom domains. No credit card. See the exact limits." />
     <meta property="og:image" content="https://easyhost.fun/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://easyhost.fun/og.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Free Hono hosting","description":"Host a Hono app for $0 on an always-on container, with Postgres, S3 storage, email and custom domains. No credit card. See the exact limits.","url":"https://easyhost.fun/free-hono-hosting","image":"https://easyhost.fun/og.png","datePublished":"2026-10-31","dateModified":"2026-10-31","author":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/"},"publisher":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/","logo":"https://easyhost.fun/icon-512.png"},"mainEntityOfPage":"https://easyhost.fun/free-hono-hosting"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"EasyHost","item":"https://easyhost.fun/"},{"@type":"ListItem","position":2,"name":"Frameworks","item":"https://easyhost.fun/frameworks"},{"@type":"ListItem","position":3,"name":"Hono","item":"https://easyhost.fun/frameworks/hono"},{"@type":"ListItem","position":4,"name":"Free hosting","item":"https://easyhost.fun/free-hono-hosting"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Hono hosting on EasyHost really free?","acceptedAnswer":{"@type":"Answer","text":"Yes. It costs $0 per month with no credit card and no trial period, within the published limits."}},{"@type":"Question","name":"Does my Hono app sleep when idle?","acceptedAnswer":{"@type":"Answer","text":"No. EasyHost apps run in an always-on container and do not sleep when idle."}},{"@type":"Question","name":"Do I need a Dockerfile for Hono?","acceptedAnswer":{"@type":"Answer","text":"No. EasyHost builds an image from your source using the commands it detects or the ones you set."}}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Free Hono hosting","description":"Host a Hono app for $0 on an always-on container, with Postgres, S3 storage, schedules and custom domains. No credit card. See the exact limits.","url":"https://easyhost.fun/free-hono-hosting","image":"https://easyhost.fun/og.png","datePublished":"2026-11-09","dateModified":"2026-11-09","author":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/"},"publisher":{"@type":"Organization","name":"EasyHost","url":"https://easyhost.fun/","logo":"https://easyhost.fun/icon-512.png"},"mainEntityOfPage":"https://easyhost.fun/free-hono-hosting"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"EasyHost","item":"https://easyhost.fun/"},{"@type":"ListItem","position":2,"name":"Frameworks","item":"https://easyhost.fun/frameworks"},{"@type":"ListItem","position":3,"name":"Hono","item":"https://easyhost.fun/frameworks/hono"},{"@type":"ListItem","position":4,"name":"Free hosting","item":"https://easyhost.fun/free-hono-hosting"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Hono hosting on EasyHost really free?","acceptedAnswer":{"@type":"Answer","text":"Yes. It costs $0 per month with no credit card and no trial period, within the published limits."}},{"@type":"Question","name":"Does my Hono app sleep when idle?","acceptedAnswer":{"@type":"Answer","text":"No. EasyHost apps run in an always-on container and do not sleep when idle."}},{"@type":"Question","name":"Do I need a Dockerfile for Hono?","acceptedAnswer":{"@type":"Answer","text":"No. EasyHost builds an image from your source using the commands it detects or the ones you set."}}]}]}</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -33,6 +33,7 @@
         <a href="/" class="logo">
           <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
+          <span class="beta">Beta</span>
         </a>
         <nav class="nav-links" aria-label="Main">
           <a href="/">Home</a>
@@ -58,11 +59,11 @@
           <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/">EasyHost</a></li><li><a href="/frameworks">Frameworks</a></li><li><a href="/frameworks/hono">Hono</a></li><li aria-current="page">Free hosting</li></ol>
           <h1>Free Hono hosting</h1>
           <p class="lead">EasyHost runs Hono, a lightweight web framework, in an always-on Node.js container for $0. No credit card is needed, and your agent can deploy it with one instruction.</p>
-          <p class="doc-meta">Last updated October 31, 2026</p>
+          <p class="doc-meta">Last updated November 9, 2026</p>
         </div>
 <section id="what-you-get">
 <h2>What you get</h2>
-<ul><li>An always-on container with 512 MB of RAM and 1 CPU</li><li>A URL at <code>&lt;app-slug&gt;.easyhost.fun</code>, plus custom domains with HTTPS</li><li>One Postgres 16 database, one S3 bucket and one email sender per project</li><li>Up to five apps and five schedules per project</li></ul>
+<ul><li>An always-on container with 512 MB of RAM and 1 CPU</li><li>A URL at <code>&lt;app-slug&gt;.easyhost.fun</code>, plus custom domains with HTTPS</li><li>One Postgres 16 database and one S3 bucket per project</li><li>Up to 3 apps and 5 schedules per project</li></ul>
 </section>
 <section id="how-hono-builds-and-runs">
 <h2>How Hono builds and runs</h2>
@@ -88,7 +89,7 @@ npx ezhst deploy</pre></div>
 <section id="limits-and-caveats">
 <h2>Limits and caveats</h2>
 <p>Bindings from Cloudflare Workers, such as KV or D1, do not exist here. Use <code>process.env</code>, the Postgres database and the S3 bucket.</p>
-<p>Apps run in one region, with no edge network, preview deployments or Git integration. Each project can send 20 emails per day, and one build runs at a time.</p>
+<p>Apps run in one region, with no edge network, preview deployments or Git integration. One build runs at a time.</p>
 </section>
 <section id="next-steps">
 <h2>Next steps</h2>
@@ -120,12 +121,12 @@ npx ezhst deploy</pre></div>
             <img src="/logo.svg" alt="" width="18" height="24" />
             EasyHost
           </a>
-          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+          <p>Free Node.js hosting with Postgres, S3 storage and schedules, built for AI coding agents. No credit card.</p>
         </div>
         <nav class="footer-columns" aria-label="Footer">
-          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Email (coming soon)</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
-          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Migrate</p><ul><li><a href="/migrate/vercel">From Vercel</a></li><li><a href="/migrate/render">From Render</a></li><li><a href="/migrate/railway">From Railway</a></li><li><a href="/migrate/netlify">From Netlify</a></li><li><a href="/migrate/fly">From Fly.io</a></li><li><a href="/migrate/heroku">From Heroku</a></li><li><a href="/migrate/koyeb">From Koyeb</a></li><li><a href="/migrate/postgres">Move a Postgres database</a></li><li><a href="/migrate/storage">Move S3 files</a></li><li><a href="/migrate">All migrations</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Resources</p><ul><li><a href="/docs">Documentation</a></li><li><a href="/docs/cli">CLI reference</a></li><li><a href="/errors">Deployment errors</a></li><li><a href="/learn">Learn hosting</a></li><li><a href="/skill.md">skill.md</a></li><li><a href="/llms.txt">llms.txt</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="https://app.easyhost.fun/login">Log in</a></li><li><a href="https://app.easyhost.fun/register">Sign up</a></li><li><a href="mailto:hello@easyhost.fun">Contact</a></li></ul></div>

@@ -5,7 +5,7 @@ import type { App } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { env } from "./env.js";
 import { containerLogs, containerName } from "./docker.js";
-import { connectedServices, connectProjectDatabase, connectProjectStorage, deleteAiFile, installAiPackages, readAllAiFiles, setupAiEmail, verifyDatabase, writeAiFile } from "./ai-apps.js";
+import { connectedServices, connectProjectDatabase, connectProjectStorage, deleteAiFile, installAiPackages, readAllAiFiles, verifyDatabase, writeAiFile } from "./ai-apps.js";
 import { runQuery } from "./userdb.js";
 import { endLiveSession, liveSession, startLiveSession, upsertStep, type AiInteractiveStep, type AiTextStep, type AiToolStep } from "./ai-live.js";
 import { findTheme, themeSummary } from "./ai-themes.js";
@@ -38,7 +38,7 @@ Runtime:
 - server.js must start an HTTP server on process.env.PORT bound to 0.0.0.0. Use Hono with @hono/node-server. Serve the frontend from ./public with serveStatic from "@hono/node-server/serve-static". Put backend routes under /api/*.
 - Preinstalled packages you can import without installing: hono, @hono/node-server, pg, bcryptjs, jose, zod, @aws-sdk/client-s3.
 - For any other npm package, call install_packages before writing code that imports it. Never add dependencies to package.json by hand. Packages that compile native code on install are not supported; prefer pure JavaScript packages. package.json must keep "type": "module".
-- Environment (already set): DATABASE_URL, AUTH_SECRET, S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_PUBLIC_URL, EMAIL_FROM, EASYHOST_API_KEY, EASYHOST_EMAIL_URL, plus any variables the user configured.
+- Environment (already set): DATABASE_URL, AUTH_SECRET, S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_PUBLIC_URL, plus any variables the user configured.
 - Frontend: plain HTML, CSS and JavaScript in public/. Load libraries from a CDN with pinned versions if needed. Make pages responsive, clean and polished.
 - Styling: every page links /theme.css and uses only its CSS variables for colors, corner radius and font. Never overwrite public/theme.css.
 - Icons: always use Lucide. Load <script src="https://unpkg.com/lucide@1.68.0/dist/umd/lucide.min.js"></script>, write icons as <i data-lucide="icon-name"></i> and call lucide.createIcons() after rendering. Never use emojis or arrow characters as icons.
@@ -47,18 +47,17 @@ Starter helpers (new apps start with a simple welcome page in public/index.html 
 - lib/db.js: query(text, params) for parameterized SQL against DATABASE_URL.
 - lib/auth.js: hashPassword, verifyPassword, startSession(c, userId), endSession(c), currentUser(c), and the requireUser middleware (sets c.get("user")). It expects a users table with id, name, email and password_hash columns; create it with run_sql before using auth.
 - lib/storage.js: uploadFile(key, body, contentType) returns a public URL, listFiles(prefix), deleteFile(key). Files are public, so never store secrets there.
-- lib/email.js: sendEmail({ to, subject, html, text }) sends from EMAIL_FROM through EasyHost.
 - If a helper is missing, only add it when a requested change needs it.
 
 Errors:
 - If a tool fails, read the error and fix the cause once. If the same tool fails again with the same error, stop calling tools and explain the problem and what the user can do. Never repeat a failing call unchanged.
 
 Services:
-- Each request lists which services are connected to this app (database, storage, email).
+- Each request lists which services are connected to this app (database, storage).
 - Use a service whenever the request needs it, without asking the user.
 - Database: just call run_sql. It connects the project's database automatically (creating it if needed) and sets DATABASE_URL.
 - Storage: if storage is not connected, call connect_storage before writing code that uses it.
-- Email: if email is not connected, call setup_email before writing code that sends email.
+- Email sending is coming soon and not available. If a request needs to send email, build everything else and tell the user email is coming soon. Never write code that sends email and never use lib/email.js.
 
 Database:
 - Use the run_sql tool to create or change tables. Never drop data unless the user asks.
@@ -153,9 +152,6 @@ const runningTitle = (tool: string, input: Record<string, unknown>) => {
   if (tool === "connect_storage") {
     return "Connecting storage";
   }
-  if (tool === "setup_email") {
-    return "Setting up email";
-  }
   return tool;
 };
 
@@ -178,9 +174,6 @@ const doneTitle = (tool: string, input: Record<string, unknown>) => {
   }
   if (tool === "connect_storage") {
     return "Connected storage";
-  }
-  if (tool === "setup_email") {
-    return "Set up email";
   }
   return tool;
 };
@@ -286,15 +279,6 @@ const buildTools = (app: App, billing: RunBilling) => {
         return { ok: true, bucket: bucket.name };
       },
     }),
-    setup_email: tool({
-      description: "Connect email sending to this app. Creates the sender address and API key if needed and restarts the server with EMAIL_FROM, EASYHOST_API_KEY and EASYHOST_EMAIL_URL set.",
-      inputSchema: z.object({}),
-      execute: async () => {
-        const current = await prisma.app.findUniqueOrThrow({ where: { id: app.id } });
-        const from = await setupAiEmail(current);
-        return { ok: true, from };
-      },
-    }),
     run_sql: tool({
       description: "Run SQL against this app's database. Connects the project's database on first use. Returns the rows of the last statement.",
       inputSchema: z.object({ sql: z.string() }),
@@ -347,7 +331,7 @@ const servicesLine = (services: { database: boolean; storage: boolean; email: bo
     }
     return "not connected";
   };
-  return `Connected services: database ${label(services.database)}, storage ${label(services.storage)}, email ${label(services.email)}.`;
+  return `Connected services: database ${label(services.database)}, storage ${label(services.storage)}, email coming soon.`;
 };
 
 const PAUSING_TOOLS = new Set(["ask_questions", "propose_plan", "choose_theme"]);

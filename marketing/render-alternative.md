@@ -11,7 +11,7 @@ According to [Render's own page](https://render.com/docs/free) as of October 202
 | Idle behaviour | Free web services spin down after 15 minutes | Apps stay on |
 | Free Postgres | Expires 30 days after creation, 1 GB cap | No expiry, one per project |
 | Git integration | Yes | No, deploys use the CLI |
-| Included with each app | Varies by plan | Postgres, S3 bucket, email and schedules per project |
+| Included with each app | Varies by plan | Postgres, S3 bucket and schedules per project |
 
 ## When EasyHost fits
 

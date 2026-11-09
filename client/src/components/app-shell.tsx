@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Clock3, Coins, Database, FolderKanban, HardDrive, KeyRound, LogOut, Mail, Rocket, Settings, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { Clock3, Coins, Database, FolderKanban, HardDrive, LogOut, Mail, Rocket, Settings, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,16 +11,15 @@ import { projectsQuery } from "@/lib/queries";
 import { clearSelectedProject, selectedProjectId, selectProject } from "@/lib/project";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { cn } from "@/lib/utils";
+import { VerifyEmailScreen } from "@/pages/verify";
 
 const navItems = [
   { to: "/apps", label: "Apps", icon: Rocket },
   { to: "/builder", label: "Builder", icon: Sparkles },
-  { to: "/tokens", label: "Tokens", icon: Coins },
   { to: "/schedules", label: "Schedules", icon: Clock3 },
   { to: "/storage", label: "Storage", icon: HardDrive },
   { to: "/databases", label: "Databases", icon: Database },
-  { to: "/email", label: "Email", icon: Mail },
-  { to: "/api-keys", label: "API Keys", icon: KeyRound },
+  { to: "/email", label: "Email", icon: Mail, soon: true },
   { to: "/members", label: "Members", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
@@ -30,7 +29,8 @@ export const AppShell = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [projectId, setProjectId] = useState(() => selectedProjectId());
-  const projects = useQuery({ ...projectsQuery().list(), enabled: !!user });
+  const needsVerification = !!user && !user.verified && !user.impersonatorId;
+  const projects = useQuery({ ...projectsQuery().list(), enabled: !!user && !needsVerification });
   const routeAppId = location.pathname.startsWith("/apps/") ? location.pathname.split("/")[2] : undefined;
   const activeProject =
     projects.data?.projects.find((project) => project.appIds.includes(routeAppId ?? "")) ??
@@ -83,6 +83,17 @@ export const AppShell = () => {
     },
   });
 
+  if (user && needsVerification) {
+    if (location.pathname.startsWith("/invite/")) {
+      return (
+        <div className="mx-auto w-full max-w-6xl p-6 md:p-8">
+          <Outlet />
+        </div>
+      );
+    }
+    return <VerifyEmailScreen email={user.email} />;
+  }
+
   if (isLoading || (user && projects.isLoading)) {
     return (
       <div className="p-8">
@@ -118,6 +129,7 @@ export const AppShell = () => {
         <div className="flex h-14 items-center gap-2 border-b px-5 font-semibold">
           <img src="/logo.svg" alt="" className="h-6 w-auto" />
           EasyHost
+          <span className="bg-foreground px-1.5 py-0.5 text-[10px] font-medium uppercase leading-none tracking-wide text-background">Beta</span>
         </div>
         <nav className="flex-1 space-y-1 p-3">
           {projectNavItems.map((item) => (
@@ -133,6 +145,7 @@ export const AppShell = () => {
             >
               <item.icon className="size-4" />
               {item.label}
+              {item.soon && <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Soon</span>}
             </NavLink>
           ))}
         </nav>
@@ -140,6 +153,12 @@ export const AppShell = () => {
         <div className="border-t p-3">
           <p className="truncate px-3 text-sm font-medium">{user.name}</p>
           <p className="truncate px-3 text-xs text-muted-foreground">{user.email}</p>
+          <Button asChild variant="ghost" size="sm" className="mt-2 w-full justify-start">
+            <NavLink to="/tokens">
+              <Coins className="size-4" />
+              AI Token
+            </NavLink>
+          </Button>
           {user.role === "ADMIN" && !user.impersonatorId && (
             <Button asChild variant="ghost" size="sm" className="mt-2 w-full justify-start">
               <NavLink to="/admin">
@@ -169,6 +188,13 @@ export const AppShell = () => {
               {item.label}
             </NavLink>
           ))}
+          <NavLink
+            to="/tokens"
+            className={({ isActive }) => cn("flex shrink-0 items-center gap-2 px-3 py-1.5 text-sm", isActive && "bg-muted font-medium")}
+          >
+            <Coins className="size-4" />
+            AI Token
+          </NavLink>
         </nav>
         {user.impersonatorId && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-red-50 px-6 py-2 text-sm text-red-900">
@@ -178,11 +204,6 @@ export const AppShell = () => {
             <Button size="sm" variant="outline" disabled={stopImpersonating.isPending} onClick={() => stopImpersonating.mutate(undefined)}>
               Stop impersonating
             </Button>
-          </div>
-        )}
-        {!user.verified && (
-          <div className="border-b bg-amber-50 px-6 py-2 text-sm text-amber-900">
-            Please verify your email address. Check your inbox for the verification link.
           </div>
         )}
         <main className="mx-auto w-full max-w-6xl flex-1 p-6 md:p-8">

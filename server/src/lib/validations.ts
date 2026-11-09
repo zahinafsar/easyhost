@@ -20,7 +20,7 @@ export const loginSchema = z.object({
 });
 
 export const verifyEmailSchema = z.object({
-  token: z.string().min(1, "Verification token is required"),
+  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code from your email"),
 });
 
 export const forgotPasswordSchema = z.object({

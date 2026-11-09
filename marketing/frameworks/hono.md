@@ -1,6 +1,6 @@
 # Hono on EasyHost
 
-Hono is a lightweight web framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+Hono is a lightweight web framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ Hono is a lightweight web framework. These guides cover hosting it for free and 
 - [AWS SDK v3](/guides/hono-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/hono-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/hono-send-email)
 - [Cron jobs](/guides/hono-cron-jobs)
 
 ## Migrate

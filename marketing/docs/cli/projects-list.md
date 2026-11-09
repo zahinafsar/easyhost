@@ -8,7 +8,7 @@ List your projects.
 ezhst projects list
 ```
 
-An account can have up to 10 projects.
+An account can have up to 3 projects.
 
 ## In scripts and agents
 

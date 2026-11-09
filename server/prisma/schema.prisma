@@ -73,7 +73,10 @@ model User {
   role         Role      @default(USER)
   verified     Boolean   @default(false)
   blocked      Boolean   @default(false)
-  verifyToken  String?
+  verifyCodeHash    String?
+  verifyCodeExpires DateTime?
+  verifyCodeSentAt  DateTime?
+  verifyAttempts    Int       @default(0)
   resetToken   String?
   resetExpires DateTime?
   createdAt    DateTime  @default(now())

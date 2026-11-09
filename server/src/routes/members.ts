@@ -6,7 +6,7 @@ import { inviteUrl, sendProjectInviteEmail } from "../lib/email.js";
 import { LIMITS } from "../lib/limits.js";
 import { validate } from "../lib/validator.js";
 import { inviteMemberSchema } from "../lib/validations.js";
-import { requireUser } from "../middleware/require-user.js";
+import { requireSession, requireUser } from "../middleware/require-user.js";
 import { requireProject } from "../middleware/require-project.js";
 import type { UserEnv } from "../lib/types.js";
 
@@ -129,7 +129,7 @@ export const memberRoutes = new Hono<UserEnv>()
   });
 
 export const inviteRoutes = new Hono<UserEnv>()
-  .use(requireUser)
+  .use(requireSession)
   .get("/:token", async (c) => {
     const invite = await findInvite(c.req.param("token"));
     if (!invite || invite.project.deleting) {
@@ -167,7 +167,7 @@ export const inviteRoutes = new Hono<UserEnv>()
         });
       }
       await tx.projectInvite.delete({ where: { id: invite.id } });
-      await tx.user.update({ where: { id: user.id }, data: { verified: true, verifyToken: null } });
+      await tx.user.update({ where: { id: user.id }, data: { verified: true, verifyCodeHash: null, verifyCodeExpires: null, verifyCodeSentAt: null, verifyAttempts: 0 } });
     });
     return c.json({ project, message: `You joined ${project.name}` });
   });

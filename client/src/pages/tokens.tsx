@@ -74,7 +74,7 @@ export const TokensPage = () => {
 
   return (
     <>
-      <PageHeader title="Tokens" description="Tokens pay for the AI builder. They are charged by how much work each request takes and never expire." />
+      <PageHeader title="AI Token" description="Tokens pay for the AI builder. They are charged by how much work each request takes and never expire." />
 
       {purchaseId && <PurchaseStatus id={purchaseId} />}
 

@@ -5,6 +5,7 @@ One page per `ezhst` command. The [main docs](/docs) cover the same commands on 
 ## auth
 
 - [`ezhst register`](/docs/cli/register)
+- [`ezhst verify`](/docs/cli/verify)
 - [`ezhst login`](/docs/cli/login)
 - [`ezhst logout`](/docs/cli/logout)
 - [`ezhst whoami`](/docs/cli/whoami)
@@ -85,20 +86,6 @@ One page per `ezhst` command. The [main docs](/docs) cover the same commands on 
 - [`ezhst schedules resume`](/docs/cli/schedules-resume)
 - [`ezhst schedules logs`](/docs/cli/schedules-logs)
 - [`ezhst schedules delete`](/docs/cli/schedules-delete)
-
-## email
-
-- [`ezhst email info`](/docs/cli/email-info)
-- [`ezhst email sender create`](/docs/cli/email-sender-create)
-- [`ezhst email sender delete`](/docs/cli/email-sender-delete)
-- [`ezhst email send`](/docs/cli/email-send)
-- [`ezhst email logs`](/docs/cli/email-logs)
-
-## keys
-
-- [`ezhst keys list`](/docs/cli/keys-list)
-- [`ezhst keys create`](/docs/cli/keys-create)
-- [`ezhst keys revoke`](/docs/cli/keys-revoke)
 
 ## members
 

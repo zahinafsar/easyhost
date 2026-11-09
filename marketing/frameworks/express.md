@@ -1,6 +1,6 @@
 # Express on EasyHost
 
-Express is a minimal Node.js web framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+Express is a minimal Node.js web framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ Express is a minimal Node.js web framework. These guides cover hosting it for fr
 - [AWS SDK v3](/guides/express-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/express-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/express-send-email)
 - [Cron jobs](/guides/express-cron-jobs)
 
 ## Migrate

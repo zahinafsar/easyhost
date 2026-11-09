@@ -1,6 +1,6 @@
 # SvelteKit on EasyHost
 
-SvelteKit is a full-stack Svelte framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+SvelteKit is a full-stack Svelte framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ SvelteKit is a full-stack Svelte framework. These guides cover hosting it for fr
 - [AWS SDK v3](/guides/sveltekit-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/sveltekit-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/sveltekit-send-email)
 - [Cron jobs](/guides/sveltekit-cron-jobs)
 
 ## Migrate

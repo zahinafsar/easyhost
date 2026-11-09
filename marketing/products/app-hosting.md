@@ -4,7 +4,7 @@ Always-on Node.js containers with 512 MB of RAM and 1 CPU, built from your sourc
 
 ## What you get
 
-- Up to five apps per project, each on its own `<app-slug>.easyhost.fun` URL
+- Up to three apps per project, each on its own `<app-slug>.easyhost.fun` URL
 - Node 20, 22 and 24, with npm, pnpm, yarn or bun picked from your lockfile
 - Build and start commands detected automatically, and overridable
 - HTTPS included, and runtime logs and build logs through the CLI

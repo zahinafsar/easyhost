@@ -1,6 +1,6 @@
 # Remix on EasyHost
 
-Remix is a full-stack React framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+Remix is a full-stack React framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ Remix is a full-stack React framework. These guides cover hosting it for free an
 - [AWS SDK v3](/guides/remix-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/remix-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/remix-send-email)
 - [Cron jobs](/guides/remix-cron-jobs)
 
 ## Migrate

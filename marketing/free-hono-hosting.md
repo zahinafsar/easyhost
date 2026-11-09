@@ -6,8 +6,8 @@ EasyHost runs Hono, a lightweight web framework, in an always-on Node.js contain
 
 - An always-on container with 512 MB of RAM and 1 CPU
 - A URL at `<app-slug>.easyhost.fun`, plus custom domains with HTTPS
-- One Postgres 16 database, one S3 bucket and one email sender per project
-- Up to five apps and five schedules per project
+- One Postgres 16 database and one S3 bucket per project
+- Up to 3 apps and 5 schedules per project
 
 ## How Hono builds and runs
 
@@ -44,7 +44,7 @@ npx ezhst deploy
 
 Bindings from Cloudflare Workers, such as KV or D1, do not exist here. Use `process.env`, the Postgres database and the S3 bucket.
 
-Apps run in one region, with no edge network, preview deployments or Git integration. Each project can send 20 emails per day, and one build runs at a time.
+Apps run in one region, with no edge network, preview deployments or Git integration. One build runs at a time.
 
 ## Next steps
 

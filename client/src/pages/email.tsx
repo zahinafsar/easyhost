@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { Mail, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,19 @@ import { api, unwrap } from "@/lib/api";
 import { emailsQuery } from "@/lib/queries";
 import { API_ORIGIN, formatDate } from "@/lib/format";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+
+export const EmailComingSoonPage = () => {
+  return (
+    <>
+      <PageHeader title="Email" description="Transactional email from your own @easyhost.fun address." />
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2 border text-center">
+        <Mail className="size-8 text-muted-foreground" />
+        <p className="font-medium">Coming soon</p>
+        <p className="max-w-sm text-sm text-muted-foreground">Sending email from your apps is not available yet.</p>
+      </div>
+    </>
+  );
+};
 
 export const EmailPage = () => {
   const [page, setPage] = useState(1);

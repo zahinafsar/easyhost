@@ -1,6 +1,6 @@
 # Next.js on EasyHost
 
-Next.js is a full-stack React framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+Next.js is a full-stack React framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ Next.js is a full-stack React framework. These guides cover hosting it for free 
 - [AWS SDK v3](/guides/nextjs-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/nextjs-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/nextjs-send-email)
 - [Cron jobs](/guides/nextjs-cron-jobs)
 
 ## Migrate

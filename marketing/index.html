@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EasyHost: Free Node.js Hosting Your AI Agent Can Deploy To</title>
-    <meta name="description" content="Free Node.js hosting for Next.js, Nuxt, Express, NestJS and more, with Postgres, S3 storage, email and custom domains. No credit card." />
+    <meta name="description" content="Free Node.js hosting for Next.js, Nuxt, Express, NestJS and more, with Postgres, S3 storage, schedules and custom domains. No credit card." />
     <link rel="canonical" href="https://easyhost.fun/" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
@@ -12,14 +12,14 @@
     <meta property="og:site_name" content="EasyHost" />
     <meta property="og:url" content="https://easyhost.fun/" />
     <meta property="og:title" content="EasyHost: Free Node.js Hosting Your AI Agent Can Deploy To" />
-    <meta property="og:description" content="Deploy Next.js, Nuxt, Express, NestJS and other Node.js frameworks with Postgres, S3 storage and email included." />
+    <meta property="og:description" content="Deploy Next.js, Nuxt, Express, NestJS and other Node.js frameworks with Postgres, S3 storage and schedules included." />
     <meta property="og:image" content="https://easyhost.fun/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="EasyHost: free Node.js hosting your AI agent can deploy to" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="EasyHost: Free Node.js Hosting Your AI Agent Can Deploy To" />
-    <meta name="twitter:description" content="Deploy Next.js, Nuxt, Express, NestJS and other Node.js frameworks with Postgres, S3 storage and email included." />
+    <meta name="twitter:description" content="Deploy Next.js, Nuxt, Express, NestJS and other Node.js frameworks with Postgres, S3 storage and schedules included." />
     <meta name="twitter:image" content="https://easyhost.fun/og.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -48,7 +48,7 @@
             "@id": "https://easyhost.fun/#software",
             "name": "EasyHost",
             "url": "https://easyhost.fun/",
-            "description": "Free hosting for Node.js apps with managed Postgres, S3 compatible storage, transactional email and custom domains, operated through the ezhst CLI by AI coding agents.",
+            "description": "Free hosting for Node.js apps with managed Postgres, S3 compatible storage, schedules and custom domains, operated through the ezhst CLI by AI coding agents.",
             "applicationCategory": "DeveloperApplication",
             "operatingSystem": "Web, macOS, Linux, Windows",
             "offers": { "@type": "Offer", "price": 0, "priceCurrency": "USD" },
@@ -60,7 +60,7 @@
               {
                 "@type": "Question",
                 "name": "Is EasyHost really free?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes. EasyHost costs $0 per month and signing up does not need a credit card. Every feature is included within fixed limits: 10 projects, and per project up to five Node.js apps and five schedules, one Postgres database, one storage bucket and one email sender with 20 emails per day." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes, for hosting. EasyHost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed limits: 3 projects, and per project up to three apps and five schedules, one Postgres database and one storage bucket. The AI Builder gives each account its first AI app and first build free, then uses AI Tokens you buy once (see pricing)." }
               },
               {
                 "@type": "Question",
@@ -75,7 +75,7 @@
               {
                 "@type": "Question",
                 "name": "Can I build an app without writing code?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the AI Builder in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres, storage and email at its own address." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the AI Builder in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres and storage at its own address. Your first AI app and its first build are free; after that, AI requests use AI Tokens." }
               },
               {
                 "@type": "Question",
@@ -95,7 +95,7 @@
               {
                 "@type": "Question",
                 "name": "How is EasyHost different from Vercel?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Vercel runs Next.js on serverless functions behind a global CDN. EasyHost runs each app as one always-on container in a single region and includes Postgres, S3 storage and email in the same free account, all scriptable by a coding agent through one CLI. EasyHost has no preview deployments, Git integration or edge network." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Vercel runs Next.js on serverless functions behind a global CDN. EasyHost runs each app as one always-on container in a single region and includes Postgres, S3 storage and schedules in the same free account, all scriptable by a coding agent through one CLI. EasyHost has no preview deployments, Git integration or edge network." }
               }
             ]
           }
@@ -113,6 +113,7 @@
         <a href="/" class="logo">
           <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
+          <span class="beta">Beta</span>
         </a>
         <nav class="nav-links" aria-label="Main">
           <a href="#agents">For agents</a>
@@ -135,7 +136,7 @@
             <p class="eyebrow reveal">Agent-first hosting. Free.</p>
             <h1 class="reveal reveal-1">Free Node.js hosting your AI agent can <mark>deploy&nbsp;to</mark>.</h1>
             <p class="lead reveal reveal-2">
-              Tell your agent to ship it. It will. EasyHost is the first agent-first free hosting platform: Claude Code, Cursor, Codex and friends can create the account, deploy your Node.js app and wire up Postgres, S3 storage, email and domains through one CLI.
+              Tell your agent to ship it. It will. EasyHost is the first agent-first free hosting platform: Claude Code, Cursor, Codex and friends can create the account, deploy your Node.js app and wire up Postgres, S3 storage, schedules and domains through one CLI.
             </p>
             <div class="hero-actions reveal reveal-3">
               <a href="#agents" class="btn btn-primary btn-lg">Install the skill</a>
@@ -284,7 +285,7 @@
               <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></span>
               <div>
                 <h3>Create an account</h3>
-                <p>Register, log in and check who is signed in, all without a browser.</p>
+                <p>Register, verify with the 6-digit code from your inbox and log in, all without a browser.</p>
                 <code>ezhst register --name --email --password</code>
               </div>
             </article>
@@ -347,17 +348,8 @@
             <article class="cap">
               <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
               <div>
-                <h3>Transactional email</h3>
-                <p>Send from you@easyhost.fun by CLI or one HTTP request. Every send is logged.</p>
-                <code>ezhst email sender create acme</code>
-              </div>
-            </article>
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
-              <div>
-                <h3>API keys</h3>
-                <p>Create and revoke keys your app uses to call the email API.</p>
-                <code>ezhst keys create production</code>
+                <h3>Email (coming soon)</h3>
+                <p>Transactional email for your apps is on the way. It is not available yet.</p>
               </div>
             </article>
             <article class="cap">
@@ -394,7 +386,7 @@
             </li>
           </ol>
           <div class="human">
-            <p><strong>Humans get a dashboard too.</strong> Manage projects, deployments, storage, databases and email from the browser, or describe an app to the <a href="/products/ai-builder">AI Builder</a> and watch it build the frontend and backend live.</p>
+            <p><strong>Humans get a dashboard too.</strong> Manage projects, deployments, storage, databases and schedules from the browser, or describe an app to the <a href="/products/ai-builder">AI Builder</a> and watch it build the frontend and backend live.</p>
             <a href="https://app.easyhost.fun/register" class="btn btn-outline">Open the dashboard</a>
           </div>
         </div>
@@ -405,20 +397,20 @@
           <div>
             <p class="eyebrow">Limits</p>
             <h2>Free. These are the limits.</h2>
-            <p class="lead">Every feature is free within these limits, with no credit card. EasyHost runs Node.js apps, including Next.js, Express, Fastify and other Node.js services.</p>
+            <p class="lead">Hosting is free within these limits, with no credit card. The AI Builder includes your first AI app and build, then uses AI Tokens. EasyHost runs Node.js apps, including Next.js, Express, Fastify and other Node.js services.</p>
             <p class="price">$0 <span>/ month</span></p>
             <p class="limits-more">See what the <a href="/free-nextjs-hosting">free Next.js hosting</a> plan includes, or how it compares as a <a href="/vercel-alternative">Vercel alternative</a>.</p>
           </div>
           <div class="limit-table">
-            <div class="limit-row"><span>Projects</span><b>10</b></div>
-            <div class="limit-row"><span>Apps</span><b>5 per project</b></div>
+            <div class="limit-row"><span>Projects</span><b>3</b></div>
+            <div class="limit-row"><span>Apps</span><b>3 per project</b></div>
             <div class="limit-row"><span>Schedules</span><b>5 per project</b></div>
             <div class="limit-row"><span>Storage buckets</span><b>1 per project</b></div>
             <div class="limit-row"><span>Postgres databases</span><b>1 per project</b></div>
-            <div class="limit-row"><span>Email senders</span><b>1 per project</b></div>
-            <div class="limit-row"><span>Emails</span><b>20 / day</b></div>
+            <div class="limit-row"><span>Email</span><b>Coming soon</b></div>
             <div class="limit-row"><span>Team members</span><b>10 per project</b></div>
             <div class="limit-row"><span>AI Builder prompts</span><b>30 / day</b></div>
+            <div class="limit-row"><span>AI Builder</span><b>First app and build free, then AI Tokens</b></div>
             <div class="limit-row"><span>Concurrent builds</span><b>1</b></div>
             <div class="limit-row"><span>App container</span><b>512 MB RAM, 1 CPU</b></div>
           </div>
@@ -432,7 +424,7 @@
           <div class="faq">
             <div>
               <h3>Is EasyHost really free?</h3>
-              <p>Yes. EasyHost costs $0 per month and signing up does not need a credit card. Every feature is included within fixed <a href="#limits">limits</a>: 10 projects, and per project up to five Node.js apps and five schedules, one Postgres database, one storage bucket and one email sender with 20 emails per day.</p>
+              <p>Yes, for hosting. EasyHost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed <a href="#limits">limits</a>: 3 projects, and per project up to three apps and five schedules, one Postgres database and one storage bucket. The AI Builder gives each account its first AI app and first build free, then uses AI Tokens you buy once (see <a href="/pricing">pricing</a>).</p>
             </div>
             <div>
               <h3>What can I host on EasyHost?</h3>
@@ -456,11 +448,11 @@
             </div>
             <div>
               <h3>How is EasyHost different from Vercel?</h3>
-              <p>Vercel runs Next.js on serverless functions behind a global CDN. EasyHost runs each app as one always-on container in a single region and includes Postgres, S3 storage and email in the same free account, all scriptable by a coding agent through one CLI. EasyHost has no preview deployments, Git integration or edge network. Read the full <a href="/vercel-alternative">comparison</a>.</p>
+              <p>Vercel runs Next.js on serverless functions behind a global CDN. EasyHost runs each app as one always-on container in a single region and includes Postgres, S3 storage and schedules in the same free account, all scriptable by a coding agent through one CLI. EasyHost has no preview deployments, Git integration or edge network. Read the full <a href="/vercel-alternative">comparison</a>.</p>
             </div>
             <div>
               <h3>Can I build an app without writing code?</h3>
-              <p>Yes. Open the <a href="/products/ai-builder">AI Builder</a> in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres, storage and email at its own address.</p>
+              <p>Yes. Open the <a href="/products/ai-builder">AI Builder</a> in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres and storage at its own address. Your first AI app and its first build are free; after that, AI requests use AI Tokens.</p>
             </div>
             <div>
               <h3>Is the database a real Postgres?</h3>
@@ -491,12 +483,12 @@
             <img src="/logo.svg" alt="" width="18" height="24" />
             EasyHost
           </a>
-          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+          <p>Free Node.js hosting with Postgres, S3 storage and schedules, built for AI coding agents. No credit card.</p>
         </div>
         <nav class="footer-columns" aria-label="Footer">
-          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Email (coming soon)</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
-          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Migrate</p><ul><li><a href="/migrate/vercel">From Vercel</a></li><li><a href="/migrate/render">From Render</a></li><li><a href="/migrate/railway">From Railway</a></li><li><a href="/migrate/netlify">From Netlify</a></li><li><a href="/migrate/fly">From Fly.io</a></li><li><a href="/migrate/heroku">From Heroku</a></li><li><a href="/migrate/koyeb">From Koyeb</a></li><li><a href="/migrate/postgres">Move a Postgres database</a></li><li><a href="/migrate/storage">Move S3 files</a></li><li><a href="/migrate">All migrations</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Resources</p><ul><li><a href="/docs">Documentation</a></li><li><a href="/docs/cli">CLI reference</a></li><li><a href="/errors">Deployment errors</a></li><li><a href="/learn">Learn hosting</a></li><li><a href="/skill.md">skill.md</a></li><li><a href="/llms.txt">llms.txt</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="https://app.easyhost.fun/login">Log in</a></li><li><a href="https://app.easyhost.fun/register">Sign up</a></li><li><a href="mailto:hello@easyhost.fun">Contact</a></li></ul></div>

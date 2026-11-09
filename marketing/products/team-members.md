@@ -5,7 +5,7 @@ Invite people to a project by email. Members manage everything in it; only the o
 ## What you get
 
 - Email invites that work for people without an account
-- Members manage apps, deploys, storage, database, email and API keys
+- Members manage apps, deploys, storage, database and schedules
 - The owner can revoke invites and remove members at any time
 - Members can leave a project themselves
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>A Free Vercel Alternative for Next.js Apps | EasyHost</title>
-    <meta name="description" content="EasyHost is a free Vercel alternative for Next.js: an always-on container with Postgres, S3 storage and email included. See the honest differences and how to move." />
+    <meta name="description" content="EasyHost is a free Vercel alternative for Next.js: an always-on container with Postgres, S3 storage and schedules included. See the honest differences and how to move." />
     <link rel="canonical" href="https://easyhost.fun/vercel-alternative" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
@@ -12,7 +12,7 @@
     <meta property="og:site_name" content="EasyHost" />
     <meta property="og:url" content="https://easyhost.fun/vercel-alternative" />
     <meta property="og:title" content="A Free Vercel Alternative for Next.js Apps | EasyHost" />
-    <meta property="og:description" content="A free Vercel alternative for Next.js: an always-on container with Postgres, S3 storage and email included." />
+    <meta property="og:description" content="A free Vercel alternative for Next.js: an always-on container with Postgres, S3 storage and schedules included." />
     <meta property="og:image" content="https://easyhost.fun/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -27,11 +27,11 @@
           {
             "@type": "TechArticle",
             "headline": "A free Vercel alternative for Next.js apps",
-            "description": "EasyHost is a free Vercel alternative for Next.js: an always-on container with Postgres, S3 storage and email included. See the honest differences and how to move.",
+            "description": "EasyHost is a free Vercel alternative for Next.js: an always-on container with Postgres, S3 storage and schedules included. See the honest differences and how to move.",
             "url": "https://easyhost.fun/vercel-alternative",
             "image": "https://easyhost.fun/og.png",
             "datePublished": "2026-09-30",
-            "dateModified": "2026-10-11",
+            "dateModified": "2026-11-09",
             "author": {
               "@type": "Organization",
               "name": "EasyHost",
@@ -105,6 +105,7 @@
         <a href="/" class="logo">
           <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
+          <span class="beta">Beta</span>
         </a>
         <nav class="nav-links" aria-label="Main">
           <a href="/">Home</a>
@@ -138,15 +139,15 @@
             <li><a href="/">EasyHost</a></li><li aria-current="page">Vercel alternative</li>
           </ol>
           <h1>A free Vercel alternative for Next.js apps</h1>
-          <p class="lead">EasyHost is a free place to run a Next.js app when you want a plain always-on server with a database, file storage and email already attached. Vercel is the better choice when you need a global CDN, preview deployments or Git-based workflows. This page lays out the differences so you can pick.</p>
-          <p class="doc-meta">Last updated October 11, 2026</p>
+          <p class="lead">EasyHost is a free place to run a Next.js app when you want a plain always-on server with a database and file storage already attached. Vercel is the better choice when you need a global CDN, preview deployments or Git-based workflows. This page lays out the differences so you can pick.</p>
+          <p class="doc-meta">Last updated November 9, 2026</p>
         </div>
 
         <section id="summary">
           <h2>The summary</h2>
           <ul>
             <li><strong>Runtime.</strong> Vercel splits your app into serverless functions behind a CDN. EasyHost runs <code>next start</code> in one container that stays up.</li>
-            <li><strong>Backend.</strong> EasyHost includes Postgres, S3 compatible storage and transactional email in the free account. On Vercel Hobby, a database and email come from other providers.</li>
+            <li><strong>Backend.</strong> EasyHost includes Postgres and S3 compatible storage in the free account, with transactional email coming soon. On Vercel Hobby, a database and email come from other providers.</li>
             <li><strong>Workflow.</strong> Vercel deploys from Git and gives every branch a preview URL. EasyHost deploys from a CLI that coding agents can drive end to end.</li>
             <li><strong>Reach.</strong> Vercel serves from a global edge network. EasyHost serves from one region.</li>
           </ul>
@@ -163,10 +164,10 @@
                 <tr><td>How the app runs</td><td>One always-on container, 512 MB RAM, 1 CPU</td><td>Serverless functions, up to 300 seconds each</td></tr>
                 <tr><td>Monthly usage</td><td>Not metered</td><td>100 GB data transfer, 1,000,000 function invocations, 4 CPU-hours</td></tr>
                 <tr><td>Over the limit</td><td>Fixed resources, nothing to exceed</td><td>The feature is paused until 30 days have passed</td></tr>
-                <tr><td>Projects</td><td>10</td><td>200</td></tr>
+                <tr><td>Projects</td><td>3</td><td>200</td></tr>
                 <tr><td>Postgres</td><td>Included, 1 per project</td><td>Through integrations</td></tr>
                 <tr><td>File storage</td><td>S3 compatible bucket, 1 per project</td><td>Vercel Blob</td></tr>
-                <tr><td>Email sending</td><td>Included, 20 per day</td><td>Not included</td></tr>
+                <tr><td>Email sending</td><td>Coming soon</td><td>Not included</td></tr>
                 <tr><td>Git deploys and previews</td><td>No</td><td>Yes</td></tr>
                 <tr><td>Global CDN</td><td>No</td><td>Yes</td></tr>
                 <tr><td>Frameworks</td><td>Node.js apps, including Next.js</td><td>Many</td></tr>
@@ -180,9 +181,9 @@
           <h3>You want a server, not functions</h3>
           <p>Your app is a single Node.js process that stays running. In-memory caches survive between requests, there are no cold starts, and you do not need to think about function size or invocation counts.</p>
           <h3>You want the backend in the same place</h3>
-          <p>A side project usually needs a database, somewhere to put uploads and a way to send a sign-up email. On EasyHost those are three commands in the same CLI: <code>ezhst db create</code>, <code>ezhst storage create</code> and <code>ezhst email sender create</code>. See <a href="/free-postgres-hosting">free Postgres hosting</a> for the database details.</p>
+          <p>A side project usually needs a database and somewhere to put uploads. On EasyHost those are two commands in the same CLI: <code>ezhst db create</code> and <code>ezhst storage create</code>. Email is coming soon. See <a href="/free-postgres-hosting">free Postgres hosting</a> for the database details.</p>
           <h3>Your coding agent does the deploying</h3>
-          <p>Every <code>ezhst</code> command takes <code>--json</code>, never prompts without a terminal, and returns errors an agent can act on. Sign-up works from the command line too, so an agent can go from an empty account to a live URL without a browser. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> shows how.</p>
+          <p>Every <code>ezhst</code> command takes <code>--json</code>, never prompts without a terminal, and returns errors an agent can act on. Sign-up works from the command line too: after you give the agent the 6-digit code from your inbox, it can go from an empty account to a live URL without a browser. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> shows how.</p>
           <h3>You want limits you can predict</h3>
           <p>There is no usage meter. An app gets 512 MB of RAM and 1 CPU, and that is what it has at any traffic level.</p>
         </section>
@@ -249,12 +250,12 @@ npx ezhst domains add www.example.com</pre></div>
             <img src="/logo.svg" alt="" width="18" height="24" />
             EasyHost
           </a>
-          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+          <p>Free Node.js hosting with Postgres, S3 storage and schedules, built for AI coding agents. No credit card.</p>
         </div>
         <nav class="footer-columns" aria-label="Footer">
-          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Email (coming soon)</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
-          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Migrate</p><ul><li><a href="/migrate/vercel">From Vercel</a></li><li><a href="/migrate/render">From Render</a></li><li><a href="/migrate/railway">From Railway</a></li><li><a href="/migrate/netlify">From Netlify</a></li><li><a href="/migrate/fly">From Fly.io</a></li><li><a href="/migrate/heroku">From Heroku</a></li><li><a href="/migrate/koyeb">From Koyeb</a></li><li><a href="/migrate/postgres">Move a Postgres database</a></li><li><a href="/migrate/storage">Move S3 files</a></li><li><a href="/migrate">All migrations</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Resources</p><ul><li><a href="/docs">Documentation</a></li><li><a href="/docs/cli">CLI reference</a></li><li><a href="/errors">Deployment errors</a></li><li><a href="/learn">Learn hosting</a></li><li><a href="/skill.md">skill.md</a></li><li><a href="/llms.txt">llms.txt</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="https://app.easyhost.fun/login">Log in</a></li><li><a href="https://app.easyhost.fun/register">Sign up</a></li><li><a href="mailto:hello@easyhost.fun">Contact</a></li></ul></div>

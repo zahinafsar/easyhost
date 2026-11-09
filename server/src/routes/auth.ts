@@ -1,10 +1,11 @@
 import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
 import { createToken, generateToken, hashPassword, removeAuthCookie, setAuthCookie, verifyPassword } from "../lib/auth.js";
-import { sendPasswordResetEmail, sendVerificationEmail } from "../lib/email.js";
+import { sendPasswordResetEmail } from "../lib/email.js";
+import { checkVerificationCode, resendWaitSeconds, sendVerificationCode } from "../lib/verify-code.js";
 import { validate } from "../lib/validator.js";
 import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema, updateProfileSchema, verifyEmailSchema } from "../lib/validations.js";
-import { requireUser } from "../middleware/require-user.js";
+import { requireSession, requireUser } from "../middleware/require-user.js";
 
 export const authRoutes = new Hono()
   .post("/register", validate("json", registerSchema), async (c) => {
@@ -15,13 +16,11 @@ export const authRoutes = new Hono()
       return c.json({ error: "Email already registered" }, 400);
     }
 
-    const verifyToken = generateToken();
     const user = await prisma.user.create({
       data: {
         name,
         email: email.toLowerCase(),
         password: await hashPassword(password),
-        verifyToken,
         apps: {
           create: {
             name: "Default project",
@@ -33,16 +32,16 @@ export const authRoutes = new Hono()
     });
 
     try {
-      await sendVerificationEmail(user.email, user.name, verifyToken);
+      await sendVerificationCode(user);
     } catch (error) {
-      console.error("Failed to send verification email", error);
+      console.error("Failed to send verification code", error);
     }
 
     const token = await createToken({ userId: user.id, email: user.email });
     setAuthCookie(c, token);
 
     return c.json({
-      message: "Registration successful. Please check your email to verify your account.",
+      message: "Registration successful. Enter the 6-digit code we sent to your email.",
       token,
       user: { id: user.id, email: user.email, name: user.name, verified: user.verified },
     });
@@ -57,6 +56,9 @@ export const authRoutes = new Hono()
     if (user.blocked) {
       return c.json({ error: "Your account has been blocked" }, 403);
     }
+    if (!user.verified && (!user.verifyCodeExpires || user.verifyCodeExpires.getTime() < Date.now())) {
+      await sendVerificationCode(user).catch((error) => console.error("Failed to send verification code", error));
+    }
 
     const token = await createToken({ userId: user.id, email: user.email });
     setAuthCookie(c, token);
@@ -70,7 +72,7 @@ export const authRoutes = new Hono()
     removeAuthCookie(c);
     return c.json({ message: "Logged out" });
   })
-  .post("/stop-impersonating", requireUser, async (c) => {
+  .post("/stop-impersonating", requireSession, async (c) => {
     const { impersonatorId } = c.get("user");
     if (!impersonatorId) {
       return c.json({ error: "Not impersonating anyone" }, 400);
@@ -84,7 +86,7 @@ export const authRoutes = new Hono()
     setAuthCookie(c, token);
     return c.json({ message: "Impersonation ended" });
   })
-  .get("/me", requireUser, (c) => {
+  .get("/me", requireSession, (c) => {
     return c.json({ user: c.get("user") });
   })
   .put("/me", requireUser, validate("json", updateProfileSchema), async (c) => {
@@ -95,35 +97,29 @@ export const authRoutes = new Hono()
     });
     return c.json({ user });
   })
-  .post("/verify-email", validate("json", verifyEmailSchema), async (c) => {
-    const { token } = c.req.valid("json");
-
-    const user = await prisma.user.findFirst({ where: { verifyToken: token } });
-    if (!user) {
-      return c.json({ error: "Invalid or expired verification token" }, 400);
+  .post("/verify-email", requireSession, validate("json", verifyEmailSchema), async (c) => {
+    const result = await checkVerificationCode(c.get("user").id, c.req.valid("json").code);
+    if (!result.ok) {
+      return c.json({ error: result.error }, 400);
     }
-    if (user.verified) {
-      return c.json({ message: "Email already verified" });
-    }
-
-    await prisma.user.update({ where: { id: user.id }, data: { verified: true, verifyToken: null } });
-    return c.json({ message: "Email verified successfully" });
+    return c.json({ message: "Email verified" });
   })
-  .post("/resend-verification", requireUser, async (c) => {
+  .post("/resend-verification", requireSession, async (c) => {
     const current = c.get("user");
     if (current.verified) {
       return c.json({ message: "Email already verified" });
     }
-
-    const verifyToken = generateToken();
-    await prisma.user.update({ where: { id: current.id }, data: { verifyToken } });
-
-    try {
-      await sendVerificationEmail(current.email, current.name, verifyToken);
-    } catch {
-      return c.json({ error: "Could not send verification email" }, 500);
+    const { verifyCodeSentAt } = await prisma.user.findUniqueOrThrow({ where: { id: current.id }, select: { verifyCodeSentAt: true } });
+    const wait = resendWaitSeconds(verifyCodeSentAt);
+    if (wait > 0) {
+      return c.json({ error: `Wait ${wait} seconds before sending another code` }, 429);
     }
-    return c.json({ message: "Verification email sent" });
+    try {
+      await sendVerificationCode(current);
+    } catch {
+      return c.json({ error: "Could not send verification code" }, 500);
+    }
+    return c.json({ message: `We sent a new code to ${current.email}` });
   })
   .post("/forgot-password", validate("json", forgotPasswordSchema), async (c) => {
     const { email } = c.req.valid("json");

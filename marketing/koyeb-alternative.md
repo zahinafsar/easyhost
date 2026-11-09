@@ -11,7 +11,7 @@ According to [Koyeb's own page](https://www.koyeb.com/pricing) as of October 202
 | Free Postgres | 5 hours of compute, 1 GB of storage | No compute-hour meter, one per project |
 | Regions | Several | One |
 | Language support | Many languages | Node.js only |
-| Included with each app | Varies by plan | Postgres, S3 bucket, email and schedules per project |
+| Included with each app | Varies by plan | Postgres, S3 bucket and schedules per project |
 
 ## When EasyHost fits
 

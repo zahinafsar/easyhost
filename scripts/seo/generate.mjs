@@ -17,7 +17,7 @@ const readLimits = (file) => {
   for (const [, key, value] of source.matchAll(/(\w+):\s*(\d+)/g)) {
     limits[key] = Number(value);
   }
-  for (const key of ["projects", "apps", "schedules", "emailSenders", "emailsPerDay", "concurrentBuilds", "projectMembers", "aiPromptsPerDay"]) {
+  for (const key of ["projects", "apps", "schedules", "concurrentBuilds", "projectMembers", "aiPromptsPerDay"]) {
     if (limits[key] === undefined) {
       throw new Error(`${file} does not define ${key}`);
     }
@@ -194,7 +194,7 @@ Every generated page has a Markdown copy at the same path with \`.md\` appended.
 
 - [Frameworks](${SITE}/frameworks): Guides for each framework
 - [Products](${SITE}/products): What is included
-- [Pricing and limits](${SITE}/pricing): Every limit
+- [Pricing and limits](${SITE}/pricing): Every limit and AI Token prices
 - [CLI reference](${SITE}/docs/cli): One page per command
 - [Deployment errors](${SITE}/errors): Error messages and fixes
 - [Migration guides](${SITE}/migrate): Moving apps and data to EasyHost

@@ -1,6 +1,6 @@
 # Koa on EasyHost
 
-Koa is a minimal Node.js web framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+Koa is a minimal Node.js web framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ Koa is a minimal Node.js web framework. These guides cover hosting it for free a
 - [AWS SDK v3](/guides/koa-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/koa-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/koa-send-email)
 - [Cron jobs](/guides/koa-cron-jobs)
 
 ## Migrate

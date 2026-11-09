@@ -11,7 +11,7 @@ According to [Fly.io's own page](https://fly.io/docs/about/pricing/) as of Octob
 | Free option | Trial only: 2 Machine hours or 7 days | Free with no trial period |
 | Regions | Many | One |
 | Docker | Your own Dockerfile | No Dockerfile, built from your package.json |
-| Included with each app | Varies by plan | Postgres, S3 bucket, email and schedules per project |
+| Included with each app | Varies by plan | Postgres, S3 bucket and schedules per project |
 
 ## When EasyHost fits
 

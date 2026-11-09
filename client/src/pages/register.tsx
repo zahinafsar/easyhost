@@ -18,7 +18,7 @@ export const RegisterPage = () => {
 
   const register = useApiMutation({
     mutationFn: () => unwrap(api.auth.register.$post({ json: form })),
-    success: "Account created. Check your email to verify it.",
+    success: "Account created. Check your email for the verification code.",
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: userQuery().all });
       navigate(redirect || "/");

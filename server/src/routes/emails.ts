@@ -5,7 +5,7 @@ import { createEmailSenderSchema, paginationSchema, sendEmailSchema } from "../l
 import { sendProjectEmail } from "../lib/project-email.js";
 import { requireUser } from "../middleware/require-user.js";
 import { requireProject } from "../middleware/require-project.js";
-import { EMAIL_DOMAIN, senderAddress } from "../lib/email.js";
+import { EMAIL_DOMAIN, emailComingSoon, senderAddress } from "../lib/email.js";
 import { LIMITS } from "../lib/limits.js";
 import type { UserEnv } from "../lib/types.js";
 
@@ -20,6 +20,7 @@ const listSenders = async (projectId: string) => {
 };
 
 export const emailRoutes = new Hono<UserEnv>()
+  .use(emailComingSoon)
   .use(requireUser)
   .use(requireProject)
   .get("/", validate("query", paginationSchema), async (c) => {

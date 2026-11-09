@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EasyHost Docs: ezhst CLI Reference for Deploying Node.js</title>
-    <meta name="description" content="Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and email." />
+    <meta name="description" content="Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and schedules." />
     <link rel="canonical" href="https://easyhost.fun/docs" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
@@ -12,7 +12,7 @@
     <meta property="og:site_name" content="EasyHost" />
     <meta property="og:url" content="https://easyhost.fun/docs" />
     <meta property="og:title" content="EasyHost Docs: ezhst CLI Reference for Deploying Node.js" />
-    <meta property="og:description" content="Every ezhst command: deploy Node.js apps, manage env vars, domains, S3 storage, Postgres and email." />
+    <meta property="og:description" content="Every ezhst command: deploy Node.js apps, manage env vars, domains, S3 storage, Postgres and schedules." />
     <meta property="og:image" content="https://easyhost.fun/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -27,11 +27,11 @@
           {
             "@type": "TechArticle",
             "headline": "EasyHost docs: ezhst CLI reference",
-            "description": "Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and email.",
+            "description": "Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and schedules.",
             "url": "https://easyhost.fun/docs",
             "image": "https://easyhost.fun/og.png",
             "datePublished": "2026-09-29",
-            "dateModified": "2026-10-11",
+            "dateModified": "2026-11-09",
             "author": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/" },
             "publisher": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/", "logo": "https://easyhost.fun/icon-512.png" }
           },
@@ -56,6 +56,7 @@
         <a href="/" class="logo">
           <img src="/logo.svg" alt="" width="18" height="24" />
           EasyHost
+          <span class="beta">Beta</span>
           <small>docs</small>
         </a>
         <nav class="nav-links" aria-label="Main">
@@ -87,7 +88,6 @@
           <li><a href="#database">Database</a></li>
           <li><a href="#schedules">Schedules</a></li>
           <li><a href="#email">Email</a></li>
-          <li><a href="#keys">API keys</a></li>
           <li><a href="#members">Team members</a></li>
           <li><a href="#ai-builder">AI Builder</a></li>
           <li><a href="#limits">Limits</a></li>
@@ -113,6 +113,7 @@
           <div class="code"><pre>npm i -g ezhst</pre></div>
           <p>Create an account (or log in), link your Node.js app folder and deploy.</p>
           <div class="code"><pre>npx ezhst register
+npx ezhst verify &lt;code&gt;
 npx ezhst link
 npx ezhst deploy</pre></div>
           <p>Already have an account? Use <code>npx ezhst login</code> instead of <code>register</code>. You can also sign up in the <a href="https://app.easyhost.fun/register">dashboard</a>.</p>
@@ -133,13 +134,15 @@ npx ezhst deploy</pre></div>
         <section id="authentication">
           <h2>Authentication</h2>
           <div class="cmds">
-            <div class="cmd-row"><code>ezhst register --name &lt;name&gt; --email &lt;email&gt; --password &lt;password&gt;</code><span>Create an account. A "Default project" is created and a verification email is sent.</span></div>
+            <div class="cmd-row"><code>ezhst register --name &lt;name&gt; --email &lt;email&gt; --password &lt;password&gt;</code><span>Create an account. A "Default project" is created and a 6-digit verification code is emailed to you.</span></div>
+            <div class="cmd-row"><code>ezhst verify &lt;code&gt;</code><span>Verify your email with the code. Required before any other command.</span></div>
             <div class="cmd-row"><code>ezhst login --email &lt;email&gt; --password &lt;password&gt;</code><span>Log in.</span></div>
             <div class="cmd-row"><code>ezhst logout</code><span>Log out.</span></div>
             <div class="cmd-row"><code>ezhst whoami</code><span>Show the logged in account.</span></div>
-            <div class="cmd-row"><code>ezhst resend-verification</code><span>Send the verification email again.</span></div>
+            <div class="cmd-row"><code>ezhst resend-verification</code><span>Email a new code. Codes expire after 10 minutes, and you can request one every 60 seconds.</span></div>
             <div class="cmd-row"><code>ezhst forgot-password --email &lt;email&gt;</code><span>Send a password reset link.</span></div>
           </div>
+          <p>Verification is mandatory. Until you run <code>ezhst verify</code> with the code from your inbox, other commands are rejected. In the dashboard, the same code is entered on the screen shown after sign up.</p>
           <p><code>login</code> and <code>register</code> save your token in <code>~/.easyhost/config.json</code>. In CI or agent sandboxes, provide the token with the <code>EZHST_TOKEN</code> environment variable instead.</p>
           <div class="code"><pre>EZHST_TOKEN=&lt;token&gt; npx ezhst deploy --json</pre></div>
           <h3>Output and prompts</h3>
@@ -151,13 +154,13 @@ npx ezhst deploy</pre></div>
 
         <section id="projects">
           <h2>Projects and linking</h2>
-          <p>A project contains up to five Node.js apps and five scheduled API calls, with a shared storage bucket, database, email sender and API keys. Each app has its own subdomain: <code>&lt;app-slug&gt;.easyhost.fun</code>.</p>
+          <p>A project contains up to three apps (Node.js apps and AI Builder apps count together) and five scheduled API calls, with a shared storage bucket and database. Each app has its own subdomain: <code>&lt;app-slug&gt;.easyhost.fun</code>.</p>
           <div class="cmds">
             <div class="cmd-row"><code>ezhst projects list</code><span>List your projects.</span></div>
             <div class="cmd-row"><code>ezhst projects create &lt;name&gt;</code><span>Create a project.</span></div>
             <div class="cmd-row"><code>ezhst projects info</code><span>Project details and apps.</span></div>
             <div class="cmd-row"><code>ezhst projects rename &lt;name&gt;</code><span>Change the display name. The URL stays the same.</span></div>
-            <div class="cmd-row"><code>ezhst projects delete --yes</code><span>Delete all apps, deployments, schedules, storage, database, email and API keys.</span></div>
+            <div class="cmd-row"><code>ezhst projects delete --yes</code><span>Delete all apps, deployments, schedules, storage and the database.</span></div>
             <div class="cmd-row"><code>ezhst link [--project &lt;slug&gt;]</code><span>Link the current folder to a project (writes <code>.easyhost.json</code>).</span></div>
           </div>
           <p>Project-scoped commands use the project linked in <code>.easyhost.json</code>. Pass <code>--project &lt;slug&gt;</code> to any of them to target another project.</p>
@@ -169,7 +172,7 @@ ezhst link --project &lt;project-slug&gt; --app &lt;app-slug&gt;</pre></div>
 
         <section id="deploying">
           <h2>Deploying</h2>
-          <p>Use <code>ezhst apps list</code>, <code>ezhst apps create &lt;name&gt;</code>, and <code>ezhst apps delete --app &lt;slug&gt; --yes</code> to manage up to five apps per project. Deployment, environment, build, domain and runtime commands accept <code>--app &lt;slug-or-id&gt;</code>. Link an app with <code>ezhst link --project &lt;slug&gt; --app &lt;slug&gt;</code>.</p>
+          <p>Use <code>ezhst apps list</code>, <code>ezhst apps create &lt;name&gt;</code>, and <code>ezhst apps delete --app &lt;slug&gt; --yes</code> to manage up to three apps per project. Deployment, environment, build, domain and runtime commands accept <code>--app &lt;slug-or-id&gt;</code>. Link an app with <code>ezhst link --project &lt;slug&gt; --app &lt;slug&gt;</code>.</p>
           <div class="cmds">
             <div class="cmd-row"><code>ezhst deploy [--verbose]</code><span>Package the Node.js app in the current folder, upload, build and go live.</span></div>
             <div class="cmd-row"><code>ezhst redeploy [--verbose]</code><span>Rebuild the latest upload. Use after changing env vars or build settings.</span></div>
@@ -341,44 +344,8 @@ ezhst env set DATABASE_URL="postgresql://..."</pre></div>
         </section>
 
         <section id="email">
-          <h2>Email</h2>
-          <p>Send transactional email from <code>&lt;username&gt;@easyhost.fun</code>. Each project has one sender and can send 20 emails per day.</p>
-          <div class="cmds">
-            <div class="cmd-row"><code>ezhst email info</code><span>Sender address and usage.</span></div>
-            <div class="cmd-row"><code>ezhst email sender create &lt;username&gt;</code><span>Create the sender address.</span></div>
-            <div class="cmd-row"><code>ezhst email sender delete</code><span>Delete the sender.</span></div>
-            <div class="cmd-row"><code>ezhst email send --from &lt;address&gt; --to &lt;address&gt; --subject &lt;text&gt; (--text &lt;body&gt; | --html &lt;html&gt;)</code><span>Send an email.</span></div>
-            <div class="cmd-row"><code>ezhst email logs [--page &lt;n&gt;]</code><span>List sent emails.</span></div>
-          </div>
-          <div class="code"><pre>ezhst email sender create acme
-ezhst email send --from acme@easyhost.fun --to ada@example.com --subject "Welcome" --text "Thanks for signing up."</pre></div>
-          <h3>Sending from your app</h3>
-          <p>Apps send email over HTTP with an <a href="#keys">API key</a>. Send <code>text</code> or <code>html</code>.</p>
-          <div class="code"><div class="code-label">POST https://api.easyhost.fun/api/v1/email/send</div><pre>const res = await fetch("https://api.easyhost.fun/api/v1/email/send", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${process.env.EASYHOST_API_KEY}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    from: "acme@easyhost.fun",
-    to: "ada@example.com",
-    subject: "Welcome",
-    html: "&lt;p&gt;Thanks for signing up.&lt;/p&gt;",
-  }),
-});</pre></div>
-        </section>
-
-        <section id="keys">
-          <h2>API keys</h2>
-          <p>API keys authenticate your app against the HTTP email API.</p>
-          <div class="cmds">
-            <div class="cmd-row"><code>ezhst keys list</code><span>List keys.</span></div>
-            <div class="cmd-row"><code>ezhst keys create &lt;name&gt;</code><span>Create a key. It is shown only once.</span></div>
-            <div class="cmd-row"><code>ezhst keys revoke &lt;id&gt;</code><span>Revoke a key.</span></div>
-          </div>
-          <div class="code"><pre>ezhst keys create production --json
-ezhst env set EASYHOST_API_KEY=&lt;key&gt;</pre></div>
+          <h2>Email <small>coming soon</small></h2>
+          <p>Transactional email for your apps is coming soon. It is not available yet: the dashboard Email page shows Coming soon, and the <code>ezhst email</code> commands and the email API return <code>Email is coming soon.</code> Account emails from EasyHost itself, such as verification codes, password resets and invites, are still sent.</p>
         </section>
 
         <section id="members">
@@ -398,23 +365,23 @@ ezhst env set EASYHOST_API_KEY=&lt;key&gt;</pre></div>
           <h2>AI Builder <small>dashboard</small></h2>
           <p>The AI Builder turns a description into a running app. Open <strong>Builder</strong> in the <a href="https://app.easyhost.fun/builder">dashboard</a>, create an app and describe it. The name becomes its address, <code>https://&lt;name&gt;.easyhost.fun</code>.</p>
           <p>For a new app or a big feature, the AI asks a few questions, shows a short plan to approve and lets you pick one of 9 themes before it builds. Small changes go straight to code. Every step is shown live: files written, SQL run and packages installed.</p>
-          <p>AI apps are plain JavaScript Hono servers. They use the project's Postgres database, storage and email when they need them, and work with environment variables, logs and custom domains like any other app. The AI Builder is not part of the CLI.</p>
+          <p>AI apps are plain JavaScript Hono servers. They use the project's Postgres database and storage when they need them (email is coming soon), and work with environment variables, logs and custom domains like any other app. The AI Builder is not part of the CLI.</p>
+          <p>Each account gets its first AI app and its first build free. After that, AI requests use AI Tokens, bought once in the dashboard and never expiring: 500 tokens for $5, 1,100 for $10, 2,400 for $20 or 6,500 for $50. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. Hosting AI apps stays free, and AI apps count toward the 3 apps per project.</p>
         </section>
 
         <section id="limits">
           <h2>Limits</h2>
-          <p>EasyHost is free within these limits. Node.js apps are supported, including Next.js and HTTP APIs. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
+          <p>EasyHost hosting is free within these limits. The AI Builder uses AI Tokens after your first free AI app and build. Node.js apps are supported, including Next.js and HTTP APIs. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Resource</th><th>Limit</th></tr></thead>
               <tbody>
-                <tr><td>Projects</td><td>10</td></tr>
-                <tr><td>Apps</td><td>5 per project</td></tr>
+                <tr><td>Projects</td><td>3</td></tr>
+                <tr><td>Apps</td><td>3 per project</td></tr>
                 <tr><td>Schedules</td><td>5 per project</td></tr>
                 <tr><td>Storage buckets</td><td>1 per project</td></tr>
                 <tr><td>Databases</td><td>1 per project</td></tr>
-                <tr><td>Email senders</td><td>1 per project</td></tr>
-                <tr><td>Emails</td><td>20 per day</td></tr>
+                <tr><td>Email</td><td>Coming soon</td></tr>
                 <tr><td>Team members</td><td>10 per project, including pending invites</td></tr>
                 <tr><td>AI Builder prompts</td><td>30 per day, per project</td></tr>
                 <tr><td>Concurrent builds</td><td>1</td></tr>
@@ -433,12 +400,12 @@ ezhst env set EASYHOST_API_KEY=&lt;key&gt;</pre></div>
             <img src="/logo.svg" alt="" width="18" height="24" />
             EasyHost
           </a>
-          <p>Free Node.js hosting with Postgres, S3 storage, email and schedules, built for AI coding agents. No credit card.</p>
+          <p>Free Node.js hosting with Postgres, S3 storage and schedules, built for AI coding agents. No credit card.</p>
         </div>
         <nav class="footer-columns" aria-label="Footer">
-          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Transactional email</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Products</p><ul><li><a href="/products/app-hosting">Node.js hosting</a></li><li><a href="/products/postgres">Postgres database</a></li><li><a href="/products/storage">S3 storage</a></li><li><a href="/products/email">Email (coming soon)</a></li><li><a href="/products/schedules">Cron schedules</a></li><li><a href="/products/custom-domains">Custom domains</a></li><li><a href="/products/cli">ezhst CLI</a></li><li><a href="/products/agent-skill">Agent skill</a></li><li><a href="/products/ai-builder">AI Builder</a></li><li><a href="/products/team-members">Team members</a></li><li><a href="/pricing">Pricing and limits</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Free hosting</p><ul><li><a href="/free-nextjs-hosting">Next.js</a></li><li><a href="/free-nuxt-hosting">Nuxt</a></li><li><a href="/free-express-hosting">Express</a></li><li><a href="/free-nestjs-hosting">NestJS</a></li><li><a href="/free-fastify-hosting">Fastify</a></li><li><a href="/free-hono-hosting">Hono</a></li><li><a href="/free-koa-hosting">Koa</a></li><li><a href="/free-adonisjs-hosting">AdonisJS</a></li><li><a href="/free-remix-hosting">Remix</a></li><li><a href="/free-sveltekit-hosting">SvelteKit</a></li><li><a href="/free-astro-hosting">Astro</a></li><li><a href="/free-strapi-hosting">Strapi</a></li><li><a href="/free-postgres-hosting">Postgres</a></li><li><a href="/frameworks">All frameworks</a></li></ul></div>
-          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-send-email">Send email from Next.js</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
+          <div class="footer-column"><p class="footer-title">Guides</p><ul><li><a href="/guides/deploy-nextjs-with-ai-agents">Deploy with AI agents</a></li><li><a href="/guides/deploy-nextjs-with-claude-code">Next.js with Claude Code</a></li><li><a href="/guides/deploy-nextjs-with-cursor">Next.js with Cursor</a></li><li><a href="/guides/deploy-nextjs-with-codex">Next.js with Codex</a></li><li><a href="/guides/nextjs-prisma-postgres">Next.js with Prisma</a></li><li><a href="/guides/nestjs-typeorm-postgres">NestJS with TypeORM</a></li><li><a href="/guides/express-file-uploads-aws-sdk">Express file uploads</a></li><li><a href="/guides/nextjs-cron-jobs">Next.js cron jobs</a></li><li><a href="/guides/custom-domain-cloudflare">Cloudflare custom domain</a></li><li><a href="/guides">All guides</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Compare</p><ul><li><a href="/vercel-alternative">Vercel alternative</a></li><li><a href="/render-alternative">Render alternative</a></li><li><a href="/railway-alternative">Railway alternative</a></li><li><a href="/netlify-alternative">Netlify alternative</a></li><li><a href="/fly-alternative">Fly.io alternative</a></li><li><a href="/heroku-alternative">Heroku alternative</a></li><li><a href="/koyeb-alternative">Koyeb alternative</a></li><li><a href="/alternatives">All comparisons</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Migrate</p><ul><li><a href="/migrate/vercel">From Vercel</a></li><li><a href="/migrate/render">From Render</a></li><li><a href="/migrate/railway">From Railway</a></li><li><a href="/migrate/netlify">From Netlify</a></li><li><a href="/migrate/fly">From Fly.io</a></li><li><a href="/migrate/heroku">From Heroku</a></li><li><a href="/migrate/koyeb">From Koyeb</a></li><li><a href="/migrate/postgres">Move a Postgres database</a></li><li><a href="/migrate/storage">Move S3 files</a></li><li><a href="/migrate">All migrations</a></li></ul></div>
           <div class="footer-column"><p class="footer-title">Resources</p><ul><li><a href="/docs">Documentation</a></li><li><a href="/docs/cli">CLI reference</a></li><li><a href="/errors">Deployment errors</a></li><li><a href="/learn">Learn hosting</a></li><li><a href="/skill.md">skill.md</a></li><li><a href="/llms.txt">llms.txt</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="https://app.easyhost.fun/login">Log in</a></li><li><a href="https://app.easyhost.fun/register">Sign up</a></li><li><a href="mailto:hello@easyhost.fun">Contact</a></li></ul></div>

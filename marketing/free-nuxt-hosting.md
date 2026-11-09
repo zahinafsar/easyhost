@@ -6,8 +6,8 @@ EasyHost runs Nuxt, a full-stack Vue framework, in an always-on Node.js containe
 
 - An always-on container with 512 MB of RAM and 1 CPU
 - A URL at `<app-slug>.easyhost.fun`, plus custom domains with HTTPS
-- One Postgres 16 database, one S3 bucket and one email sender per project
-- Up to five apps and five schedules per project
+- One Postgres 16 database and one S3 bucket per project
+- Up to 3 apps and 5 schedules per project
 
 ## How Nuxt builds and runs
 
@@ -41,7 +41,7 @@ npx ezhst deploy
 
 Use the default `node-server` preset. Presets for serverless platforms do not produce `.output/server/index.mjs`.
 
-Apps run in one region, with no edge network, preview deployments or Git integration. Each project can send 20 emails per day, and one build runs at a time.
+Apps run in one region, with no edge network, preview deployments or Git integration. One build runs at a time.
 
 ## Next steps
 

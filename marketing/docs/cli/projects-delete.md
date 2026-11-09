@@ -8,7 +8,7 @@ Delete a project and everything in it.
 ezhst projects delete --yes
 ```
 
-This removes all apps, deployments, schedules, storage, database, email and API keys. It cannot be undone.
+This removes all apps, deployments, schedules, storage and the database. It cannot be undone.
 
 ## In scripts and agents
 

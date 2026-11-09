@@ -11,7 +11,7 @@ According to [Railway's own page](https://docs.railway.com/reference/pricing/pla
 | Free allowance | $1 of credit per month | Fixed limits with no credit meter |
 | Billing model | Usage-based | Free within limits |
 | Git integration | Yes | No, deploys use the CLI |
-| Included with each app | Varies by plan | Postgres, S3 bucket, email and schedules per project |
+| Included with each app | Varies by plan | Postgres, S3 bucket and schedules per project |
 
 ## When EasyHost fits
 

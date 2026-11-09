@@ -1,6 +1,6 @@
 {
   "name": "ezhst",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "EasyHost CLI: agent-first hosting for Node.js apps with storage, databases and email",
   "type": "module",
   "bin": {

@@ -1,6 +1,6 @@
 # Astro on EasyHost
 
-Astro is a content-focused web framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+Astro is a content-focused web framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ Astro is a content-focused web framework. These guides cover hosting it for free
 - [AWS SDK v3](/guides/astro-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/astro-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/astro-send-email)
 - [Cron jobs](/guides/astro-cron-jobs)
 
 ## Migrate

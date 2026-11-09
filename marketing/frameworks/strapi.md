@@ -1,6 +1,6 @@
 # Strapi on EasyHost
 
-Strapi is a open source headless CMS. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+Strapi is a open source headless CMS. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -26,9 +26,8 @@ Strapi is a open source headless CMS. These guides cover hosting it for free and
 
 - [the Strapi database config](/guides/strapi-database-postgres)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/strapi-send-email)
 - [Cron jobs](/guides/strapi-cron-jobs)
 
 ## Migrate

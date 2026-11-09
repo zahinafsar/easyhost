@@ -1,6 +1,6 @@
 # Nuxt on EasyHost
 
-Nuxt is a full-stack Vue framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+Nuxt is a full-stack Vue framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -39,9 +39,8 @@ Nuxt is a full-stack Vue framework. These guides cover hosting it for free and c
 - [AWS SDK v3](/guides/nuxt-file-uploads-aws-sdk)
 - [MinIO JavaScript client](/guides/nuxt-file-uploads-minio)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/nuxt-send-email)
 - [Cron jobs](/guides/nuxt-cron-jobs)
 
 ## Migrate

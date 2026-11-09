@@ -7,7 +7,7 @@ A single `SKILL.md` file that teaches Claude Code, Cursor, Codex and other agent
 - Installs for Claude Code (`.claude/skills`), Codex (`.agents/skills`) or Cursor (`.cursor/skills`)
 - Global in your home folder or Local in the current project
 - Raw file at `https://easyhost.fun/skill.md` for any agent
-- Covers deploys, env vars, domains, storage, Postgres, email and schedules
+- Covers deploys, env vars, domains, storage, Postgres and schedules
 
 ## Try it
 

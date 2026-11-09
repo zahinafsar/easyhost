@@ -1,6 +1,6 @@
 # AdonisJS on EasyHost
 
-AdonisJS is a batteries-included TypeScript framework. These guides cover hosting it for free and connecting it to Postgres, storage, email and schedules.
+AdonisJS is a batteries-included TypeScript framework. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.
 
 ## Start here
 
@@ -26,9 +26,8 @@ AdonisJS is a batteries-included TypeScript framework. These guides cover hostin
 
 - [Lucid](/guides/adonisjs-lucid-postgres)
 
-## Email and schedules
+## Schedules
 
-- [Send email](/guides/adonisjs-send-email)
 - [Cron jobs](/guides/adonisjs-cron-jobs)
 
 ## Migrate

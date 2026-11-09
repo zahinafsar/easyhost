@@ -8,4 +8,4 @@ Transactional email is sent to one person because of something they did: a passw
 
 ## On EasyHost
 
-EasyHost includes 20 emails per day per project. [Learn more](/products/email).
+Email on EasyHost is coming soon and is not available yet. [Learn more](/products/email).

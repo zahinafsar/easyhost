@@ -31,7 +31,7 @@ Nx works the same way with `npx nx build <project>`.
 
 ## Several apps, one project
 
-A project holds up to five apps. Create one EasyHost app per deployable folder and set each root directory. They share the project's database, bucket and email sender.
+A project holds up to 3 apps. Create one EasyHost app per deployable folder and set each root directory. They share the project's database and bucket.
 
 See the [Express hub](/frameworks/express) for every Express guide, or [free Express hosting](/free-express-hosting) for what is included.
 
