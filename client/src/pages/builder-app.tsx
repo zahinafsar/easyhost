@@ -29,7 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap } from "@/lib/api";
-import { aiAppsQuery, appsQuery } from "@/lib/queries";
+import { aiAppsQuery, appsQuery, tokensQuery } from "@/lib/queries";
 import { selectedProjectId } from "@/lib/project";
 import { cn } from "@/lib/utils";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -369,6 +369,7 @@ export const BuilderAppPage = () => {
   const wasGenerating = useRef(false);
   const chatEnd = useRef<HTMLDivElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
+  const tokens = useQuery(tokensQuery().summary());
 
   const generating = data?.app.aiStatus === "GENERATING";
   const messageCount = data?.messages.length ?? 0;
@@ -417,9 +418,10 @@ export const BuilderAppPage = () => {
     if (wasGenerating.current && !generating) {
       setPreviewKey((key) => key + 1);
       setLiveSteps([]);
+      queryClient.invalidateQueries({ queryKey: tokensQuery().all });
     }
     wasGenerating.current = generating;
-  }, [generating]);
+  }, [generating, queryClient]);
 
   useEffect(() => {
     chatEnd.current?.scrollIntoView({ behavior: "smooth" });
@@ -573,6 +575,13 @@ export const BuilderAppPage = () => {
             <Button type="submit" className="w-full" disabled={!prompt.trim() || generating || send.isPending}>
               Send
             </Button>
+            {tokens.data && (
+              <p className="flex items-center justify-between text-xs text-muted-foreground">
+                {tokens.data.freeBuildAvailable && <span>Your first build is free</span>}
+                {!tokens.data.freeBuildAvailable && <span className="tabular-nums">{tokens.data.balance.toLocaleString("en-US")} tokens left</span>}
+                <Link to="/tokens" className="underline-offset-4 hover:underline">Buy tokens</Link>
+              </p>
+            )}
           </form>
         </aside>
 

@@ -12,6 +12,7 @@ import { env } from "../lib/env.js";
 import { AiFileError, aiPreviewUrl, generateAuthSecret, listAiFiles, readAiFile, startAiApp, writeAiFile } from "../lib/ai-apps.js";
 import { starterFiles } from "../lib/ai-template.js";
 import { startGeneration } from "../lib/ai-agent.js";
+import { MIN_TOKENS_TO_BUILD, OUT_OF_TOKENS, billingForRun } from "../lib/tokens.js";
 import { requireUser } from "../middleware/require-user.js";
 import { requireProject } from "../middleware/require-project.js";
 import type { UserEnv } from "../lib/types.js";
@@ -69,6 +70,7 @@ export const aiAppRoutes = new Hono<UserEnv>()
     }
 
     const projectId = c.get("projectId");
+    const userId = c.get("user").id;
     const app = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM apps WHERE id = ${projectId} FOR UPDATE`;
       const project = await tx.app.findUnique({ where: { id: projectId } });
@@ -78,6 +80,13 @@ export const aiAppRoutes = new Hono<UserEnv>()
       const count = await tx.app.count({ where: { appEnabled: true, OR: [{ id: projectId }, { parentProjectId: projectId }] } });
       if (count >= LIMITS.apps) {
         return null;
+      }
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
+      const account = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { freeAiAppUsed: true, tokenBalance: true } });
+      if (!account.freeAiAppUsed) {
+        await tx.user.update({ where: { id: userId }, data: { freeAiAppUsed: true } });
+      } else if (account.tokenBalance < MIN_TOKENS_TO_BUILD) {
+        return "tokens" as const;
       }
       return tx.app.create({
         data: {
@@ -98,6 +107,9 @@ export const aiAppRoutes = new Hono<UserEnv>()
     });
     if (app === "taken") {
       return c.json({ error: `${name} is already taken` }, 400);
+    }
+    if (app === "tokens") {
+      return c.json({ error: "Your free AI app is used. Buy tokens on the Tokens page to create more AI apps." }, 402);
     }
     if (!app) {
       return c.json({ error: `Each project can have at most ${LIMITS.apps} apps.` }, 400);
@@ -173,6 +185,11 @@ export const aiAppRoutes = new Hono<UserEnv>()
       return c.json({ error: `Each project can send at most ${LIMITS.aiPromptsPerDay} AI prompts per day.` }, 429);
     }
 
+    const billing = await billingForRun(c.get("user").id);
+    if (!billing) {
+      return c.json({ error: OUT_OF_TOKENS }, 402);
+    }
+
     const { count } = await prisma.app.updateMany({
       where: { id: app.id, aiStatus: { not: "GENERATING" } },
       data: { aiStatus: "GENERATING", aiProgress: "Starting", aiError: null, aiSteps: [] },
@@ -184,7 +201,7 @@ export const aiAppRoutes = new Hono<UserEnv>()
       data: { appId: app.id, role: "user", content: c.req.valid("json").prompt },
       select: { id: true, role: true, content: true, steps: true, createdAt: true },
     });
-    startGeneration(app.id);
+    startGeneration(app.id, billing);
     return c.json({ message }, 202);
   })
   .post("/:id/respond", validate("json", aiRespondSchema), async (c) => {
@@ -230,6 +247,11 @@ export const aiAppRoutes = new Hono<UserEnv>()
       reply = `Theme: ${theme.name}. Build it now.`;
     }
 
+    const billing = await billingForRun(c.get("user").id);
+    if (!billing) {
+      return c.json({ error: OUT_OF_TOKENS }, 402);
+    }
+
     const { count } = await prisma.app.updateMany({
       where: { id: app.id, aiStatus: { not: "GENERATING" } },
       data: { aiStatus: "GENERATING", aiProgress: "Starting", aiError: null, aiSteps: [] },
@@ -256,7 +278,7 @@ export const aiAppRoutes = new Hono<UserEnv>()
       },
     });
     await prisma.aiMessage.create({ data: { appId: app.id, role: "user", content: reply } });
-    startGeneration(app.id);
+    startGeneration(app.id, billing);
     return c.json({ ok: true });
   })
   .get("/:id/events", async (c) => {

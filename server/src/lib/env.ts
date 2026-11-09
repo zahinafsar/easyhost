@@ -14,6 +14,10 @@ const REQUIRED = [
   "APPS_PROTOCOL",
   "PUBLIC_IP",
   "GOOGLE_GENERATIVE_AI_API_KEY",
+  "LEMONSQUEEZY_API_KEY",
+  "LEMONSQUEEZY_STORE_ID",
+  "LEMONSQUEEZY_VARIANT_ID",
+  "LEMONSQUEEZY_WEBHOOK_SECRET",
 ] as const;
 
 const NPM_REQUIRED = ["NPM_API_URL", "NPM_API_EMAIL", "NPM_API_PASSWORD"] as const;
@@ -103,5 +107,11 @@ export const env = {
   appsProtocol: oneOf("APPS_PROTOCOL", ["http", "https"] as const),
   publicIp: raw("PUBLIC_IP"),
   googleAiApiKey: raw("GOOGLE_GENERATIVE_AI_API_KEY"),
+  lemonSqueezy: {
+    apiKey: raw("LEMONSQUEEZY_API_KEY"),
+    storeId: String(integer("LEMONSQUEEZY_STORE_ID")),
+    variantId: String(integer("LEMONSQUEEZY_VARIANT_ID")),
+    webhookSecret: raw("LEMONSQUEEZY_WEBHOOK_SECRET"),
+  },
   npm: readNpm(),
 };

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { NODE_VERSIONS } from "./build-plan.js";
+import { TOKEN_PACKS } from "./tokens.js";
 
 const resourceName = z
   .string()
@@ -216,4 +217,8 @@ export const aiRespondSchema = z.object({
   answers: z.record(z.string(), z.string().trim().max(500)).optional(),
   approve: z.literal(true).optional(),
   theme: z.string().optional(),
+});
+
+export const tokenCheckoutSchema = z.object({
+  pack: z.enum(TOKEN_PACKS.map((pack) => pack.id) as [string, ...string[]], "Choose a token pack"),
 });

@@ -36,6 +36,11 @@ enum AiStatus {
   FAILED
 }
 
+enum TokenPurchaseStatus {
+  PENDING
+  PAID
+}
+
 enum DomainStatus {
   PENDING
   ACTIVE
@@ -74,9 +79,15 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  tokenBalance    Int     @default(0)
+  freeAiAppUsed   Boolean @default(false)
+  freeAiBuildUsed Boolean @default(false)
+
   apps           App[]
   projectMembers ProjectMember[]
   sentInvites    ProjectInvite[]
+  tokenPurchases TokenPurchase[]
+  tokenUsages    TokenUsage[]
 
   @@map("users")
 }
@@ -222,6 +233,7 @@ model App {
   aiTheme         String?
   aiBucket        Bucket?         @relation("AiAppBucket", fields: [aiBucketId], references: [id], onDelete: SetNull)
   aiMessages      AiMessage[]
+  tokenUsages     TokenUsage[]
 
   @@index([parentProjectId])
   @@map("apps")
@@ -307,4 +319,41 @@ model AiMessage {
 
   @@index([appId, createdAt])
   @@map("ai_messages")
+}
+
+model TokenPurchase {
+  id           String              @id @default(cuid())
+  userId       String
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokens       Int
+  amountCents  Int
+  status       TokenPurchaseStatus @default(PENDING)
+  lsCheckoutId String?             @unique
+  lsOrderId    String?             @unique
+  lsEventId    String?             @unique
+  paidAt       DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([userId, status, createdAt])
+  @@map("token_purchases")
+}
+
+model TokenUsage {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appId             String?
+  app               App?     @relation(fields: [appId], references: [id], onDelete: SetNull)
+  appName           String
+  free              Boolean  @default(false)
+  tokens            Int      @default(0)
+  inputTokens       Int      @default(0)
+  cachedInputTokens Int      @default(0)
+  outputTokens      Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@map("token_usages")
 }

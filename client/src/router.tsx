@@ -21,6 +21,7 @@ import { BuilderPage } from "@/pages/builder";
 import { BuilderAppPage } from "@/pages/builder-app";
 import { InvitePage } from "@/pages/invite";
 import { AdminPage } from "@/pages/admin";
+import { TokensPage } from "@/pages/tokens";
 
 export const router = createBrowserRouter([
   {
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
       { path: "/api-keys", element: <ApiKeysPage /> },
       { path: "/builder", element: <BuilderPage /> },
       { path: "/builder/:id", element: <BuilderAppPage /> },
+      { path: "/tokens", element: <TokensPage /> },
       { path: "/members", element: <MembersPage /> },
       { path: "/settings", element: <SettingsPage /> },
       { path: "/invite/:token", element: <InvitePage /> },

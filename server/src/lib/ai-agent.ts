@@ -9,6 +9,7 @@ import { connectedServices, connectProjectDatabase, connectProjectStorage, delet
 import { runQuery } from "./userdb.js";
 import { endLiveSession, liveSession, startLiveSession, upsertStep, type AiInteractiveStep, type AiTextStep, type AiToolStep } from "./ai-live.js";
 import { findTheme, themeSummary } from "./ai-themes.js";
+import { OUT_OF_TOKENS, addUsage, emptyUsage, markFreeBuildUsed, recordUsage, tokensForUsage, type RunBilling } from "./tokens.js";
 
 const MODEL_ID = "gemini-3.8-flash";
 const MAX_STEPS = 40;
@@ -222,13 +223,29 @@ const keepsFailing = ({ steps }: { steps: StepResult<ToolSet>[] }) => {
   return steps.length >= MAX_FAILED_STEPS && steps.slice(-MAX_FAILED_STEPS).every(stepFailed);
 };
 
-const buildTools = (app: App) => {
+const runsOutOfTokens = (billing: RunBilling) => {
+  return ({ steps }: { steps: StepResult<ToolSet>[] }) => {
+    if (billing.free) {
+      return false;
+    }
+    const totals = emptyUsage();
+    for (const step of steps) {
+      addUsage(totals, step.usage);
+    }
+    return tokensForUsage(totals) >= billing.balance;
+  };
+};
+
+const buildTools = (app: App, billing: RunBilling) => {
   return {
     write_file: tool({
       description: "Create or overwrite a file with its complete contents. Paths are relative to the app root, for example server.js or public/app.js.",
       inputSchema: z.object({ path: z.string(), content: z.string() }),
       execute: async ({ path, content }) => {
         const written = await writeAiFile(app, path, content);
+        if (billing.free) {
+          await markFreeBuildUsed(billing.userId);
+        }
         return { ok: true, path: written };
       },
     }),
@@ -376,7 +393,7 @@ const themeLine = (themeId: string | null) => {
   return themeSummary(theme);
 };
 
-const runGeneration = async (appId: string) => {
+const runGeneration = async (appId: string, billing: RunBilling) => {
   const app = await prisma.app.findUniqueOrThrow({ where: { id: appId } });
   const history = await prisma.aiMessage.findMany({
     where: { appId },
@@ -398,6 +415,23 @@ const runGeneration = async (appId: string) => {
   });
 
   const session = startLiveSession(appId);
+  const totals = emptyUsage();
+  let charged = 0;
+  let usageId: string | null = null;
+  let billingQueue: Promise<void> = Promise.resolve();
+  const bill = () => {
+    billingQueue = billingQueue
+      .then(async () => {
+        let tokens = 0;
+        if (!billing.free) {
+          tokens = tokensForUsage(totals);
+        }
+        const charge = Math.max(tokens - charged, 0);
+        usageId = await recordUsage(billing, app, usageId, { ...totals }, tokens, charge);
+        charged += charge;
+      })
+      .catch((error) => console.error("Failed to record AI token usage", error));
+  };
   const toolInputs = new Map<string, { tool: string; raw: string; lastEmit: number }>();
   let lastPersist = 0;
   let progress = "Thinking";
@@ -439,8 +473,8 @@ const runGeneration = async (appId: string) => {
   const agent = new ToolLoopAgent({
     model: google(MODEL_ID),
     instructions: INSTRUCTIONS,
-    tools: buildTools(app),
-    stopWhen: [isStepCount(MAX_STEPS), keepsFailing],
+    tools: buildTools(app, billing),
+    stopWhen: [isStepCount(MAX_STEPS), keepsFailing, runsOutOfTokens(billing)],
   });
 
   persist(true);
@@ -450,6 +484,11 @@ const runGeneration = async (appId: string) => {
   for await (const part of result.stream) {
     if (part.type === "start-step") {
       modelStep += 1;
+      continue;
+    }
+    if (part.type === "finish-step") {
+      addUsage(totals, part.usage);
+      bill();
       continue;
     }
     if (part.type === "text-delta") {
@@ -563,6 +602,12 @@ const runGeneration = async (appId: string) => {
     upsertStep(session, notice);
     summary = [summary, notice.text].filter(Boolean).join("\n\n");
   }
+  await billingQueue;
+  if (!billing.free && tokensForUsage(totals) >= billing.balance) {
+    const notice: AiTextStep = { id: "out-of-tokens", type: "text", text: `I stopped because your token balance ran out. ${OUT_OF_TOKENS}` };
+    upsertStep(session, notice);
+    summary = [summary, notice.text].filter(Boolean).join("\n\n");
+  }
   if (!summary) {
     summary = "Done.";
   }
@@ -573,8 +618,8 @@ const runGeneration = async (appId: string) => {
   endLiveSession(appId, "IDLE", null);
 };
 
-export const startGeneration = (appId: string) => {
-  runGeneration(appId).catch(async (error) => {
+export const startGeneration = (appId: string, billing: RunBilling) => {
+  runGeneration(appId, billing).catch(async (error) => {
     console.error("AI generation failed", error);
     let message = "The AI could not finish this request. Try again.";
     if (error instanceof Error && error.message) {

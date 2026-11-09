@@ -16,6 +16,7 @@ import { scheduleRoutes } from "./routes/schedules.js";
 import { startScheduleWorker } from "./lib/schedule-worker.js";
 import { appRoutes } from "./routes/apps.js";
 import { adminRoutes } from "./routes/admin.js";
+import { lemonSqueezyWebhookRoutes, tokenRoutes } from "./routes/tokens.js";
 import { v1EmailRoutes } from "./routes/v1/email.js";
 import { env } from "./lib/env.js";
 import { startBuildQueue } from "./lib/build-queue.js";
@@ -42,6 +43,8 @@ const routes = app
   .route("/schedules", scheduleRoutes)
   .route("/apps", appRoutes)
   .route("/ai-apps", aiAppRoutes)
+  .route("/tokens", tokenRoutes)
+  .route("/webhooks/lemonsqueezy", lemonSqueezyWebhookRoutes)
   .route("/admin", adminRoutes)
   .route("/v1/email", v1EmailRoutes);
 
