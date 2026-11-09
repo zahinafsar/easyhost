@@ -110,6 +110,29 @@ export const sendProjectDeletedEmail = async (email: string, name: string, proje
   });
 };
 
+export const sendAccountDeletedEmail = async (email: string, name: string) => {
+  await resend.emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: "Your EasyHost account has been closed",
+    html: emailLayout(`
+      <h1 style="margin: 0 0 8px; font-size: 20px; color: #111;">Your account has been closed</h1>
+      <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
+        Hi ${escapeHtml(name)}, during a routine review our team identified unusual activity associated with your EasyHost account. To protect the security and reliability of the platform for all of our users, we have closed your account.
+      </p>
+      <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
+        Your account and all of its projects have been permanently deleted, including apps, deployments, custom domains, storage buckets, databases and any remaining AI tokens. This data cannot be restored.
+      </p>
+      <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+        If you believe this decision was made in error, please reply to this email and our team will review your case.
+      </p>
+      <p style="color: #9ca3af; font-size: 12px; margin-top: 24px; margin-bottom: 0;">
+        This is an automated notice sent to ${escapeHtml(email)}.
+      </p>
+    `),
+  });
+};
+
 export const inviteUrl = (token: string) => `${APP_URL}/invite/${token}`;
 
 export const sendProjectInviteEmail = async (email: string, inviterName: string, projectName: string, token: string) => {

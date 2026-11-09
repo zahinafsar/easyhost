@@ -69,6 +69,26 @@ export const deleteApp = async (app: Pick<App, "id" | "slug" | "parentProjectId"
   }
 };
 
+export const deleteUserAccount = async (userId: string): Promise<DeleteResult> => {
+  const projects = await prisma.app.findMany({ where: { userId, parentProjectId: null }, select: { id: true, slug: true } });
+  for (const project of projects) {
+    const result = await deleteProject(project);
+    if (!result.ok) {
+      return result;
+    }
+  }
+  const apps = await prisma.app.findMany({ where: { userId }, select: { id: true, slug: true, parentProjectId: true } });
+  for (const app of apps) {
+    const result = await deleteApp(app);
+    if (!result.ok) {
+      return result;
+    }
+    await prisma.app.deleteMany({ where: { id: app.id } });
+  }
+  await prisma.user.delete({ where: { id: userId } });
+  return { ok: true };
+};
+
 export const deleteProject = async (project: Pick<App, "id" | "slug">): Promise<DeleteResult> => {
   const apps = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM apps WHERE id = ${project.id} FOR UPDATE`;

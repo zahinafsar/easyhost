@@ -7,9 +7,10 @@ import { createToken, setAuthCookie } from "../lib/auth.js";
 import { docker, containerName } from "../lib/docker.js";
 import { minio } from "../lib/minio.js";
 import { databaseSizes, userdbStats } from "../lib/userdb.js";
-import { deleteProject } from "../lib/delete-project.js";
+import { deleteProject, deleteUserAccount } from "../lib/delete-project.js";
+import { cleanJunk, scanJunk } from "../lib/cleanup.js";
 import { appHost } from "../lib/domains.js";
-import { sendProjectDeletedEmail } from "../lib/email.js";
+import { sendAccountDeletedEmail, sendProjectDeletedEmail } from "../lib/email.js";
 import { LIMITS } from "../lib/limits.js";
 import { validate } from "../lib/validator.js";
 import { adminAnalyticsQuerySchema, adminUsersQuerySchema } from "../lib/validations.js";
@@ -310,6 +311,45 @@ export const adminRoutes = new Hono<UserEnv>()
     }
 
     return c.json({ message: "Project deleted", emailSent });
+  })
+  .delete("/users/:id", async (c) => {
+    const admin = c.get("user");
+    const target = await prisma.user.findUnique({ where: { id: c.req.param("id") } });
+    if (!target) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    if (target.id === admin.id) {
+      return c.json({ error: "You cannot delete your own account" }, 400);
+    }
+    if (target.role === "ADMIN") {
+      return c.json({ error: "Admin accounts cannot be deleted" }, 400);
+    }
+
+    const result = await deleteUserAccount(target.id);
+    if (!result.ok) {
+      return c.json({ error: result.error }, 409);
+    }
+    console.log(`Admin ${admin.email} (${admin.id}) deleted user ${target.email} (${target.id}) and all of their projects`);
+
+    let emailSent = true;
+    try {
+      await sendAccountDeletedEmail(target.email, target.name);
+    } catch (error) {
+      console.error("Failed to send account deleted email", error);
+      emailSent = false;
+    }
+
+    return c.json({ message: "User deleted", emailSent });
+  })
+  .get("/cleanup", async (c) => {
+    const scan = await scanJunk();
+    return c.json({ groups: scan.groups, totalBytes: scan.groups.reduce((total, group) => total + group.bytes, 0) });
+  })
+  .post("/cleanup", async (c) => {
+    const admin = c.get("user");
+    const result = await cleanJunk();
+    console.log(`Admin ${admin.email} (${admin.id}) ran the junk cleaner, about ${result.freedBytes} bytes freed`);
+    return c.json(result);
   })
   .post("/users/:id/impersonate", async (c) => {
     const admin = c.get("user");

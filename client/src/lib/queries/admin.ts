@@ -24,6 +24,12 @@ export const adminQuery = () => {
         queryFn: () => unwrap(api.admin.usage.$get()),
       }),
 
+    cleanup: () =>
+      queryOptions({
+        queryKey: createKey(...query.all, "cleanup"),
+        queryFn: () => unwrap(api.admin.cleanup.$get()),
+      }),
+
     users: (page: number, search: string) =>
       queryOptions({
         queryKey: createKey(...query.all, "users", { page, search }),

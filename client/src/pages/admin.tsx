@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CircleCheck, CircleX, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, BrushCleaning, CircleCheck, CircleX, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -304,6 +304,17 @@ const UsersTab = ({ currentUserId }: { currentUserId: string }) => {
   const { data, isLoading } = useQuery(adminQuery().users(page, search));
 
   const impersonate = useImpersonate();
+  const removeUser = useApiMutation({
+    mutationFn: (id: string) => unwrap(api.admin.users[":id"].$delete({ param: { id } })),
+    invalidate: [adminQuery().all],
+    onSuccess: ({ emailSent }) => {
+      if (emailSent) {
+        toast.success("User deleted and notified by email");
+      } else {
+        toast.warning("User deleted, but the email to the user failed");
+      }
+    },
+  });
 
   return (
     <div className="space-y-4">
@@ -356,20 +367,35 @@ const UsersTab = ({ currentUserId }: { currentUserId: string }) => {
                     <TableCell className="text-right tabular-nums">{user.runningApps}</TableCell>
                     <TableCell className="text-right tabular-nums">{user.emailsToday}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</TableCell>
-                    <TableCell className="text-right">
-                      {user.id !== currentUserId && !user.blocked && (
-                        <ConfirmButton
-                          title={`Impersonate ${user.email}?`}
-                          description={IMPERSONATE_NOTICE}
-                          confirmLabel="Impersonate"
-                          onConfirm={() => impersonate.mutate(user.id)}
-                        >
-                          <Button size="sm" variant="outline" disabled={impersonate.isPending}>
-                            <UserRound className="size-4" />
-                            Impersonate
-                          </Button>
-                        </ConfirmButton>
-                      )}
+                    <TableCell>
+                      <div className="flex justify-end gap-2">
+                        {user.id !== currentUserId && !user.blocked && (
+                          <ConfirmButton
+                            title={`Impersonate ${user.email}?`}
+                            description={IMPERSONATE_NOTICE}
+                            confirmLabel="Impersonate"
+                            onConfirm={() => impersonate.mutate(user.id)}
+                          >
+                            <Button size="sm" variant="outline" disabled={impersonate.isPending}>
+                              <UserRound className="size-4" />
+                              Impersonate
+                            </Button>
+                          </ConfirmButton>
+                        )}
+                        {user.id !== currentUserId && user.role !== "ADMIN" && (
+                          <ConfirmButton
+                            title={`Delete ${user.email}?`}
+                            description={`This permanently deletes the account and all ${user.projects} of its projects, including apps, deployments, domains, schedules, storage, databases, memberships and AI tokens. The user is emailed that the account was closed due to unusual activity. This cannot be undone.`}
+                            confirmLabel="Delete user"
+                            confirmVariant="destructive"
+                            onConfirm={() => removeUser.mutate(user.id)}
+                          >
+                            <Button size="icon-sm" variant="outline" aria-label="Delete user" disabled={removeUser.isPending}>
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </ConfirmButton>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -391,6 +417,72 @@ const UsersTab = ({ currentUserId }: { currentUserId: string }) => {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+};
+
+const CleanupTab = () => {
+  const { data, isLoading, isFetching, refetch } = useQuery(adminQuery().cleanup());
+  const clean = useApiMutation({
+    mutationFn: () => unwrap(api.admin.cleanup.$post()),
+    invalidate: [adminQuery().all],
+    onSuccess: ({ freedBytes }) => {
+      toast.success(`Cleanup finished, about ${formatBytes(freedBytes)} freed`);
+    },
+  });
+  if (isLoading || !data) {
+    return <Skeleton className="h-64 w-full" />;
+  }
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-2xl font-semibold tracking-tight tabular-nums">{formatBytes(data.totalBytes)}</p>
+          <p className="text-sm text-muted-foreground">Reclaimable disk space. Sizes are estimates because image layers can be shared.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching || clean.isPending}>
+            Rescan
+          </Button>
+          <ConfirmButton
+            title="Clean up unused data?"
+            description="This removes everything listed below that is older than one hour. Running apps, their current images and the latest deploy of every app are kept. This cannot be undone."
+            confirmLabel="Clean up"
+            confirmVariant="destructive"
+            onConfirm={() => clean.mutate()}
+          >
+            <Button disabled={clean.isPending || isFetching}>
+              <BrushCleaning className="size-4" />
+              {clean.isPending ? "Cleaning..." : "Clean up"}
+            </Button>
+          </ConfirmButton>
+        </div>
+      </div>
+      <Card>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead className="text-right">Count</TableHead>
+                <TableHead className="text-right">Size</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.groups.map((group) => (
+                <TableRow key={group.key}>
+                  <TableCell>
+                    <p className="font-medium">{group.label}</p>
+                    <p className="text-xs whitespace-normal text-muted-foreground">{group.description}</p>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{group.count}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatBytes(group.bytes)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
@@ -433,6 +525,7 @@ export const AdminPage = () => {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="usage">Usage</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="cleanup">Cleanup</TabsTrigger>
           </TabsList>
           <TabsContent value="health">
             <HealthTab />
@@ -445,6 +538,9 @@ export const AdminPage = () => {
           </TabsContent>
           <TabsContent value="users">
             <UsersTab currentUserId={user.id} />
+          </TabsContent>
+          <TabsContent value="cleanup">
+            <CleanupTab />
           </TabsContent>
         </Tabs>
       </main>
