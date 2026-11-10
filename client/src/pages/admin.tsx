@@ -1,12 +1,23 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BrushCleaning, CircleCheck, CircleX, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, Ban, BrushCleaning, CircleCheck, CircleX, Ellipsis, MailX, Trash2, UserRound, UserRoundCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -297,24 +308,95 @@ const UsageTab = ({ currentUserId }: { currentUserId: string }) => {
   );
 };
 
+type UserActionKind = "impersonate" | "delete" | "blockEmail" | "block" | "unblock";
+
+type UserAction = { kind: UserActionKind; user: { id: string; email: string; projects: number } };
+
+const actionDialog = ({ kind, user }: UserAction) => {
+  const deleted = `all ${user.projects} of its projects, including apps, deployments, domains, schedules, storage, databases, memberships and AI tokens. The user is emailed that the account was closed due to unusual activity. This cannot be undone.`;
+  if (kind === "impersonate") {
+    return { title: `Impersonate ${user.email}?`, description: IMPERSONATE_NOTICE, confirmLabel: "Impersonate", destructive: false };
+  }
+  if (kind === "delete") {
+    return { title: `Delete ${user.email}?`, description: `This permanently deletes the account and ${deleted}`, confirmLabel: "Delete user", destructive: true };
+  }
+  if (kind === "blockEmail") {
+    const domain = user.email.split("@").pop();
+    return {
+      title: `Block the email domain ${domain}?`,
+      description: `No one can register with an @${domain} address again. Existing accounts on this domain are not affected. It also permanently deletes this account and ${deleted}`,
+      confirmLabel: "Block domain and delete",
+      destructive: true,
+    };
+  }
+  if (kind === "block") {
+    return {
+      title: `Block ${user.email}?`,
+      description: "The user is signed out and cannot log in, API keys and schedules stop working, and every running app they own is stopped. Their data is kept and you can unblock them later.",
+      confirmLabel: "Block user",
+      destructive: true,
+    };
+  }
+  return {
+    title: `Unblock ${user.email}?`,
+    description: "The user can log in again. Apps stopped by the block stay stopped until the user starts them.",
+    confirmLabel: "Unblock user",
+    destructive: false,
+  };
+};
+
 const UsersTab = ({ currentUserId }: { currentUserId: string }) => {
   const [page, setPage] = useState(1);
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
   const { data, isLoading } = useQuery(adminQuery().users(page, search));
 
+  const [action, setAction] = useState<UserAction | null>(null);
+
   const impersonate = useImpersonate();
-  const removeUser = useApiMutation({
-    mutationFn: (id: string) => unwrap(api.admin.users[":id"].$delete({ param: { id } })),
+  const runAction = useApiMutation({
+    mutationFn: async ({ kind, user }: UserAction): Promise<{ warning: boolean; message: string }> => {
+      const param = { id: user.id };
+      if (kind === "delete" || kind === "blockEmail") {
+        let result;
+        let done;
+        if (kind === "delete") {
+          result = await unwrap(api.admin.users[":id"].$delete({ param }));
+          done = "User deleted";
+        } else {
+          result = await unwrap(api.admin.users[":id"]["block-domain"].$post({ param }));
+          done = "Domain blocked and user deleted";
+        }
+        if (result.emailSent) {
+          return { warning: false, message: `${done}, user notified by email` };
+        }
+        return { warning: true, message: `${done}, but the email to the user failed` };
+      }
+      if (kind === "block") {
+        const result = await unwrap(api.admin.users[":id"].block.$post({ param }));
+        if (result.failed > 0) {
+          return { warning: true, message: `User blocked, ${result.stopped} apps stopped, ${result.failed} could not be stopped` };
+        }
+        return { warning: false, message: `User blocked, ${result.stopped} apps stopped` };
+      }
+      await unwrap(api.admin.users[":id"].unblock.$post({ param }));
+      return { warning: false, message: "User unblocked" };
+    },
     invalidate: [adminQuery().all],
-    onSuccess: ({ emailSent }) => {
-      if (emailSent) {
-        toast.success("User deleted and notified by email");
+    onSuccess: ({ warning, message }) => {
+      if (warning) {
+        toast.warning(message);
       } else {
-        toast.warning("User deleted, but the email to the user failed");
+        toast.success(message);
       }
     },
   });
+
+  const confirm = (kind: UserActionKind, user: UserAction["user"]) => {
+    setAction({ kind, user });
+  };
+
+  const dialog = action ? actionDialog(action) : null;
 
   return (
     <div className="space-y-4">
@@ -368,34 +450,49 @@ const UsersTab = ({ currentUserId }: { currentUserId: string }) => {
                     <TableCell className="text-right tabular-nums">{user.emailsToday}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</TableCell>
                     <TableCell>
-                      <div className="flex justify-end gap-2">
-                        {user.id !== currentUserId && !user.blocked && (
-                          <ConfirmButton
-                            title={`Impersonate ${user.email}?`}
-                            description={IMPERSONATE_NOTICE}
-                            confirmLabel="Impersonate"
-                            onConfirm={() => impersonate.mutate(user.id)}
-                          >
-                            <Button size="sm" variant="outline" disabled={impersonate.isPending}>
-                              <UserRound className="size-4" />
-                              Impersonate
-                            </Button>
-                          </ConfirmButton>
-                        )}
-                        {user.id !== currentUserId && user.role !== "ADMIN" && (
-                          <ConfirmButton
-                            title={`Delete ${user.email}?`}
-                            description={`This permanently deletes the account and all ${user.projects} of its projects, including apps, deployments, domains, schedules, storage, databases, memberships and AI tokens. The user is emailed that the account was closed due to unusual activity. This cannot be undone.`}
-                            confirmLabel="Delete user"
-                            confirmVariant="destructive"
-                            onConfirm={() => removeUser.mutate(user.id)}
-                          >
-                            <Button size="icon-sm" variant="outline" aria-label="Delete user" disabled={removeUser.isPending}>
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </ConfirmButton>
-                        )}
-                      </div>
+                      {user.id !== currentUserId && (
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon-sm" variant="outline" aria-label="User actions" disabled={runAction.isPending || impersonate.isPending}>
+                                <Ellipsis className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {!user.blocked && (
+                                <DropdownMenuItem onSelect={() => confirm("impersonate", user)}>
+                                  <UserRound />
+                                  Impersonate
+                                </DropdownMenuItem>
+                              )}
+                              {user.role !== "ADMIN" && (
+                                <>
+                                  {!user.blocked && <DropdownMenuSeparator />}
+                                  {user.blocked ? (
+                                    <DropdownMenuItem onSelect={() => confirm("unblock", user)}>
+                                      <UserRoundCheck />
+                                      Unblock (User)
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onSelect={() => confirm("block", user)}>
+                                      <Ban />
+                                      Block (User)
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem variant="destructive" onSelect={() => confirm("blockEmail", user)}>
+                                    <MailX />
+                                    Block (Domain)
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem variant="destructive" onSelect={() => confirm("delete", user)}>
+                                    <Trash2 />
+                                    Delete (Full)
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -417,6 +514,38 @@ const UsersTab = ({ currentUserId }: { currentUserId: string }) => {
           </CardContent>
         </Card>
       )}
+      <AlertDialog
+        open={action !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAction(null);
+          }
+        }}
+      >
+        {dialog && action && (
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{dialog.title}</AlertDialogTitle>
+              <AlertDialogDescription>{dialog.description}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant={dialog.destructive ? "destructive" : "default"}
+                onClick={() => {
+                  if (action.kind === "impersonate") {
+                    impersonate.mutate(action.user.id);
+                  } else {
+                    runAction.mutate(action);
+                  }
+                }}
+              >
+                {dialog.confirmLabel}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        )}
+      </AlertDialog>
     </div>
   );
 };

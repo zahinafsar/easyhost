@@ -126,7 +126,7 @@ export const AI_RUNTIME_IMAGE = "easyhost/ai-runtime";
 const AI_APP_DIR = "/srv/app";
 const NPM_CACHE_VOLUME = "easyhost-npm-cache";
 
-export type ContainerFile = { path: string; content: string };
+export type ContainerFile = { path: string; content: string | Buffer };
 
 const tarBuffer = async (files: ContainerFile[]) => {
   const tar = pack();

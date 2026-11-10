@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -6,6 +6,12 @@ import {
   ChevronDown,
   ChevronLeft,
   CircleHelp,
+  Code,
+  Download,
+  Ellipsis,
+  Eye,
+  ImagePlus,
+  Save,
   ListChecks,
   Palette,
   Database,
@@ -14,6 +20,7 @@ import {
   HardDrive,
   Mail,
   Loader2,
+  MousePointerClick,
   Package,
   Play,
   RefreshCw,
@@ -22,13 +29,15 @@ import {
   X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/status-badge";
-import { api, unwrap } from "@/lib/api";
+import { api, unwrap, upload } from "@/lib/api";
 import { aiAppsQuery, appsQuery, tokensQuery } from "@/lib/queries";
 import { selectedProjectId } from "@/lib/project";
 import { cn } from "@/lib/utils";
@@ -61,6 +70,58 @@ type Theme = {
   radius: string;
   font: string;
 };
+type SelectedElement = { tag: string; selector: string; text: string; html: string; page: string };
+type InspectorMessage =
+  | { type: "easyhost:select"; element: SelectedElement }
+  | { type: "easyhost:inspect-exit" }
+  | { type: "easyhost:inspector-ready" };
+
+const MAX_ELEMENTS = 5;
+const MAX_ATTACHMENTS = 5;
+const ASSET_DIR = "public/uploads/";
+const IMAGE_ACCEPT = ".png,.jpg,.jpeg,.gif,.webp,.avif,.svg,.ico";
+
+const isAssetPath = (path: string) => path.startsWith(ASSET_DIR);
+
+const assetSrc = (appId: string, path: string) => {
+  return `/api/ai-apps/${appId}/asset?path=${encodeURIComponent(path)}&projectId=${encodeURIComponent(selectedProjectId() ?? "")}`;
+};
+
+const AttachmentChip = ({ appId, path, onRemove }: { appId: string; path: string; onRemove?: () => void }) => (
+  <span title={`/uploads/${path.slice(ASSET_DIR.length)}`} className="inline-flex max-w-full items-center gap-1.5 border bg-background p-0.5 pr-2 text-xs text-foreground">
+    <img src={assetSrc(appId, path)} alt="" className="size-6 shrink-0 bg-muted object-cover" />
+    <span className="truncate">{path.slice(ASSET_DIR.length)}</span>
+    {onRemove && (
+      <button type="button" onClick={onRemove} aria-label="Remove image" className="shrink-0 text-muted-foreground hover:text-foreground">
+        <X className="size-3" />
+      </button>
+    )}
+  </span>
+);
+
+const elementLabel = (element: SelectedElement) => {
+  if (element.text.length > 40) {
+    return `${element.text.slice(0, 40)}...`;
+  }
+  if (element.text) {
+    return element.text;
+  }
+  return element.selector.split(" > ").pop() ?? element.tag;
+};
+
+const ElementChip = ({ element, onRemove }: { element: SelectedElement; onRemove?: () => void }) => (
+  <span title={element.selector} className="inline-flex max-w-full items-center gap-1.5 border bg-background px-2 py-0.5 text-xs text-foreground">
+    <MousePointerClick className="size-3 shrink-0 text-muted-foreground" />
+    <span className="shrink-0 font-mono text-muted-foreground">{element.tag}</span>
+    <span className="truncate">{elementLabel(element)}</span>
+    {onRemove && (
+      <button type="button" onClick={onRemove} aria-label="Remove element" className="shrink-0 text-muted-foreground hover:text-foreground">
+        <X className="size-3" />
+      </button>
+    )}
+  </span>
+);
+
 type Respond = (body: { stepId: string; answers?: Record<string, string>; approve?: true; theme?: string }) => void;
 type CardProps = { respond?: Respond; pending: boolean };
 type LiveEvent =
@@ -357,12 +418,156 @@ const StepsView = ({
   </div>
 );
 
+const MonacoEditor = lazy(() => import("@/components/monaco-editor").then((module) => ({ default: module.MonacoEditor })));
+
+const pickDefaultFile = (files: { path: string }[]) => {
+  const preferred = ["public/index.html", "server.js"].find((path) => files.some((file) => file.path === path));
+  if (preferred) {
+    return preferred;
+  }
+  return files[0]?.path ?? "";
+};
+
+const CodeEditor = ({
+  appId,
+  files,
+  readOnly,
+  onSaved,
+}: {
+  appId: string;
+  files: { path: string; size: number }[];
+  readOnly: boolean;
+  onSaved: () => void;
+}) => {
+  const [path, setPath] = useState(() => pickDefaultFile(files));
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const asset = isAssetPath(path);
+  const file = useQuery({ ...aiAppsQuery().file(appId, path), enabled: !!path && !asset });
+
+  useEffect(() => {
+    if (readOnly) {
+      setDrafts({});
+    }
+  }, [readOnly]);
+
+  const saved = file.data?.content ?? "";
+  const draft = drafts[path];
+  const value = draft ?? saved;
+  const dirty = draft !== undefined && draft !== saved;
+
+  const save = useApiMutation({
+    mutationFn: (body: { path: string; content: string }) => unwrap(api["ai-apps"][":id"].file.$put({ param: { id: appId }, json: body })),
+    invalidate: [aiAppsQuery().all],
+    onSuccess: ({ path: savedPath }) => {
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[savedPath];
+        return next;
+      });
+      toast.success(`Saved ${savedPath}`);
+      onSaved();
+    },
+  });
+
+  const submit = () => {
+    if (!dirty || readOnly || save.isPending) {
+      return;
+    }
+    save.mutate({ path, content: value });
+  };
+
+  const isDirty = (filePath: string) => {
+    return drafts[filePath] !== undefined && !(filePath === path && drafts[filePath] === saved);
+  };
+
+  return (
+    <div className="flex h-full min-h-0">
+      <nav className="w-56 shrink-0 overflow-y-auto border-r bg-background py-2">
+        {files.map((item) => (
+          <button
+            key={item.path}
+            type="button"
+            onClick={() => setPath(item.path)}
+            className={cn(
+              "flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs hover:bg-muted",
+              item.path === path && "bg-muted font-medium",
+            )}
+          >
+            <span className="min-w-0 flex-1 truncate">{item.path}</span>
+            {isDirty(item.path) && <span className="size-1.5 shrink-0 rounded-full bg-primary" aria-label="Unsaved changes" />}
+          </button>
+        ))}
+        {!files.length && <p className="px-3 py-1.5 text-xs text-muted-foreground">No files yet.</p>}
+      </nav>
+      <div className="flex min-w-0 flex-1 flex-col bg-background">
+        <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b px-3">
+          <span className="truncate font-mono text-xs text-muted-foreground">{path}</span>
+          {asset && <span className="shrink-0 text-xs text-muted-foreground">Uploaded image, read only</span>}
+          {!asset && (
+            <div className="flex items-center gap-2">
+              {readOnly && <span className="text-xs text-muted-foreground">Read only while the AI is working</span>}
+              {dirty && !readOnly && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    setDrafts((current) => {
+                      const next = { ...current };
+                      delete next[path];
+                      return next;
+                    })
+                  }
+                >
+                  Discard
+                </Button>
+              )}
+              <Button size="sm" onClick={submit} disabled={!dirty || readOnly || save.isPending}>
+                <Save />
+                {save.isPending ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          )}
+        </div>
+        {asset && (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-auto bg-muted/30 p-6">
+            <img src={assetSrc(appId, path)} alt={path} className="max-h-[70%] max-w-full border bg-background object-contain" />
+            <p className="font-mono text-xs text-muted-foreground">/uploads/{path.slice(ASSET_DIR.length)}</p>
+          </div>
+        )}
+        {file.isLoading && <Skeleton className="m-3 flex-1" />}
+        {file.error && <p className="p-3 text-sm text-destructive">{file.error.message}</p>}
+        {file.data && (
+          <div className="min-h-0 flex-1">
+            <Suspense fallback={<div className="h-full w-full bg-[#1e1e1e]" />}>
+              <MonacoEditor
+                path={path}
+                value={value}
+                readOnly={readOnly}
+                onChange={(next) => setDrafts((current) => ({ ...current, [path]: next }))}
+                onSave={submit}
+              />
+            </Suspense>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const BuilderAppPage = () => {
   const { id = "" } = useParams();
   const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery(aiAppsQuery().detail(id));
   const [prompt, setPrompt] = useState("");
   const [previewKey, setPreviewKey] = useState(0);
+  const [selecting, setSelecting] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+  const [inspectorReady, setInspectorReady] = useState(false);
+  const [elements, setElements] = useState<SelectedElement[]>([]);
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(0);
+  const imageInput = useRef<HTMLInputElement>(null);
+  const preview = useRef<HTMLIFrameElement>(null);
   const [liveSteps, setLiveSteps] = useState<Step[]>([]);
   const [lastEventAt, setLastEventAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
@@ -373,6 +578,79 @@ export const BuilderAppPage = () => {
 
   const generating = data?.app.aiStatus === "GENERATING";
   const messageCount = data?.messages.length ?? 0;
+  const previewUrl = data?.previewUrl ?? null;
+  let previewOrigin: string | null = null;
+  if (previewUrl) {
+    previewOrigin = new URL(previewUrl).origin;
+  }
+
+  useEffect(() => {
+    const frame = preview.current?.contentWindow;
+    if (!frame || !previewOrigin) {
+      return;
+    }
+    frame.postMessage({ type: "easyhost:inspect", enabled: selecting }, previewOrigin);
+  }, [selecting, previewOrigin]);
+
+  useEffect(() => {
+    if (!previewOrigin) {
+      return;
+    }
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== previewOrigin || event.source !== preview.current?.contentWindow) {
+        return;
+      }
+      const message = event.data as InspectorMessage;
+      if (message?.type === "easyhost:inspector-ready") {
+        setInspectorReady(true);
+        preview.current?.contentWindow?.postMessage({ type: "easyhost:inspect", enabled: selecting }, previewOrigin);
+        return;
+      }
+      if (message?.type === "easyhost:inspect-exit") {
+        setSelecting(false);
+        return;
+      }
+      if (message?.type === "easyhost:select") {
+        setSelecting(false);
+        setElements((current) => {
+          if (current.some((item) => item.selector === message.element.selector && item.page === message.element.page)) {
+            return current;
+          }
+          return [...current, message.element].slice(-MAX_ELEMENTS);
+        });
+        composer.current?.focus();
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+    };
+  }, [previewOrigin, selecting]);
+
+  useEffect(() => {
+    if (!selecting) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelecting(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [selecting]);
+
+  useEffect(() => {
+    if (generating) {
+      setSelecting(false);
+    }
+  }, [generating]);
+
+  useEffect(() => {
+    setInspectorReady(false);
+  }, [previewKey, previewUrl]);
 
   useEffect(() => {
     if (!generating) {
@@ -428,10 +706,12 @@ export const BuilderAppPage = () => {
   }, [messageCount, generating, liveSteps]);
 
   const send = useApiMutation({
-    mutationFn: () => unwrap(api["ai-apps"][":id"].prompt.$post({ param: { id }, json: { prompt: prompt.trim() } })),
+    mutationFn: () => unwrap(api["ai-apps"][":id"].prompt.$post({ param: { id }, json: { prompt: prompt.trim(), elements, attachments } })),
     invalidate: [aiAppsQuery().all],
     onSuccess: () => {
       setPrompt("");
+      setElements([]);
+      setAttachments([]);
       setLiveSteps([]);
     },
   });
@@ -456,7 +736,8 @@ export const BuilderAppPage = () => {
     return <Skeleton className="m-6 h-96" />;
   }
 
-  const { app, messages, previewUrl, themes } = data;
+  const { app, messages, themes, files } = data;
+  const exportUrl = `/api/ai-apps/${id}/export?projectId=${encodeURIComponent(selectedProjectId() ?? "")}`;
   const lastAssistantId = [...messages].reverse().find((message) => message.role === "assistant")?.id;
   const respond: Respond = (body) => {
     respondMutation.mutate(body);
@@ -475,8 +756,35 @@ export const BuilderAppPage = () => {
     currentSteps = app.steps;
   }
 
+  const attachImages = async (list: File[]) => {
+    const room = MAX_ATTACHMENTS - attachments.length;
+    if (room <= 0) {
+      toast.error(`Attach at most ${MAX_ATTACHMENTS} images per message`);
+      return;
+    }
+    if (list.length > room) {
+      toast.error(`Only the first ${room} images were attached`);
+    }
+    await Promise.all(
+      list.slice(0, room).map(async (item) => {
+        const form = new FormData();
+        form.append("file", item);
+        setUploading((count) => count + 1);
+        try {
+          const result = (await upload(`/api/ai-apps/${id}/assets`, form)) as { asset: { path: string } };
+          setAttachments((current) => [...current, result.asset.path].slice(0, MAX_ATTACHMENTS));
+        } catch (uploadError) {
+          toast.error((uploadError as Error).message);
+        } finally {
+          setUploading((count) => count - 1);
+        }
+      }),
+    );
+    queryClient.invalidateQueries({ queryKey: aiAppsQuery().all });
+  };
+
   const submit = () => {
-    if (!prompt.trim() || generating || send.isPending) {
+    if (!prompt.trim() || generating || send.isPending || uploading > 0) {
       return;
     }
     send.mutate(undefined);
@@ -495,16 +803,58 @@ export const BuilderAppPage = () => {
           <StatusBadge status={displayStatus(app.aiStatus, app.status)} />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPreviewKey((key) => key + 1)}>
-            <RefreshCw />
-            Reload
+          <Button
+            variant={selecting ? "default" : "outline"}
+            size="sm"
+            disabled={!previewUrl || generating || showCode}
+            onClick={() => {
+              if (!selecting && !inspectorReady) {
+                toast.error("This app runs on an older runtime. Stop and start the app, then try again.");
+                return;
+              }
+              setSelecting(!selecting);
+            }}
+            aria-pressed={selecting}
+          >
+            <MousePointerClick />
+            {selecting ? "Click an element" : "Select element"}
           </Button>
-          <Button size="sm" asChild>
-            <a href={previewUrl ?? app.url} target="_blank" rel="noreferrer">
-              <ExternalLink />
-              Open
-            </a>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon-sm" aria-label="More actions">
+                <Ellipsis />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onSelect={() => {
+                  setSelecting(false);
+                  setShowCode(!showCode);
+                }}
+              >
+                {showCode && <Eye />}
+                {!showCode && <Code />}
+                {showCode ? "Preview" : "Code"}
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href={exportUrl} download={`${app.slug}.zip`}>
+                  <Download />
+                  Export
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setPreviewKey((key) => key + 1)}>
+                <RefreshCw />
+                Reload
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href={previewUrl ?? app.url} target="_blank" rel="noreferrer">
+                  <ExternalLink />
+                  Open
+                </a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -516,9 +866,25 @@ export const BuilderAppPage = () => {
             )}
             {messages.map((message) => {
               if (message.role === "user") {
+                const tagged = message.elements as SelectedElement[];
+                const images = message.attachments as string[];
                 return (
-                  <div key={message.id} className="ml-auto max-w-[90%] bg-primary px-3 py-2 text-sm whitespace-pre-wrap text-primary-foreground">
-                    {message.content}
+                  <div key={message.id} className="ml-auto flex max-w-[90%] flex-col items-end gap-1">
+                    {images.length > 0 && (
+                      <div className="flex flex-wrap justify-end gap-1">
+                        {images.map((path) => (
+                          <AttachmentChip key={path} appId={app.id} path={path} />
+                        ))}
+                      </div>
+                    )}
+                    {tagged.length > 0 && (
+                      <div className="flex flex-wrap justify-end gap-1">
+                        {tagged.map((element) => (
+                          <ElementChip key={`${element.page}${element.selector}`} element={element} />
+                        ))}
+                      </div>
+                    )}
+                    <div className="bg-primary px-3 py-2 text-sm whitespace-pre-wrap text-primary-foreground">{message.content}</div>
                   </div>
                 );
               }
@@ -558,10 +924,46 @@ export const BuilderAppPage = () => {
               submit();
             }}
           >
+            {(attachments.length > 0 || uploading > 0) && (
+              <div className="flex flex-wrap gap-1">
+                {attachments.map((path) => (
+                  <AttachmentChip
+                    key={path}
+                    appId={app.id}
+                    path={path}
+                    onRemove={() => setAttachments((current) => current.filter((item) => item !== path))}
+                  />
+                ))}
+                {uploading > 0 && (
+                  <span className="inline-flex items-center gap-1.5 border px-2 py-1 text-xs text-muted-foreground">
+                    <Loader2 className="size-3 animate-spin" />
+                    Uploading
+                  </span>
+                )}
+              </div>
+            )}
+            {elements.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {elements.map((element) => (
+                  <ElementChip
+                    key={`${element.page}${element.selector}`}
+                    element={element}
+                    onRemove={() => setElements((current) => current.filter((item) => item !== element))}
+                  />
+                ))}
+              </div>
+            )}
             <Textarea
               ref={composer}
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
+              onPaste={(event) => {
+                const pasted = [...event.clipboardData.files].filter((item) => item.type.startsWith("image/"));
+                if (pasted.length) {
+                  event.preventDefault();
+                  attachImages(pasted);
+                }
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
@@ -572,9 +974,36 @@ export const BuilderAppPage = () => {
               rows={3}
               disabled={generating}
             />
-            <Button type="submit" className="w-full" disabled={!prompt.trim() || generating || send.isPending}>
-              Send
-            </Button>
+            <input
+              ref={imageInput}
+              type="file"
+              accept={IMAGE_ACCEPT}
+              multiple
+              className="hidden"
+              onChange={(event) => {
+                const chosen = [...(event.target.files ?? [])];
+                event.target.value = "";
+                if (chosen.length) {
+                  attachImages(chosen);
+                }
+              }}
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Attach images"
+                title="Attach images to use as assets"
+                disabled={generating || attachments.length >= MAX_ATTACHMENTS}
+                onClick={() => imageInput.current?.click()}
+              >
+                <ImagePlus />
+              </Button>
+              <Button type="submit" className="flex-1" disabled={!prompt.trim() || generating || send.isPending || uploading > 0}>
+                Send
+              </Button>
+            </div>
             {tokens.data && (
               <p className="flex items-center justify-between text-xs text-muted-foreground">
                 {tokens.data.freeBuildAvailable && <span>Your first build is free</span>}
@@ -586,16 +1015,27 @@ export const BuilderAppPage = () => {
         </aside>
 
         <section className="min-h-0 bg-muted/30">
-          {previewUrl && <iframe key={previewKey} src={previewUrl} title={`${app.name} preview`} className="h-full w-full border-0 bg-white" />}
-          {!previewUrl && (
-            <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
-              <p>The app is not running.</p>
-              <Button onClick={() => start.mutate(undefined)} disabled={start.isPending}>
-                <Play />
-                Start app
-              </Button>
-            </div>
+          {showCode && (
+            <CodeEditor
+              key={app.id}
+              appId={app.id}
+              files={files}
+              readOnly={generating}
+              onSaved={() => setPreviewKey((key) => key + 1)}
+            />
           )}
+          <div className={cn("h-full", showCode && "hidden")}>
+            {previewUrl && <iframe ref={preview} key={previewKey} src={previewUrl} title={`${app.name} preview`} className="h-full w-full border-0 bg-white" />}
+            {!previewUrl && (
+              <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                <p>The app is not running.</p>
+                <Button onClick={() => start.mutate(undefined)} disabled={start.isPending}>
+                  <Play />
+                  Start app
+                </Button>
+              </div>
+            )}
+          </div>
         </section>
       </div>
     </div>

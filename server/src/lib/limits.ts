@@ -6,6 +6,8 @@ export const LIMITS = {
   aiPromptsPerDay: 30,
   aiFiles: 200,
   aiFileBytes: 262144,
+  aiAssetBytes: 5242880,
+  aiAttachments: 5,
   buckets: 10,
   databases: 10,
   emailSenders: 1,

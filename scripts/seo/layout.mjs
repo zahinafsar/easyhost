@@ -1,7 +1,7 @@
 import { escapeHtml, inline, renderMarkdown } from "./markdown.mjs";
 
 export const SITE = "https://easyhost.fun";
-export const UPDATED = "2026-11-09";
+export const UPDATED = "2026-11-10";
 const UPDATED_LABEL = new Date(UPDATED).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 export const HELD_BACK_FAMILIES = new Set([

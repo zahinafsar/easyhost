@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import { createToken, generateToken, hashPassword, removeAuthCookie, setAuthCookie, verifyPassword } from "../lib/auth.js";
 import { sendPasswordResetEmail } from "../lib/email.js";
 import { checkVerificationCode, resendWaitSeconds, sendVerificationCode } from "../lib/verify-code.js";
+import { emailDomain } from "../lib/email-domains.js";
 import { validate } from "../lib/validator.js";
 import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema, updateProfileSchema, verifyEmailSchema } from "../lib/validations.js";
 import { requireSession, requireUser } from "../middleware/require-user.js";
@@ -10,6 +11,11 @@ import { requireSession, requireUser } from "../middleware/require-user.js";
 export const authRoutes = new Hono()
   .post("/register", validate("json", registerSchema), async (c) => {
     const { name, email, password } = c.req.valid("json");
+
+    const blockedDomain = await prisma.blockedDomain.findUnique({ where: { domain: emailDomain(email) } });
+    if (blockedDomain) {
+      return c.json({ error: "This email address cannot be used to register" }, 403);
+    }
 
     const existingUser = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
     if (existingUser) {

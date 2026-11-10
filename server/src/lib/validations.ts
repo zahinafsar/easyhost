@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { NODE_VERSIONS } from "./build-plan.js";
 import { TOKEN_PACKS } from "./tokens.js";
+import { LIMITS } from "./limits.js";
 
 const resourceName = z
   .string()
@@ -206,11 +207,31 @@ export const createAiAppSchema = z.object({ name: aiAppNameSchema });
 
 export const aiAppAvailabilitySchema = z.object({ name: z.string() });
 
+export const aiElementSchema = z.object({
+  tag: z.string().max(40),
+  selector: z.string().max(400),
+  text: z.string().max(400),
+  html: z.string().max(1000),
+  page: z.string().max(300),
+});
+
+export type AiElement = z.infer<typeof aiElementSchema>;
+
 export const aiPromptSchema = z.object({
   prompt: z.string().trim().min(1, "Describe what to build").max(8000, "Prompt is too long"),
+  elements: z.array(aiElementSchema).max(5, "Select at most 5 elements").default([]),
+  attachments: z
+    .array(z.string().regex(/^public\/uploads\/[a-z0-9._-]+$/, "Invalid attachment"))
+    .max(LIMITS.aiAttachments, `Attach at most ${LIMITS.aiAttachments} images`)
+    .default([]),
 });
 
 export const aiFileQuerySchema = z.object({ path: z.string().min(1) });
+
+export const aiWriteFileSchema = z.object({
+  path: z.string().trim().min(1, "File path is required").max(300),
+  content: z.string(),
+});
 
 export const aiRespondSchema = z.object({
   stepId: z.string().min(1),

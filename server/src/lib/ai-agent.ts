@@ -1,3 +1,4 @@
+import type { AiElement } from "./validations.js";
 import { ToolLoopAgent, isStepCount, tool, type ModelMessage, type StepResult, type ToolSet } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
@@ -5,7 +6,7 @@ import type { App } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { env } from "./env.js";
 import { containerLogs, containerName } from "./docker.js";
-import { connectedServices, connectProjectDatabase, connectProjectStorage, deleteAiFile, installAiPackages, readAllAiFiles, verifyDatabase, writeAiFile } from "./ai-apps.js";
+import { aiAssetUrl, connectedServices, connectProjectDatabase, connectProjectStorage, deleteAiFile, installAiPackages, listAiAssets, readAllAiFiles, verifyDatabase, writeAiFile } from "./ai-apps.js";
 import { runQuery } from "./userdb.js";
 import { endLiveSession, liveSession, startLiveSession, upsertStep, type AiInteractiveStep, type AiTextStep, type AiToolStep } from "./ai-live.js";
 import { findTheme, themeSummary } from "./ai-themes.js";
@@ -59,6 +60,12 @@ Services:
 - Storage: if storage is not connected, call connect_storage before writing code that uses it.
 - Email sending is coming soon and not available. If a request needs to send email, build everything else and tell the user email is coming soon. Never write code that sends email and never use lib/email.js.
 
+Uploaded images:
+- The user can attach images. They are stored in public/uploads/ and served at /uploads/<name>. Each request lists the uploaded images and which ones the user attached to that message.
+- You cannot see, read, describe, edit, crop, resize, convert, replace, delete or generate images. You only know each image's file name and URL. Never call write_file or delete_file on public/uploads/.
+- Use uploaded images only as assets, for example <img src="/uploads/logo.png"> or a CSS background, exactly where the user asks.
+- If the user asks you to edit, generate, read or describe an image, say you can only place their uploaded images as they are, then do any other part of the request.
+
 Database:
 - Use the run_sql tool to create or change tables. Never drop data unless the user asks.
 
@@ -66,6 +73,30 @@ Workflow:
 - The current files are given with each request. Write complete file contents with write_file (no partial edits or placeholders).
 - After changing server code, call read_logs and fix any startup or runtime error you see before finishing.
 - Finish with a short plain-language summary of what you built or changed. Do not paste code in the summary.`;
+
+const elementsContext = (elements: AiElement[]) => {
+  if (!elements.length) {
+    return "";
+  }
+  const lines = elements.map((element, index) => {
+    return `${index + 1}. <${element.tag}> on page ${element.page}\n   selector: ${element.selector}\n   text: ${element.text || "(none)"}\n   html: ${element.html}`;
+  });
+  return `\n\nThe user selected these elements in the preview. The request refers to them:\n${lines.join("\n")}`;
+};
+
+const attachmentsContext = (attachments: string[]) => {
+  if (!attachments.length) {
+    return "";
+  }
+  return `\n\nThe user attached these images to this message. Use them as assets by URL only:\n${attachments.map((item) => `- ${aiAssetUrl(item)}`).join("\n")}`;
+};
+
+const assetsContext = (assets: { path: string; size: number }[]) => {
+  if (!assets.length) {
+    return "Uploaded images: none.";
+  }
+  return `Uploaded images (assets only, never read or change them):\n${assets.map((asset) => `- ${aiAssetUrl(asset.path)} (${Math.ceil(asset.size / 1024)} KB)`).join("\n")}`;
+};
 
 const filesContext = (files: { path: string; content: string }[]) => {
   if (!files.length) {
@@ -386,16 +417,18 @@ const runGeneration = async (appId: string, billing: RunBilling) => {
   });
   history.reverse();
   const files = await readAllAiFiles(appId);
-  const services = `${servicesLine(await connectedServices(app))}\n${themeLine(app.aiTheme)}`;
+  const assets = await listAiAssets(appId);
+  const services = `${servicesLine(await connectedServices(app))}\n${themeLine(app.aiTheme)}\n${assetsContext(assets)}`;
 
   const messages: ModelMessage[] = history.map((message, index) => {
     if (message.role === "assistant") {
       return { role: "assistant", content: message.content };
     }
+    const request = `${message.content}${elementsContext(message.elements as AiElement[])}${attachmentsContext(message.attachments as string[])}`;
     if (index === history.length - 1) {
-      return { role: "user", content: `${services}\n\nCurrent files:\n\n${filesContext(files)}\n\nRequest:\n${message.content}` };
+      return { role: "user", content: `${services}\n\nCurrent files:\n\n${filesContext(files)}\n\nRequest:\n${request}` };
     }
-    return { role: "user", content: message.content };
+    return { role: "user", content: request };
   });
 
   const session = startLiveSession(appId);

@@ -8,6 +8,7 @@ Describe an app in the dashboard and AI builds the frontend and the backend, liv
 - The AI asks a few questions, shows a short plan to approve, then lets you pick one of 9 themes
 - Uses your project's Postgres and storage when the app needs them (email is coming soon)
 - Every step is shown as it happens: files written, SQL run, packages installed
+- Select an element in the preview, attach images to use as assets, edit the code yourself and export it as a zip
 
 ## Try it
 

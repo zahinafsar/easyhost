@@ -31,7 +31,7 @@
             "url": "https://easyhost.fun/docs",
             "image": "https://easyhost.fun/og.png",
             "datePublished": "2026-09-29",
-            "dateModified": "2026-11-09",
+            "dateModified": "2026-11-10",
             "author": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/" },
             "publisher": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/", "logo": "https://easyhost.fun/icon-512.png" }
           },
@@ -365,6 +365,8 @@ ezhst env set DATABASE_URL="postgresql://..."</pre></div>
           <h2>AI Builder <small>dashboard</small></h2>
           <p>The AI Builder turns a description into a running app. Open <strong>Builder</strong> in the <a href="https://app.easyhost.fun/builder">dashboard</a>, create an app and describe it. The name becomes its address, <code>https://&lt;name&gt;.easyhost.fun</code>.</p>
           <p>For a new app or a big feature, the AI asks a few questions, shows a short plan to approve and lets you pick one of 9 themes before it builds. Small changes go straight to code. Every step is shown live: files written, SQL run and packages installed.</p>
+          <p>To point at part of the page, click <strong>Select element</strong> and then the element in the preview. It is tagged in your message so the AI knows exactly what to change. You can also attach up to 5 images per message (png, jpg, gif, webp, avif, svg or ico, up to 5 MB each). They are saved in the app and served at <code>/uploads/&lt;name&gt;</code>, and the AI uses them only as they are, for example as a logo or background. It cannot see, edit, describe or generate images.</p>
+          <p>The menu next to <strong>Select element</strong> opens the <strong>Code</strong> view, where you can edit any file and save it straight into the running app, and <strong>Export</strong>, which downloads all of the app's code as a zip.</p>
           <p>AI apps are plain JavaScript Hono servers. They use the project's Postgres database and storage when they need them (email is coming soon), and work with environment variables, logs and custom domains like any other app. The AI Builder is not part of the CLI.</p>
           <p>Each account gets its first AI app and its first build free. After that, AI requests use AI Tokens, bought once in the dashboard and never expiring: 500 tokens for $5, 1,100 for $10, 2,400 for $20 or 6,500 for $50. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. Hosting AI apps stays free, and AI apps count toward the 3 apps per project.</p>
         </section>

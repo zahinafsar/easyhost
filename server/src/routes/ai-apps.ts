@@ -1,15 +1,16 @@
 import { Hono } from "hono";
+import { zipSync } from "fflate";
 import { streamSSE } from "hono/streaming";
 import { liveSession, subscribeLive, type AiLiveEvent, type AiStep } from "../lib/ai-live.js";
 import { prisma } from "../lib/prisma.js";
 import { LIMITS } from "../lib/limits.js";
 import { validate } from "../lib/validator.js";
-import { aiAppAvailabilitySchema, aiAppNameSchema, aiFileQuerySchema, aiPromptSchema, aiRespondSchema, createAiAppSchema } from "../lib/validations.js";
+import { aiAppAvailabilitySchema, aiAppNameSchema, aiFileQuerySchema, aiPromptSchema, aiWriteFileSchema, aiRespondSchema, createAiAppSchema, type AiElement } from "../lib/validations.js";
 import { AI_THEMES, findTheme, themeCss } from "../lib/ai-themes.js";
 import { projectAppsWhere, withAppUrl } from "../lib/project-apps.js";
 import { appUrl } from "../lib/domains.js";
 import { env } from "../lib/env.js";
-import { AiFileError, aiPreviewUrl, generateAuthSecret, listAiFiles, readAiFile, startAiApp, writeAiFile } from "../lib/ai-apps.js";
+import { AiFileError, aiPreviewUrl, generateAuthSecret, isAiAssetPath, listAiFiles, readAiAsset, readAiFile, readAllAiFileBytes, saveAiAsset, startAiApp, writeAiFile } from "../lib/ai-apps.js";
 import { starterFiles } from "../lib/ai-template.js";
 import { startGeneration } from "../lib/ai-agent.js";
 import { MIN_TOKENS_TO_BUILD, OUT_OF_TOKENS, billingForRun } from "../lib/tokens.js";
@@ -135,7 +136,7 @@ export const aiAppRoutes = new Hono<UserEnv>()
     const [messages, files] = await Promise.all([
       prisma.aiMessage.findMany({
         where: { appId: app.id },
-        select: { id: true, role: true, content: true, steps: true, createdAt: true },
+        select: { id: true, role: true, content: true, steps: true, elements: true, attachments: true, createdAt: true },
         orderBy: { createdAt: "asc" },
       }),
       listAiFiles(app.id),
@@ -145,7 +146,7 @@ export const aiAppRoutes = new Hono<UserEnv>()
       app: { ...withAppUrl(summary), steps: summary.aiSteps as AiStep[] },
       previewUrl: await aiPreviewUrl(app),
       themes: AI_THEMES,
-      messages: messages.map((message) => ({ ...message, steps: message.steps as AiStep[] })),
+      messages: messages.map((message) => ({ ...message, steps: message.steps as AiStep[], elements: message.elements as AiElement[], attachments: message.attachments as string[] })),
       files,
     });
   })
@@ -153,6 +154,9 @@ export const aiAppRoutes = new Hono<UserEnv>()
     const app = await findAiApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "AI app not found" }, 404);
+    }
+    if (isAiAssetPath(c.req.valid("query").path)) {
+      return c.json({ error: "Uploaded images cannot be opened as text" }, 400);
     }
     try {
       const content = await readAiFile(app.id, c.req.valid("query").path);
@@ -166,6 +170,85 @@ export const aiAppRoutes = new Hono<UserEnv>()
       }
       throw error;
     }
+  })
+  .put("/:id/file", validate("json", aiWriteFileSchema), async (c) => {
+    const app = await findAiApp(c.get("projectId"), c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "AI app not found" }, 404);
+    }
+    if (app.aiStatus === "GENERATING") {
+      return c.json({ error: "Wait for the AI to finish before editing files" }, 409);
+    }
+    const { path, content } = c.req.valid("json");
+    try {
+      const saved = await writeAiFile(app, path, content);
+      return c.json({ path: saved });
+    } catch (error) {
+      if (error instanceof AiFileError) {
+        return c.json({ error: error.message }, 400);
+      }
+      throw error;
+    }
+  })
+  .post("/:id/assets", async (c) => {
+    const app = await findAiApp(c.get("projectId"), c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "AI app not found" }, 404);
+    }
+    const body = await c.req.parseBody();
+    const file = body.file;
+    if (!(file instanceof File)) {
+      return c.json({ error: "File is required" }, 400);
+    }
+    try {
+      const asset = await saveAiAsset(app, file);
+      return c.json({ asset }, 201);
+    } catch (error) {
+      if (error instanceof AiFileError) {
+        return c.json({ error: error.message }, 400);
+      }
+      throw error;
+    }
+  })
+  .get("/:id/asset", validate("query", aiFileQuerySchema), async (c) => {
+    const app = await findAiApp(c.get("projectId"), c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "AI app not found" }, 404);
+    }
+    try {
+      const asset = await readAiAsset(app.id, c.req.valid("query").path);
+      return c.body(new Uint8Array(asset.content), 200, {
+        "Content-Type": asset.contentType,
+        "Cache-Control": "private, max-age=300",
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        "X-Content-Type-Options": "nosniff",
+      });
+    } catch (error) {
+      if (error instanceof AiFileError) {
+        return c.json({ error: error.message }, 400);
+      }
+      if ((error as { code?: string }).code === "NoSuchKey") {
+        return c.json({ error: "File not found" }, 404);
+      }
+      throw error;
+    }
+  })
+  .get("/:id/export", async (c) => {
+    const app = await findAiApp(c.get("projectId"), c.req.param("id"));
+    if (!app) {
+      return c.json({ error: "AI app not found" }, 404);
+    }
+    const files = await readAllAiFileBytes(app.id);
+    const entries: Record<string, Uint8Array> = {};
+    for (const file of files) {
+      entries[`${app.slug}/${file.path}`] = new Uint8Array(file.content);
+    }
+    const zip = zipSync(entries, { level: 6 });
+    return c.body(zip, 200, {
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="${app.slug}.zip"`,
+      "Cache-Control": "no-store",
+    });
   })
   .post("/:id/prompt", validate("json", aiPromptSchema), async (c) => {
     const app = await findAiApp(c.get("projectId"), c.req.param("id"));
@@ -198,8 +281,8 @@ export const aiAppRoutes = new Hono<UserEnv>()
       return c.json({ error: "The AI is still working on the previous request" }, 409);
     }
     const message = await prisma.aiMessage.create({
-      data: { appId: app.id, role: "user", content: c.req.valid("json").prompt },
-      select: { id: true, role: true, content: true, steps: true, createdAt: true },
+      data: { appId: app.id, role: "user", content: c.req.valid("json").prompt, elements: c.req.valid("json").elements, attachments: c.req.valid("json").attachments },
+      select: { id: true, role: true, content: true, steps: true, elements: true, attachments: true, createdAt: true },
     });
     startGeneration(app.id, billing);
     return c.json({ message }, 202);

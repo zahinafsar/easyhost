@@ -33,6 +33,29 @@ const ensureBucket = () => {
 
 const objectKey = (appId: string, filePath: string) => `${appId}/${filePath}`;
 
+export const AI_ASSET_DIR = "public/uploads";
+
+export const AI_ASSET_TYPES: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  avif: "image/avif",
+  svg: "image/svg+xml",
+  ico: "image/x-icon",
+};
+
+export const isAiAssetPath = (filePath: string) => filePath.startsWith(`${AI_ASSET_DIR}/`);
+
+export const aiAssetUrl = (filePath: string) => filePath.slice("public".length);
+
+const assetExtension = (name: string) => name.split(".").pop()?.toLowerCase() ?? "";
+
+const assetContentType = (filePath: string) => AI_ASSET_TYPES[assetExtension(filePath)] ?? "application/octet-stream";
+
+const READ_ONLY_ASSET = `Files in ${AI_ASSET_DIR} are images uploaded by the user. They cannot be edited, replaced or deleted, only referenced by URL.`;
+
 export class AiFileError extends Error {}
 
 export const normalizeFilePath = (input: string) => {
@@ -66,19 +89,86 @@ export const listAiFiles = async (appId: string) => {
   });
 };
 
-export const readAiFile = async (appId: string, filePath: string) => {
+export const readAiFileBytes = async (appId: string, filePath: string) => {
   await ensureBucket();
   const stream = await minio.getObject(AI_BUCKET, objectKey(appId, normalizeFilePath(filePath)));
   const chunks: Buffer[] = [];
   for await (const chunk of stream) {
     chunks.push(chunk as Buffer);
   }
-  return Buffer.concat(chunks).toString("utf8");
+  return Buffer.concat(chunks);
+};
+
+export const readAiFile = async (appId: string, filePath: string) => {
+  const bytes = await readAiFileBytes(appId, filePath);
+  return bytes.toString("utf8");
 };
 
 export const readAllAiFiles = async (appId: string) => {
-  const files = await listAiFiles(appId);
+  const files = (await listAiFiles(appId)).filter((file) => !isAiAssetPath(file.path));
   return Promise.all(files.map(async (file) => ({ path: file.path, content: await readAiFile(appId, file.path) })));
+};
+
+export const readAllAiFileBytes = async (appId: string) => {
+  const files = await listAiFiles(appId);
+  return Promise.all(files.map(async (file) => ({ path: file.path, content: await readAiFileBytes(appId, file.path) })));
+};
+
+export const listAiAssets = async (appId: string) => {
+  const files = await listAiFiles(appId);
+  return files.filter((file) => isAiAssetPath(file.path));
+};
+
+const assetFileName = (name: string) => {
+  const extension = assetExtension(name);
+  const base = name
+    .slice(0, name.length - extension.length - 1)
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "")
+    .slice(0, 60);
+  if (base) {
+    return { base, extension };
+  }
+  return { base: "image", extension };
+};
+
+export const saveAiAsset = async (app: Pick<App, "id" | "slug">, file: File) => {
+  const { base, extension } = assetFileName(file.name);
+  const contentType = AI_ASSET_TYPES[extension];
+  if (!contentType) {
+    throw new AiFileError(`Only images can be attached (${Object.keys(AI_ASSET_TYPES).join(", ")})`);
+  }
+  if (file.size > LIMITS.aiAssetBytes) {
+    throw new AiFileError(`${file.name} is larger than ${LIMITS.aiAssetBytes / 1024 / 1024} MB`);
+  }
+  const files = await listAiFiles(app.id);
+  if (files.length >= LIMITS.aiFiles) {
+    throw new AiFileError(`An AI app can have at most ${LIMITS.aiFiles} files`);
+  }
+  const taken = new Set(files.map((item) => item.path));
+  let filePath = `${AI_ASSET_DIR}/${base}.${extension}`;
+  let suffix = 2;
+  while (taken.has(filePath)) {
+    filePath = `${AI_ASSET_DIR}/${base}-${suffix}.${extension}`;
+    suffix += 1;
+  }
+  const content = Buffer.from(await file.arrayBuffer());
+  await ensureBucket();
+  await minio.putObject(AI_BUCKET, objectKey(app.id, filePath), content, content.length, { "Content-Type": contentType });
+  const name = containerName(app.slug);
+  if (await containerExists(name)) {
+    await putContainerFiles(name, [{ path: filePath, content }]);
+  }
+  return { path: filePath, url: aiAssetUrl(filePath), size: content.length };
+};
+
+export const readAiAsset = async (appId: string, filePath: string) => {
+  const normalized = normalizeFilePath(filePath);
+  if (!isAiAssetPath(normalized)) {
+    throw new AiFileError("Not an uploaded image");
+  }
+  return { content: await readAiFileBytes(appId, normalized), contentType: assetContentType(normalized) };
 };
 
 const INSTALL_TIMEOUT_MS = 180_000;
@@ -109,6 +199,9 @@ const readAiFileOrNull = async (appId: string, filePath: string) => {
 
 export const writeAiFile = async (app: Pick<App, "id" | "slug">, filePath: string, content: string) => {
   const normalized = normalizeFilePath(filePath);
+  if (isAiAssetPath(normalized)) {
+    throw new AiFileError(READ_ONLY_ASSET);
+  }
   let previous: string | null = null;
   if (normalized === "package.json") {
     previous = await readAiFileOrNull(app.id, normalized);
@@ -134,6 +227,9 @@ export const writeAiFile = async (app: Pick<App, "id" | "slug">, filePath: strin
 
 export const deleteAiFile = async (app: Pick<App, "id" | "slug">, filePath: string) => {
   const normalized = normalizeFilePath(filePath);
+  if (isAiAssetPath(normalized)) {
+    throw new AiFileError(READ_ONLY_ASSET);
+  }
   await ensureBucket();
   await minio.removeObject(AI_BUCKET, objectKey(app.id, normalized));
   const name = containerName(app.slug);
@@ -199,7 +295,11 @@ export const connectedServices = async (app: AiEnvApp) => {
 
 export const aiAppEnv = async (app: AiEnvApp) => {
   const { database, bucket, sender } = await findLinked(app);
-  const values: Record<string, string> = { ...(app.env as Record<string, string>), PORT: String(APP_PORT) };
+  const values: Record<string, string> = {
+    ...(app.env as Record<string, string>),
+    PORT: String(APP_PORT),
+    EASYHOST_DASHBOARD_ORIGIN: new URL(env.appUrl).origin,
+  };
   if (app.aiAuthSecret) {
     values.AUTH_SECRET = app.aiAuthSecret;
   }
@@ -251,7 +351,7 @@ const waitUntilReady = async (slug: string) => {
 };
 
 export const startAiApp = async (app: App) => {
-  const files = await readAllAiFiles(app.id);
+  const files = await readAllAiFileBytes(app.id);
   const containerId = await runAiContainer(containerName(app.slug), await aiAppEnv(app), files, { publishPort: !env.isProduction });
   await waitUntilReady(app.slug);
   return prisma.app.update({ where: { id: app.id }, data: { containerId, status: "RUNNING" } });

@@ -66,21 +66,21 @@ enum DeploymentStatus {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  password     String
-  name         String
-  role         Role      @default(USER)
-  verified     Boolean   @default(false)
-  blocked      Boolean   @default(false)
+  id                String    @id @default(cuid())
+  email             String    @unique
+  password          String
+  name              String
+  role              Role      @default(USER)
+  verified          Boolean   @default(false)
+  blocked           Boolean   @default(false)
   verifyCodeHash    String?
   verifyCodeExpires DateTime?
   verifyCodeSentAt  DateTime?
   verifyAttempts    Int       @default(0)
-  resetToken   String?
-  resetExpires DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  resetToken        String?
+  resetExpires      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   tokenBalance    Int     @default(0)
   freeAiAppUsed   Boolean @default(false)
@@ -93,6 +93,13 @@ model User {
   tokenUsages    TokenUsage[]
 
   @@map("users")
+}
+
+model BlockedDomain {
+  domain    String   @id
+  createdAt DateTime @default(now())
+
+  @@map("blocked_domains")
 }
 
 model ProjectMember {
@@ -312,13 +319,15 @@ model ScheduleRun {
 }
 
 model AiMessage {
-  id        String   @id @default(cuid())
-  appId     String
-  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
-  role      String
-  content   String   @db.Text
-  steps     Json     @default("[]")
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  role        String
+  content     String   @db.Text
+  steps       Json     @default("[]")
+  elements    Json     @default("[]")
+  attachments Json     @default("[]")
+  createdAt   DateTime @default(now())
 
   @@index([appId, createdAt])
   @@map("ai_messages")

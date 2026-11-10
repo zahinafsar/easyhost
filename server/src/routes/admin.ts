@@ -4,7 +4,7 @@ import os from "node:os";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { createToken, setAuthCookie } from "../lib/auth.js";
-import { docker, containerName } from "../lib/docker.js";
+import { docker, containerName, stopContainer } from "../lib/docker.js";
 import { minio } from "../lib/minio.js";
 import { databaseSizes, userdbStats } from "../lib/userdb.js";
 import { deleteProject, deleteUserAccount } from "../lib/delete-project.js";
@@ -12,6 +12,7 @@ import { cleanJunk, scanJunk } from "../lib/cleanup.js";
 import { appHost } from "../lib/domains.js";
 import { sendAccountDeletedEmail, sendProjectDeletedEmail } from "../lib/email.js";
 import { LIMITS } from "../lib/limits.js";
+import { emailDomain } from "../lib/email-domains.js";
 import { validate } from "../lib/validator.js";
 import { adminAnalyticsQuerySchema, adminUsersQuerySchema } from "../lib/validations.js";
 import { requireAdmin } from "../middleware/require-admin.js";
@@ -20,6 +21,35 @@ import type { UserEnv } from "../lib/types.js";
 const USERS_PER_PAGE = 25;
 const USAGE_PROJECTS = 200;
 const IMPERSONATION_TTL = "2h";
+
+const findManageableUser = async (adminId: string, id: string) => {
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) {
+    return { error: "User not found", status: 404 as const };
+  }
+  if (target.id === adminId) {
+    return { error: "You cannot do this to your own account", status: 400 as const };
+  }
+  if (target.role === "ADMIN") {
+    return { error: "Admin accounts cannot be changed here", status: 400 as const };
+  }
+  return { target };
+};
+
+const closeAccount = async (target: { id: string; email: string; name: string }) => {
+  const result = await deleteUserAccount(target.id);
+  if (!result.ok) {
+    return result;
+  }
+  let emailSent = true;
+  try {
+    await sendAccountDeletedEmail(target.email, target.name);
+  } catch (error) {
+    console.error("Failed to send account deleted email", error);
+    emailSent = false;
+  }
+  return { ok: true as const, emailSent };
+};
 
 type Check = { name: string; ok: boolean; ms: number; detail: string };
 
@@ -314,32 +344,75 @@ export const adminRoutes = new Hono<UserEnv>()
   })
   .delete("/users/:id", async (c) => {
     const admin = c.get("user");
-    const target = await prisma.user.findUnique({ where: { id: c.req.param("id") } });
-    if (!target) {
-      return c.json({ error: "User not found" }, 404);
-    }
-    if (target.id === admin.id) {
-      return c.json({ error: "You cannot delete your own account" }, 400);
-    }
-    if (target.role === "ADMIN") {
-      return c.json({ error: "Admin accounts cannot be deleted" }, 400);
+    const found = await findManageableUser(admin.id, c.req.param("id"));
+    if ("error" in found) {
+      return c.json({ error: found.error }, found.status);
     }
 
-    const result = await deleteUserAccount(target.id);
+    const result = await closeAccount(found.target);
     if (!result.ok) {
       return c.json({ error: result.error }, 409);
     }
-    console.log(`Admin ${admin.email} (${admin.id}) deleted user ${target.email} (${target.id}) and all of their projects`);
+    console.log(`Admin ${admin.email} (${admin.id}) deleted user ${found.target.email} (${found.target.id}) and all of their projects`);
 
-    let emailSent = true;
-    try {
-      await sendAccountDeletedEmail(target.email, target.name);
-    } catch (error) {
-      console.error("Failed to send account deleted email", error);
-      emailSent = false;
+    return c.json({ message: "User deleted", emailSent: result.emailSent });
+  })
+  .post("/users/:id/block-domain", async (c) => {
+    const admin = c.get("user");
+    const found = await findManageableUser(admin.id, c.req.param("id"));
+    if ("error" in found) {
+      return c.json({ error: found.error }, found.status);
     }
 
-    return c.json({ message: "User deleted", emailSent });
+    const domain = emailDomain(found.target.email);
+    await prisma.blockedDomain.upsert({ where: { domain }, create: { domain }, update: {} });
+    const result = await closeAccount(found.target);
+    if (!result.ok) {
+      return c.json({ error: `${domain} is blocked, but the account could not be deleted: ${result.error}` }, 409);
+    }
+    console.log(`Admin ${admin.email} (${admin.id}) blocked the email domain ${domain} and deleted user ${found.target.email} (${found.target.id})`);
+
+    return c.json({ message: "Domain blocked and user deleted", emailSent: result.emailSent });
+  })
+  .post("/users/:id/block", async (c) => {
+    const admin = c.get("user");
+    const found = await findManageableUser(admin.id, c.req.param("id"));
+    if ("error" in found) {
+      return c.json({ error: found.error }, found.status);
+    }
+
+    await prisma.user.update({ where: { id: found.target.id }, data: { blocked: true } });
+    const apps = await prisma.app.findMany({
+      where: { userId: found.target.id, status: { in: ["RUNNING", "DEPLOYING"] } },
+      select: { id: true, slug: true },
+    });
+    let stopped = 0;
+    let failed = 0;
+    for (const app of apps) {
+      try {
+        await stopContainer(containerName(app.slug));
+        await prisma.app.update({ where: { id: app.id }, data: { status: "STOPPED" } });
+        stopped += 1;
+      } catch (error) {
+        console.error(`Failed to stop ${app.slug} while blocking user ${found.target.id}`, error);
+        failed += 1;
+      }
+    }
+    console.log(`Admin ${admin.email} (${admin.id}) blocked user ${found.target.email} (${found.target.id}), ${stopped} apps stopped`);
+
+    return c.json({ message: "User blocked", stopped, failed });
+  })
+  .post("/users/:id/unblock", async (c) => {
+    const admin = c.get("user");
+    const found = await findManageableUser(admin.id, c.req.param("id"));
+    if ("error" in found) {
+      return c.json({ error: found.error }, found.status);
+    }
+
+    await prisma.user.update({ where: { id: found.target.id }, data: { blocked: false } });
+    console.log(`Admin ${admin.email} (${admin.id}) unblocked user ${found.target.email} (${found.target.id})`);
+
+    return c.json({ message: "User unblocked" });
   })
   .get("/cleanup", async (c) => {
     const scan = await scanJunk();
