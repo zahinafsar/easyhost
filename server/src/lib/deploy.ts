@@ -2,7 +2,9 @@ import type { DeploymentStep } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { minio, DEPLOY_BUCKET } from "./minio.js";
 import { resolveBuildPlan, type BuildPlan } from "./build-plan.js";
-import { buildImage, containerName, imageTag, runContainer, removeImage, APP_PORT } from "./docker.js";
+import { buildContext, containerName, runContainer, runWithEnv, APP_PORT } from "./docker.js";
+import { imageTag, pullImage, removeAppImage } from "./registry.js";
+import { removeSource, sourceObjectName, submitBuild, watchBuild } from "./cloud-build.js";
 
 const readObject = async (key: string) => {
   const stream = await minio.getObject(DEPLOY_BUCKET, key);
@@ -41,13 +43,14 @@ const createLogger = (deploymentId: string) => {
 };
 
 const stepFromBuildLine = (line: string, plan: BuildPlan): DeploymentStep | null => {
-  if (!line.startsWith("Step ")) {
+  if (!/^#\d+ \[[^\]]+\] RUN /.test(line)) {
     return null;
   }
-  if (line.endsWith(` : RUN ${plan.build}`)) {
+  const instruction = line.slice(line.indexOf("] ") + 2);
+  if (plan.build && instruction === runWithEnv(plan.build)) {
     return "BUILDING";
   }
-  if (line.endsWith(` : RUN ${plan.install}`)) {
+  if (instruction === runWithEnv(plan.install)) {
     return "INSTALLING";
   }
   return null;
@@ -74,8 +77,10 @@ export const runDeployment = async (deploymentId: string) => {
   const { app } = deployment;
   const logger = createLogger(deploymentId);
   const tag = imageTag(app.slug, deployment.id);
-  let currentStep: DeploymentStep = "QUEUED";
+  const resumed = Boolean(deployment.cloudBuildId);
+  let currentStep: DeploymentStep = deployment.step;
   let stepUpdate: Promise<unknown> = Promise.resolve();
+  let cleanupImage = false;
 
   const setStep = (step: DeploymentStep) => {
     if (step === currentStep) {
@@ -95,25 +100,37 @@ export const runDeployment = async (deploymentId: string) => {
   };
 
   try {
-    await prisma.deployment.update({ where: { id: deploymentId }, data: { imageTag: tag } });
-    await setStep("PREPARING");
-    await prisma.app.update({ where: { id: app.id }, data: { status: "DEPLOYING" } });
-
-    logger.log("Downloading source");
     const artifact = await readObject(deployment.artifactKey);
     const appEnv = app.env as Record<string, string>;
-
     const plan = await resolveBuildPlan(artifact, app);
-    logger.log(describePlan(plan));
+    let buildId = deployment.cloudBuildId;
 
-    logger.log(`Installing dependencies and building ${tag}`);
-    await buildImage(artifact, tag, plan, appEnv, onBuildLog(plan));
+    if (!buildId) {
+      await prisma.deployment.update({ where: { id: deploymentId }, data: { imageTag: tag } });
+      await setStep("PREPARING");
+      await prisma.app.update({ where: { id: app.id }, data: { status: "DEPLOYING" } });
+      logger.log(describePlan(plan));
+      logger.log("Sending source to the build server");
+      const context = await buildContext(artifact, plan, appEnv);
+      buildId = await submitBuild(deploymentId, context, tag);
+      await prisma.deployment.update({ where: { id: deploymentId }, data: { cloudBuildId: buildId } });
+      logger.log(`Installing dependencies and building ${tag}`);
+    } else {
+      logger.log("Server restarted, resuming the build");
+    }
+
+    await watchBuild(buildId, onBuildLog(plan), resumed);
+    cleanupImage = true;
+    await removeSource(sourceObjectName(deploymentId));
 
     await setStep("STARTING");
+    logger.log("Downloading image");
+    await pullImage(tag, (line) => logger.log(line));
     logger.log("Starting container");
     const name = containerName(app.slug);
     const env = { ...appEnv, PORT: String(APP_PORT), HOSTNAME: "0.0.0.0" };
     const containerId = await runContainer(name, tag, env);
+    cleanupImage = false;
 
     const previous = await prisma.deployment.findMany({
       where: { appId: app.id, status: "RUNNING", id: { not: deploymentId } },
@@ -124,7 +141,7 @@ export const runDeployment = async (deploymentId: string) => {
     });
     for (const item of previous) {
       if (item.imageTag) {
-        await removeImage(item.imageTag);
+        await removeAppImage(item.imageTag);
       }
     }
 
@@ -137,6 +154,10 @@ export const runDeployment = async (deploymentId: string) => {
     logger.log(`Deployment failed: ${error instanceof Error ? error.message : String(error)}`);
     await logger.close();
     await stepUpdate.catch(() => undefined);
+    await removeSource(sourceObjectName(deploymentId));
+    if (cleanupImage) {
+      await removeAppImage(tag);
+    }
     await prisma.deployment.update({ where: { id: deploymentId }, data: { status: "FAILED", finishedAt: new Date() } });
     const running = await prisma.deployment.count({ where: { appId: app.id, status: "RUNNING" } });
     await prisma.app.update({ where: { id: app.id }, data: { status: running ? "RUNNING" : "FAILED" } });

@@ -51,6 +51,35 @@ services:
     environment:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
 
+  registry-init:
+    image: httpd:2.4.62-alpine
+    entrypoint: ["/bin/sh", "-c", "htpasswd -Bbn easyhost \"$$REGISTRY_PASSWORD\" > /auth/htpasswd"]
+    environment:
+      REGISTRY_PASSWORD: ${REGISTRY_PASSWORD:?Set REGISTRY_PASSWORD in .env}
+    volumes:
+      - registry_auth:/auth
+    restart: "no"
+
+  registry:
+    image: registry:2.8.3
+    restart: unless-stopped
+    depends_on:
+      registry-init:
+        condition: service_completed_successfully
+    environment:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: EasyHost Registry
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    volumes:
+      - registry_data:/var/lib/registry
+      - registry_auth:/auth:ro
+    networks:
+      default: {}
+      proxy:
+        aliases:
+          - easyhost-registry
+
   ai-runtime:
     build: ./server/ai-runtime
     image: easyhost/ai-runtime
@@ -77,6 +106,8 @@ services:
         condition: service_completed_successfully
       ai-runtime:
         condition: service_completed_successfully
+      registry:
+        condition: service_started
     env_file:
       - .env
     volumes:
@@ -91,6 +122,8 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  registry_data:
+  registry_auth:
 
 networks:
   apps:

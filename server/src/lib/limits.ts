@@ -12,5 +12,5 @@ export const LIMITS = {
   databases: 10,
   emailSenders: 1,
   emailsPerDay: 20,
-  concurrentBuilds: 1,
+  concurrentBuilds: 5,
 } as const;

@@ -18,6 +18,11 @@ const REQUIRED = [
   "LEMONSQUEEZY_STORE_ID",
   "LEMONSQUEEZY_VARIANT_ID",
   "LEMONSQUEEZY_WEBHOOK_SECRET",
+  "GCP_PROJECT_ID",
+  "GCB_BUCKET",
+  "GCP_SERVICE_ACCOUNT_KEY",
+  "REGISTRY_URL",
+  "REGISTRY_PASSWORD",
 ] as const;
 
 const NPM_REQUIRED = ["NPM_API_URL", "NPM_API_EMAIL", "NPM_API_PASSWORD"] as const;
@@ -71,6 +76,24 @@ if (
   throw new Error("Environment variable DATABASE_URL must be a Postgres URL with a host, explicit port from 1 to 65535, username, password, database name, and sslmode=require, verify-ca, or verify-full");
 }
 
+const readServiceAccount = () => {
+  let parsed: { client_email?: unknown; private_key?: unknown };
+  try {
+    parsed = JSON.parse(Buffer.from(raw("GCP_SERVICE_ACCOUNT_KEY"), "base64").toString("utf8"));
+  } catch {
+    throw new Error("Environment variable GCP_SERVICE_ACCOUNT_KEY must be a base64 encoded service account JSON key");
+  }
+  if (typeof parsed.client_email !== "string" || typeof parsed.private_key !== "string") {
+    throw new Error("Environment variable GCP_SERVICE_ACCOUNT_KEY must contain client_email and private_key");
+  }
+  return { clientEmail: parsed.client_email, privateKey: parsed.private_key };
+};
+
+const registryUrl = url("REGISTRY_URL");
+if (registryUrl.protocol !== "https:" || registryUrl.pathname !== "/") {
+  throw new Error("Environment variable REGISTRY_URL must be an https origin like https://registry.easyhost.fun");
+}
+
 const readNpm = () => {
   if (process.env.NODE_ENV !== "production") {
     return null;
@@ -114,4 +137,14 @@ export const env = {
     webhookSecret: raw("LEMONSQUEEZY_WEBHOOK_SECRET"),
   },
   npm: readNpm(),
+  gcp: {
+    projectId: raw("GCP_PROJECT_ID"),
+    bucket: raw("GCB_BUCKET"),
+    serviceAccount: readServiceAccount(),
+  },
+  registry: {
+    url: registryUrl.origin,
+    host: registryUrl.host,
+    password: raw("REGISTRY_PASSWORD"),
+  },
 };

@@ -93,7 +93,7 @@ export const sendEmailSchema = z.object({
 
 const RESERVED_APP_NAMES = [
   "api", "app", "www", "storage", "admin", "dashboard", "mail", "email", "smtp", "docs", "blog", "status",
-  "help", "support", "cdn", "static", "assets", "auth", "login", "console", "caddy", "minio", "db", "root",
+  "help", "support", "cdn", "static", "assets", "auth", "login", "console", "caddy", "minio", "db", "root", "registry",
 ];
 
 export const adminUsersQuerySchema = z.object({

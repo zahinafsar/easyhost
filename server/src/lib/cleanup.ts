@@ -3,9 +3,9 @@ import { prisma } from "./prisma.js";
 import { docker, removeContainer, removeImage, AI_RUNTIME_IMAGE } from "./docker.js";
 import { DEPLOY_BUCKET, emptyAndRemoveBucket, minio } from "./minio.js";
 import { AI_BUCKET } from "./ai-apps.js";
+import { APP_IMAGE_PREFIX } from "./registry.js";
 
 const GRACE_MS = 60 * 60 * 1000;
-const APP_IMAGE_PREFIX = "easyhost/";
 const APP_CONTAINER_PREFIX = "eh-app-";
 const PROJECT_BUCKET_PREFIX = "eh-";
 const REMOVE_BATCH = 1000;

@@ -36,13 +36,7 @@ const processQueue = async () => {
       if (!id) {
         break;
       }
-      active += 1;
-      runDeployment(id)
-        .catch((error) => console.error("Deployment crashed", error))
-        .finally(() => {
-          active -= 1;
-          processQueue().catch((error) => console.error("Build queue failed", error));
-        });
+      startDeployment(id);
     }
   } finally {
     draining = false;
@@ -89,17 +83,28 @@ export const queuePosition = async (deployment: { status: string; createdAt: Dat
   return queuedAhead + building;
 };
 
+const startDeployment = (id: string) => {
+  active += 1;
+  runDeployment(id)
+    .catch((error) => console.error("Deployment crashed", error))
+    .finally(() => {
+      active -= 1;
+      processQueue().catch((error) => console.error("Build queue failed", error));
+    });
+};
+
 const recoverInterruptedBuilds = async () => {
   const interrupted = await prisma.deployment.findMany({
     where: { status: "BUILDING" },
-    select: { id: true, appId: true },
+    select: { id: true, appId: true, cloudBuildId: true },
   });
 
-  for (const item of interrupted) {
+  const lost = interrupted.filter((item) => !item.cloudBuildId);
+  for (const item of lost) {
     await prisma.$executeRaw`UPDATE deployments SET status = 'FAILED', "finishedAt" = NOW(), log = log || ${"Deployment failed: interrupted by a server restart\n"} WHERE id = ${item.id}`;
   }
 
-  const appIds = [...new Set(interrupted.map((item) => item.appId))];
+  const appIds = [...new Set(lost.map((item) => item.appId))];
   for (const appId of appIds) {
     const running = await prisma.deployment.count({ where: { appId, status: "RUNNING" } });
     let status: "RUNNING" | "FAILED" = "FAILED";
@@ -109,8 +114,16 @@ const recoverInterruptedBuilds = async () => {
     await prisma.app.update({ where: { id: appId }, data: { status } });
   }
 
-  if (interrupted.length) {
-    console.log(`Marked ${interrupted.length} interrupted build(s) as failed`);
+  if (lost.length) {
+    console.log(`Marked ${lost.length} interrupted build(s) as failed`);
+  }
+
+  const resumable = interrupted.filter((item) => item.cloudBuildId);
+  for (const item of resumable) {
+    startDeployment(item.id);
+  }
+  if (resumable.length) {
+    console.log(`Resumed ${resumable.length} cloud build(s)`);
   }
 };
 

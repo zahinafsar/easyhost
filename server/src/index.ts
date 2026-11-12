@@ -20,6 +20,7 @@ import { lemonSqueezyWebhookRoutes, tokenRoutes } from "./routes/tokens.js";
 import { v1EmailRoutes } from "./routes/v1/email.js";
 import { env } from "./lib/env.js";
 import { startBuildQueue } from "./lib/build-queue.js";
+import { startRegistryGc } from "./lib/registry.js";
 
 const app = new Hono().basePath("/api");
 
@@ -115,4 +116,5 @@ serve({ fetch: server.fetch, port }, (info) => {
   startScheduleWorker();
   resetStuckGenerations().catch((error) => console.error("Failed to reset AI generations", error));
   startBuildQueue().catch((error) => console.error("Build queue failed to start", error));
+  startRegistryGc();
 });

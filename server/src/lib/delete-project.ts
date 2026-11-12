@@ -1,7 +1,8 @@
 import type { App } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { DEPLOY_BUCKET, emptyAndRemoveBucket, minio, removeBucketCredentials } from "./minio.js";
-import { containerName, removeContainer, removeImage } from "./docker.js";
+import { containerName, removeContainer } from "./docker.js";
+import { removeAppImage } from "./registry.js";
 import { releaseDomain } from "./domains.js";
 import { dropUserDatabase } from "./userdb.js";
 import { removeAllAiFiles } from "./ai-apps.js";
@@ -19,7 +20,7 @@ const removeAppResources = async (app: Pick<App, "id" | "slug">) => {
   await removeContainer(containerName(app.slug));
   for (const deployment of deployments) {
     if (deployment.imageTag) {
-      await removeImage(deployment.imageTag);
+      await removeAppImage(deployment.imageTag);
     }
   }
   await removeAllAiFiles(app.id);

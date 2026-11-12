@@ -272,7 +272,8 @@ model Deployment {
   status      DeploymentStatus @default(QUEUED)
   step        DeploymentStep   @default(QUEUED)
   artifactKey String
-  imageTag    String?
+  imageTag     String?
+  cloudBuildId String?
   log         String           @default("")
   createdAt   DateTime         @default(now())
   finishedAt  DateTime?

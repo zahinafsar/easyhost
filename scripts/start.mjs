@@ -51,6 +51,7 @@ EasyHost is running.
   Dashboard  https://app.easyhost.fun
   API        https://api.easyhost.fun
   Storage    https://storage.easyhost.fun
+  Registry   https://registry.easyhost.fun
   Apps       https://<app>.easyhost.fun
 
 Logs: npm run logs

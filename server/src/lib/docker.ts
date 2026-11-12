@@ -1,7 +1,8 @@
 import Docker from "dockerode";
 import { pack } from "tar-stream";
 import path from "node:path";
-import { PassThrough, type Readable } from "node:stream";
+import { PassThrough } from "node:stream";
+import { createGzip } from "node:zlib";
 import type { BuildPlan } from "./build-plan.js";
 
 export const docker = new Docker();
@@ -9,78 +10,55 @@ export const docker = new Docker();
 const DOCKER_NETWORK = "easyhost";
 export const APP_PORT = 3000;
 
-const dockerfile = (plan: BuildPlan, envKeys: string[]) => {
-  const args = envKeys.map((key) => `ARG ${key}`).join("\n");
+const ENV_SECRET = "/run/secrets/appenv";
+
+export const runWithEnv = (command: string) => {
+  return `RUN --mount=type=secret,id=appenv,target=${ENV_SECRET} set -a && . ${ENV_SECRET} && set +a && ${command}`;
+};
+
+const dockerfile = (plan: BuildPlan) => {
   const installPath = path.posix.join("/app", plan.installDir);
   const appPath = path.posix.join("/app", plan.appDir);
-  return `FROM node:${plan.nodeVersion}-alpine
+  let build = "";
+  if (plan.build) {
+    build = runWithEnv(plan.build);
+  }
+  return `# syntax=docker/dockerfile:1
+FROM node:${plan.nodeVersion}-alpine
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 ADD app.tgz /app/
-${args}
 WORKDIR ${installPath}
-RUN ${plan.install}
+${runWithEnv(plan.install)}
 WORKDIR ${appPath}
 ENV PATH=${appPath}/node_modules/.bin:/app/node_modules/.bin:$PATH
-${plan.build ? `RUN ${plan.build}` : ""}
+${build}
 ENV NODE_ENV=production PORT=${APP_PORT} HOST=0.0.0.0 HOSTNAME=0.0.0.0
 EXPOSE ${APP_PORT}
 CMD ["sh", "-c", ${JSON.stringify(plan.start)}]
 `;
 };
 
-export const containerName = (slug: string) => `eh-app-${slug}`;
-
-export const imageTag = (slug: string, deploymentId: string) => `easyhost/${slug}:${deploymentId.toLowerCase()}`;
-
-const buildContext = (artifact: Buffer, plan: BuildPlan, envKeys: string[]) => {
-  const tar = pack();
-  tar.entry({ name: "Dockerfile" }, dockerfile(plan, envKeys));
-  tar.entry({ name: "app.tgz" }, artifact);
-  tar.finalize();
-  return tar;
+const envFile = (env: Record<string, string>) => {
+  return Object.entries(env)
+    .map(([key, value]) => `${key}='${value.replace(/'/g, "'\\''")}'\n`)
+    .join("");
 };
 
-export const buildImage = async (
-  artifact: Buffer,
-  tag: string,
-  plan: BuildPlan,
-  env: Record<string, string>,
-  onLog: (line: string) => void,
-) => {
-  const stream = await docker.buildImage(buildContext(artifact, plan, Object.keys(env)) as unknown as Readable, {
-    t: tag,
-    rm: true,
-    forcerm: true,
-    buildargs: env,
-  });
+export const containerName = (slug: string) => `eh-app-${slug}`;
 
-  await new Promise<void>((resolve, reject) => {
-    docker.modem.followProgress(
-      stream,
-      (error: Error | null, output: { error?: string }[]) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        const failed = output.find((item) => item.error);
-        if (failed) {
-          reject(new Error(failed.error));
-          return;
-        }
-        resolve();
-      },
-      (event: { stream?: string; error?: string }) => {
-        if (event.stream) {
-          onLog(event.stream.trimEnd());
-        }
-        if (event.error) {
-          onLog(event.error);
-        }
-      },
-    );
-  });
+export const buildContext = async (artifact: Buffer, plan: BuildPlan, env: Record<string, string>) => {
+  const tar = pack();
+  tar.entry({ name: "Dockerfile" }, dockerfile(plan));
+  tar.entry({ name: "appenv", mode: 0o600 }, envFile(env));
+  tar.entry({ name: "app.tgz" }, artifact);
+  tar.finalize();
+  const chunks: Buffer[] = [];
+  for await (const chunk of tar.pipe(createGzip())) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks);
 };
 
 const ensureNetwork = async () => {
