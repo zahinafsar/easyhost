@@ -1,12 +1,13 @@
 import type { AiElement } from "./validations.js";
-import { ToolLoopAgent, isStepCount, tool, type ModelMessage, type StepResult, type ToolSet } from "ai";
+import { ToolLoopAgent, isStepCount, tool, type ModelMessage, type StepResult, type ToolResultPart, type ToolSet } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
 import type { App } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { env } from "./env.js";
 import { containerLogs, containerName } from "./docker.js";
-import { aiAssetUrl, connectedServices, connectProjectDatabase, connectProjectStorage, deleteAiFile, installAiPackages, listAiAssets, readAllAiFiles, verifyDatabase, writeAiFile } from "./ai-apps.js";
+import { aiAssetUrl, connectedServices, connectProjectDatabase, connectProjectStorage, installAiPackages, isAiAssetPath, listAiFiles, verifyDatabase } from "./ai-apps.js";
+import { createWorkspace } from "./ai-workspace.js";
 import { runQuery } from "./userdb.js";
 import { endLiveSession, liveSession, startLiveSession, upsertStep, type AiInteractiveStep, type AiTextStep, type AiToolStep } from "./ai-live.js";
 import { findTheme, themeSummary } from "./ai-themes.js";
@@ -70,7 +71,11 @@ Database:
 - Use the run_sql tool to create or change tables. Never drop data unless the user asks.
 
 Workflow:
-- The current files are given with each request. Write complete file contents with write_file (no partial edits or placeholders).
+- Each request lists the app's files with their sizes, not their contents. Read only the files the request needs with read_file, and use grep to find code instead of reading many files.
+- Change existing files with edit_file: old_string must match the file exactly (copy it from read_file output without the line number prefix) and include enough surrounding lines to be unique. Prefer several small edits over rewriting a file.
+- Use write_file only for new files or when most of a file changes. Never use placeholders such as "rest of the code unchanged".
+- You must read a file with read_file in this request before editing or overwriting it. Do not read a file again after changing it unless an edit failed.
+- Call independent tools together in one step, for example read several files at once or make edits to different files at once.
 - After changing server code, call read_logs and fix any startup or runtime error you see before finishing.
 - Finish with a short plain-language summary of what you built or changed. Do not paste code in the summary.`;
 
@@ -98,11 +103,18 @@ const assetsContext = (assets: { path: string; size: number }[]) => {
   return `Uploaded images (assets only, never read or change them):\n${assets.map((asset) => `- ${aiAssetUrl(asset.path)} (${Math.ceil(asset.size / 1024)} KB)`).join("\n")}`;
 };
 
-const filesContext = (files: { path: string; content: string }[]) => {
+const filesContext = (files: { path: string; size: number }[]) => {
   if (!files.length) {
     return "The app has no files yet.";
   }
-  return files.map((file) => `--- ${file.path} ---\n${file.content}`).join("\n\n");
+  return files.map((file) => `- ${file.path} (${formatSize(file.size)})`).join("\n");
+};
+
+const formatSize = (size: number) => {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+  return `${(size / 1024).toFixed(1)} KB`;
 };
 
 const truncate = (value: string) => {
@@ -168,6 +180,15 @@ const runningTitle = (tool: string, input: Record<string, unknown>) => {
   if (tool === "write_file") {
     return `Writing ${path || "file"}`;
   }
+  if (tool === "edit_file") {
+    return `Editing ${path || "file"}`;
+  }
+  if (tool === "read_file") {
+    return `Reading ${path || "file"}`;
+  }
+  if (tool === "grep") {
+    return "Searching files";
+  }
   if (tool === "delete_file") {
     return `Deleting ${path || "file"}`;
   }
@@ -191,6 +212,15 @@ const doneTitle = (tool: string, input: Record<string, unknown>) => {
   if (tool === "write_file") {
     return `Wrote ${path}`;
   }
+  if (tool === "edit_file") {
+    return `Edited ${path}`;
+  }
+  if (tool === "read_file") {
+    return `Read ${path}`;
+  }
+  if (tool === "grep" && typeof input.pattern === "string") {
+    return `Searched for ${input.pattern}`;
+  }
   if (tool === "delete_file") {
     return `Deleted ${path}`;
   }
@@ -213,6 +243,9 @@ const stepDetail = (tool: string, input: Record<string, unknown>) => {
   if (tool === "write_file" && typeof input.content === "string") {
     return clip(input.content);
   }
+  if (tool === "edit_file" && typeof input.new_string === "string") {
+    return clip(input.new_string);
+  }
   if (tool === "run_sql" && typeof input.sql === "string") {
     return clip(input.sql);
   }
@@ -223,7 +256,7 @@ const stepDetail = (tool: string, input: Record<string, unknown>) => {
 };
 
 const stepOutput = (tool: string, output: unknown) => {
-  if (tool === "write_file" || tool === "delete_file") {
+  if (tool === "write_file" || tool === "edit_file" || tool === "delete_file" || tool === "read_file") {
     return null;
   }
   if (typeof output === "string") {
@@ -260,25 +293,121 @@ const runsOutOfTokens = (billing: RunBilling) => {
   };
 };
 
+const PROTECTED_OUTPUT_CHARS = 120_000;
+const MIN_PRUNE_CHARS = 80_000;
+const PRUNABLE_TOOLS = new Set(["read_file", "grep", "read_logs", "run_sql", "install_packages"]);
+const PRUNED_OUTPUT = "[Old output cleared to save context. Call the tool again if you need it.]";
+
+const outputSize = (part: ToolResultPart) => {
+  if (part.output.type === "text") {
+    return part.output.value.length;
+  }
+  return JSON.stringify(part.output).length;
+};
+
+const pruneToolOutputs = (messages: ModelMessage[]) => {
+  const prunable = new Set<ToolResultPart>();
+  let kept = 0;
+  let prunableChars = 0;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role !== "tool") {
+      continue;
+    }
+    for (let partIndex = message.content.length - 1; partIndex >= 0; partIndex -= 1) {
+      const part = message.content[partIndex];
+      if (part.type !== "tool-result" || !PRUNABLE_TOOLS.has(part.toolName)) {
+        continue;
+      }
+      const size = outputSize(part);
+      if (part.output.type === "text" && part.output.value === PRUNED_OUTPUT) {
+        continue;
+      }
+      if (kept + size <= PROTECTED_OUTPUT_CHARS) {
+        kept += size;
+        continue;
+      }
+      prunable.add(part);
+      prunableChars += size;
+    }
+  }
+  if (prunableChars < MIN_PRUNE_CHARS) {
+    return null;
+  }
+  return messages.map((message): ModelMessage => {
+    if (message.role !== "tool") {
+      return message;
+    }
+    return {
+      ...message,
+      content: message.content.map((part) => {
+        if (part.type === "tool-result" && prunable.has(part)) {
+          return { ...part, output: { type: "text", value: PRUNED_OUTPUT } };
+        }
+        return part;
+      }),
+    };
+  });
+};
+
 const buildTools = (app: App, billing: RunBilling) => {
+  const workspace = createWorkspace(app);
+  const changed = async () => {
+    if (billing.free) {
+      await markFreeBuildUsed(billing.userId);
+    }
+  };
   return {
+    read_file: tool({
+      description: "Read a file. Returns lines prefixed with their line number and a | separator (not part of the file). Reads up to 2000 lines; use offset (1-based line) and limit for larger files.",
+      inputSchema: z.object({
+        path: z.string(),
+        offset: z.number().int().min(1).optional(),
+        limit: z.number().int().min(1).max(2000).optional(),
+      }),
+      execute: async ({ path, offset, limit }) => {
+        return workspace.read(path, offset, limit);
+      },
+    }),
+    grep: tool({
+      description: "Search the app's files with a JavaScript regular expression. Returns matching lines as path:line: text.",
+      inputSchema: z.object({
+        pattern: z.string(),
+        include: z.string().optional().describe("Optional glob to limit files, for example *.js or public/**/*.html"),
+      }),
+      execute: async ({ pattern, include }) => {
+        return workspace.grep(pattern, include);
+      },
+    }),
+    edit_file: tool({
+      description: "Replace old_string with new_string in a file you have read. old_string must match exactly once (unless replace_all) and must not include line number prefixes.",
+      inputSchema: z.object({
+        path: z.string(),
+        old_string: z.string(),
+        new_string: z.string(),
+        replace_all: z.boolean().optional(),
+      }),
+      execute: async ({ path, old_string, new_string, replace_all }) => {
+        const written = await workspace.edit(path, old_string, new_string, replace_all ?? false);
+        await changed();
+        return `Edited ${written}`;
+      },
+    }),
     write_file: tool({
-      description: "Create or overwrite a file with its complete contents. Paths are relative to the app root, for example server.js or public/app.js.",
+      description: "Create a new file, or overwrite a file you have read, with its complete contents. Paths are relative to the app root, for example server.js or public/app.js.",
       inputSchema: z.object({ path: z.string(), content: z.string() }),
       execute: async ({ path, content }) => {
-        const written = await writeAiFile(app, path, content);
-        if (billing.free) {
-          await markFreeBuildUsed(billing.userId);
-        }
-        return { ok: true, path: written };
+        const written = await workspace.write(path, content);
+        await changed();
+        return `Wrote ${written}`;
       },
     }),
     delete_file: tool({
       description: "Delete a file from the app.",
       inputSchema: z.object({ path: z.string() }),
       execute: async ({ path }) => {
-        const removed = await deleteAiFile(app, path);
-        return { ok: true, path: removed };
+        const removed = await workspace.remove(path);
+        return `Deleted ${removed}`;
       },
     }),
     ask_questions: tool({
@@ -307,7 +436,7 @@ const buildTools = (app: App, billing: RunBilling) => {
       execute: async () => {
         const current = await prisma.app.findUniqueOrThrow({ where: { id: app.id } });
         const bucket = await connectProjectStorage(current);
-        return { ok: true, bucket: bucket.name };
+        return `Connected bucket ${bucket.name}`;
       },
     }),
     run_sql: tool({
@@ -340,7 +469,11 @@ const buildTools = (app: App, billing: RunBilling) => {
       execute: async ({ packages }) => {
         const current = await prisma.app.findUniqueOrThrow({ where: { id: app.id } });
         const result = await installAiPackages(current, packages);
-        return { ok: result.ok, output: truncate(result.output) };
+        workspace.forget("package.json");
+        if (result.ok) {
+          return truncate(result.output);
+        }
+        return `npm install failed:\n${truncate(result.output)}`;
       },
     }),
     read_logs: tool({
@@ -416,8 +549,9 @@ const runGeneration = async (appId: string, billing: RunBilling) => {
     take: HISTORY_MESSAGES,
   });
   history.reverse();
-  const files = await readAllAiFiles(appId);
-  const assets = await listAiAssets(appId);
+  const allFiles = await listAiFiles(appId);
+  const files = allFiles.filter((file) => !isAiAssetPath(file.path));
+  const assets = allFiles.filter((file) => isAiAssetPath(file.path));
   const services = `${servicesLine(await connectedServices(app))}\n${themeLine(app.aiTheme)}\n${assetsContext(assets)}`;
 
   const messages: ModelMessage[] = history.map((message, index) => {
@@ -426,7 +560,7 @@ const runGeneration = async (appId: string, billing: RunBilling) => {
     }
     const request = `${message.content}${elementsContext(message.elements as AiElement[])}${attachmentsContext(message.attachments as string[])}`;
     if (index === history.length - 1) {
-      return { role: "user", content: `${services}\n\nCurrent files:\n\n${filesContext(files)}\n\nRequest:\n${request}` };
+      return { role: "user", content: `${services}\n\nFiles:\n${filesContext(files)}\n\nRequest:\n${request}` };
     }
     return { role: "user", content: request };
   });
@@ -492,6 +626,13 @@ const runGeneration = async (appId: string, billing: RunBilling) => {
     instructions: INSTRUCTIONS,
     tools: buildTools(app, billing),
     stopWhen: [isStepCount(MAX_STEPS), keepsFailing, runsOutOfTokens(billing)],
+    prepareStep: ({ messages: stepMessages }) => {
+      const pruned = pruneToolOutputs(stepMessages);
+      if (!pruned) {
+        return {};
+      }
+      return { messages: pruned };
+    },
   });
 
   persist(true);
@@ -554,6 +695,9 @@ const runGeneration = async (appId: string, billing: RunBilling) => {
       let detail: string | undefined = undefined;
       if (input.tool === "write_file") {
         detail = partialJsonString(input.raw, "content") ?? undefined;
+      }
+      if (input.tool === "edit_file") {
+        detail = partialJsonString(input.raw, "new_string") ?? undefined;
       }
       if (input.tool === "run_sql") {
         detail = partialJsonString(input.raw, "sql") ?? undefined;

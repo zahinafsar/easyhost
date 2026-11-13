@@ -31,7 +31,7 @@ fi
 gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:${SA}" --role=roles/cloudbuild.builds.editor --condition=None
 gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:${SA}" --role=roles/logging.logWriter --condition=None
 gcloud iam service-accounts add-iam-policy-binding "$SA" --member="serviceAccount:${SA}" --role=roles/iam.serviceAccountUser
-gcloud storage buckets add-iam-policy-binding "gs://${BUCKET}" --member="serviceAccount:${SA}" --role=roles/storage.objectAdmin
+gcloud storage buckets add-iam-policy-binding "gs://${BUCKET}" --member="serviceAccount:${SA}" --role=roles/storage.admin
 
 if gcloud secrets describe "$SECRET" >/dev/null 2>&1; then
   printf '%s' "$REGISTRY_PASSWORD" | gcloud secrets versions add "$SECRET" --data-file=-

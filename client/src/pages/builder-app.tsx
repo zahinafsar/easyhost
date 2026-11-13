@@ -17,6 +17,8 @@ import {
   Database,
   ExternalLink,
   FileCode2,
+  FilePen,
+  FileText,
   HardDrive,
   Mail,
   Loader2,
@@ -24,6 +26,7 @@ import {
   Package,
   Play,
   RefreshCw,
+  Search,
   Terminal,
   Trash2,
   X,
@@ -131,6 +134,9 @@ type LiveEvent =
 
 const TOOL_ICONS: Record<string, typeof FileCode2> = {
   write_file: FileCode2,
+  edit_file: FilePen,
+  read_file: FileText,
+  grep: Search,
   delete_file: Trash2,
   run_sql: Database,
   install_packages: Package,
