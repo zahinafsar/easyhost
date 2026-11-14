@@ -92,6 +92,7 @@ services:
       dockerfile: server/Dockerfile
       args:
         VITE_PUBLIC_API_URL: ${VITE_PUBLIC_API_URL:?Set VITE_PUBLIC_API_URL in .env}
+        VITE_MARKETING_URL: ${VITE_MARKETING_URL:?Set VITE_MARKETING_URL in .env}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:48710/api/health').then(response => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1))"]

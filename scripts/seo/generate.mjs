@@ -135,6 +135,7 @@ const SITEMAP_RULES = {
   "domain-guides": { changefreq: "yearly", priority: 0.7 },
   errors: { changefreq: "yearly", priority: 0.6 },
   learn: { changefreq: "yearly", priority: 0.6 },
+  legal: { changefreq: "yearly", priority: 0.3 },
 };
 
 const sitemapRuleFor = (family) => {

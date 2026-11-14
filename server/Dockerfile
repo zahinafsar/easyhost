@@ -6,6 +6,9 @@ COPY client/ ./
 ARG VITE_PUBLIC_API_URL
 RUN test -n "$VITE_PUBLIC_API_URL" || (echo "VITE_PUBLIC_API_URL build arg is required" && exit 1)
 ENV VITE_PUBLIC_API_URL=$VITE_PUBLIC_API_URL
+ARG VITE_MARKETING_URL
+RUN test -n "$VITE_MARKETING_URL" || (echo "VITE_MARKETING_URL build arg is required" && exit 1)
+ENV VITE_MARKETING_URL=$VITE_MARKETING_URL
 RUN npx vite build
 
 FROM node:22-bookworm-slim AS build

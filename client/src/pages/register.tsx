@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, unwrap } from "@/lib/api";
+import { env } from "@/lib/env";
 import { userQuery } from "@/lib/queries";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 
@@ -58,6 +59,21 @@ export const RegisterPage = () => {
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" value={form.password} onChange={update("password")} minLength={6} required />
+          </div>
+          <div className="flex items-start gap-2">
+            <input id="terms" type="checkbox" className="mt-0.5 size-4 accent-primary" required />
+            <Label htmlFor="terms" className="text-sm font-normal leading-snug text-muted-foreground">
+              <span>
+                I agree to the{" "}
+                <a href={`${env.marketingUrl}/terms`} target="_blank" rel="noreferrer" className="text-foreground hover:underline">
+                  Terms and Conditions
+                </a>{" "}
+                and{" "}
+                <a href={`${env.marketingUrl}/privacy`} target="_blank" rel="noreferrer" className="text-foreground hover:underline">
+                  Privacy Policy
+                </a>
+              </span>
+            </Label>
           </div>
         </CardContent>
         <CardFooter className="mt-6 flex-col gap-3">

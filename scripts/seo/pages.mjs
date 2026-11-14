@@ -1102,10 +1102,135 @@ const indexPages = (pages) => {
   ];
 };
 
+const legalPages = () => {
+  const contact = "Questions about this page go to [hello@easyhost.fun](mailto:hello@easyhost.fun).";
+  return [
+    {
+      family: "legal",
+      path: "/privacy",
+      title: "Privacy Policy | EasyHost",
+      description: "What EasyHost collects, why, who processes it, and why your data is not encrypted by us unless you encrypt it yourself.",
+      h1: "Privacy policy",
+      lead: "EasyHost is a small hosting platform in beta. This page explains, in plain words, what we collect and how we handle what you store with us.",
+      crumbs: [HOME, { name: "Privacy policy", path: "/privacy" }],
+      body: `## What we collect
+
+- Account details: your email address, a hashed password and whether your email is verified.
+- Everything you upload or create: source code, build logs, environment variables, database contents, storage files, schedules and AI Builder chats and files.
+- Usage data: deployments, builds, container logs, resource usage, IP addresses in server logs and AI Token purchases and usage.
+- Dashboard analytics: the dashboard uses Microsoft Clarity to record how pages are used, so we can fix problems.
+
+## Your data is not encrypted by us
+
+Data travels over TLS (HTTPS and TLS for Postgres connections). Beyond that, EasyHost does not apply its own encryption to what you store. Environment variables, database rows, storage files, logs and source code are kept as you send them.
+
+If something must stay private, even from us, encrypt it yourself before you store it, and keep the keys outside EasyHost.
+
+Storage files are public to anyone with the URL. Do not put private files in a bucket unless you encrypt them first.
+
+## We may look at your data
+
+The people who run EasyHost can access your projects, apps, databases, files, logs and account. We may review them to:
+
+- investigate security incidents, abuse, spam, phishing or malware
+- check that use follows the [terms](/terms)
+- fix bugs and support requests (including acting as your account with an admin session)
+- respond to valid legal requests
+
+We do not sell your data and we do not look at it for advertising.
+
+## Services that process your data
+
+- Google Cloud Build and Cloud Storage: your source code and build environment, to build your app images.
+- Google Gemini: AI Builder prompts, files and logs, to generate your app.
+- Lemon Squeezy: payment details when you buy AI Tokens. We never see your card number.
+- Resend: your email address, to send verification, password reset and invite emails.
+- Microsoft Clarity: dashboard usage recordings.
+
+## How long we keep it
+
+We keep your data while your account and projects exist. Deleting a project removes its apps, containers, images, database, bucket and files. Backups and logs may hold copies for a short time after that.
+
+## Your choices
+
+You can export your database and files at any time, and delete any project from the dashboard. To delete your account, email us from the address on the account.
+
+## Changes
+
+We may update this page. The date at the top shows the last change.
+
+${contact}`,
+      faq: [],
+    },
+    {
+      family: "legal",
+      path: "/terms",
+      title: "Terms and Conditions | EasyHost",
+      description: "The rules for using EasyHost: acceptable use, no encryption by default, our right to review and remove content, beta status and no warranty.",
+      h1: "Terms and conditions",
+      lead: "By creating an account or using EasyHost, you agree to these terms. If you do not agree, do not use the service.",
+      crumbs: [HOME, { name: "Terms and conditions", path: "/terms" }],
+      body: `## The service
+
+EasyHost hosts Node.js apps, Postgres databases, S3 storage, schedules and AI built apps, within the [published limits](/pricing). It is in beta. Features and limits may change or be removed at any time.
+
+## Your account
+
+You are responsible for your account, your password, your API tokens and everything that runs under your projects, including what project members do. Give us a real email address.
+
+## Your content
+
+You keep ownership of what you upload. You give us permission to store, copy, build, run and serve it as needed to provide the service.
+
+## Security and encryption
+
+EasyHost does not encrypt your stored data for you. Environment variables, databases, files, logs and source code are stored as you send them. If you need something encrypted, you must encrypt it yourself before storing it. You accept this when you use the service.
+
+## We may review your activity
+
+To keep the platform safe, we may inspect your projects, code, databases, files, logs, traffic and account activity at any time, without notice. We do this to investigate security issues, abuse and breaches of these terms, to fix problems, and to answer legal requests. See the [privacy policy](/privacy).
+
+## Acceptable use
+
+You must not use EasyHost to:
+
+- host phishing, malware, scams, spam or illegal content
+- attack, scan or overload other systems, or mine cryptocurrency
+- get around limits, for example with many accounts
+- impersonate others or break someone else's rights
+- interfere with other customers or with the platform itself
+
+## Suspension and removal
+
+We may stop, suspend or delete any app, project or account that breaks these terms, puts the platform or others at risk, or uses resources in a harmful way. We will try to tell you, but we may act first when there is a risk.
+
+## Paid AI Tokens
+
+AI Tokens are bought once, used by the AI Builder and are not refundable except where the law requires it. Tokens have no cash value.
+
+## No warranty
+
+The service is provided as is, without any warranty. We do not promise that it will be available, fast or free of data loss. Keep your own backups.
+
+## Limitation of liability
+
+To the extent the law allows, EasyHost is not liable for lost data, lost profits or any indirect damages. Our total liability is limited to what you paid us in the last 12 months.
+
+## Changes
+
+We may change these terms. Continuing to use EasyHost after a change means you accept it.
+
+${contact}`,
+      faq: [],
+    },
+  ];
+};
+
 export const buildPages = (limits) => {
   const pages = [
     ...productPages(),
     pricingPage(limits),
+    ...legalPages(),
     ...hostingPages(limits),
     ...frameworkHubPages(),
     ...agentPages(),

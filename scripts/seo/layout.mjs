@@ -107,6 +107,8 @@ const FOOTER_COLUMNS = [
       ["https://app.easyhost.fun/login", "Log in"],
       ["https://app.easyhost.fun/register", "Sign up"],
       ["mailto:hello@easyhost.fun", "Contact"],
+      ["/privacy", "Privacy policy"],
+      ["/terms", "Terms and conditions"],
     ],
   },
 ];
