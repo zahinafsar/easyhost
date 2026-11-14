@@ -1,0 +1,382 @@
+---
+import Base from "../../layouts/Base.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import CopyCode from "../../components/CopyCode.astro";
+---
+
+<Base>
+  <Fragment slot="head">
+    <title>EasyHost Docs: ezhst CLI Reference for Deploying Node.js</title>
+    <meta name="description" content="Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and schedules." />
+    <link rel="canonical" href="https://easyhost.fun/docs" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="EasyHost" />
+    <meta property="og:url" content="https://easyhost.fun/docs" />
+    <meta property="og:title" content="EasyHost Docs: ezhst CLI Reference for Deploying Node.js" />
+    <meta property="og:description" content="Every ezhst command: deploy Node.js apps, manage env vars, domains, S3 storage, Postgres and schedules." />
+    <meta property="og:image" content="https://easyhost.fun/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://easyhost.fun/og.png" />
+    <script is:inline type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "TechArticle",
+            "headline": "EasyHost docs: ezhst CLI reference",
+            "description": "Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage, Postgres and schedules.",
+            "url": "https://easyhost.fun/docs",
+            "image": "https://easyhost.fun/og.png",
+            "datePublished": "2026-09-29",
+            "dateModified": "2026-11-10",
+            "author": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/" },
+            "publisher": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/", "logo": "https://easyhost.fun/icon-512.png" }
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "EasyHost", "item": "https://easyhost.fun/" },
+              { "@type": "ListItem", "position": 2, "name": "Docs", "item": "https://easyhost.fun/docs" }
+            ]
+          }
+        ]
+      }
+    </script>
+  </Fragment>
+    <Nav docs>
+          <a href="/">Home</a>
+          <a href="/docs" class="keep" aria-current="page">Docs</a>
+          <a href="/skill.md">skill.md</a>
+    </Nav>
+
+    <div class="container docs">
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <ol>
+          <li><a href="#quick-start">Quick start</a></li>
+          <li><a href="#skill">Agent skill</a></li>
+          <li><a href="#authentication">Authentication</a></li>
+          <li><a href="#projects">Projects and linking</a></li>
+          <li><a href="#deploying">Deploying</a></li>
+          <li><a href="#env">Environment variables</a></li>
+          <li><a href="#build">Build settings</a></li>
+          <li><a href="#logs">Logs</a></li>
+          <li><a href="#domains">Custom domains</a></li>
+          <li><a href="#storage">Storage</a></li>
+          <li><a href="#database">Database</a></li>
+          <li><a href="#schedules">Schedules</a></li>
+          <li><a href="#email">Email</a></li>
+          <li><a href="#members">Team members</a></li>
+          <li><a href="#ai-builder">AI Builder</a></li>
+          <li><a href="#limits">Limits</a></li>
+        </ol>
+      </aside>
+
+      <main class="doc">
+        <div class="doc-head">
+          <p class="eyebrow">Documentation</p>
+          <h1>EasyHost docs: the ezhst CLI</h1>
+          <p class="lead">Everything on EasyHost runs through the <code>ezhst</code> CLI, which is built to be driven by coding agents. This page covers every command.</p>
+        </div>
+
+        <section id="quick-start">
+          <h2>Quick start</h2>
+          <h3>For agents</h3>
+          <p>Run the installer and choose Global for all projects or Local for the current project, then ask your agent to deploy.</p>
+          <div class="code"><pre>npx ezhst skill install</pre></div>
+          <p>Then tell it: <code>Deploy this to EasyHost</code>. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> walks through it for each agent. The agent creates an account if you do not have one, creates and links a project, sets environment variables and deploys.</p>
+
+          <h3>For humans</h3>
+          <p>Install the CLI globally or run it with <code>npx</code>.</p>
+          <div class="code"><pre>npm i -g ezhst</pre></div>
+          <p>Create an account (or log in), link your Node.js app folder and deploy.</p>
+          <div class="code"><pre>npx ezhst register
+npx ezhst verify &lt;code&gt;
+npx ezhst link
+npx ezhst deploy</pre></div>
+          <p>Already have an account? Use <code>npx ezhst login</code> instead of <code>register</code>. You can also sign up in the <a href="https://app.easyhost.fun/register">dashboard</a>.</p>
+        </section>
+
+        <section id="skill">
+          <h2>Installing the agent skill</h2>
+          <p>The skill is a single <code>SKILL.md</code> file that teaches your agent how to use EasyHost.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst skill install</code><span>Asks which agent (Claude Code, Codex or Cursor), then Global or Local.</span></div>
+            <div class="cmd-row"><code>ezhst skill install --agent claude --global</code><span>Writes <code>~/.claude/skills/easyhost/SKILL.md</code> for use across projects.</span></div>
+            <div class="cmd-row"><code>ezhst skill install --agent cursor --local</code><span>Writes <code>.cursor/skills/easyhost/SKILL.md</code> in the current project.</span></div>
+          </div>
+          <p>Claude Code uses <code>.claude/skills</code>, Codex uses <code>.agents/skills</code> and Cursor uses <code>.cursor/skills</code>, under your home folder for Global or the current directory for Local. Choose Local to check the skill into the repo for your team. For noninteractive use, including <code>--json</code>, pass <code>--agent &lt;claude|codex|cursor&gt;</code> and exactly one of <code>--global</code> or <code>--local</code>.</p>
+          <p>For other agents, ask them to read the raw file at <a href="/skill.md">https://easyhost.fun/skill.md</a> before deploying.</p>
+        </section>
+
+        <section id="authentication">
+          <h2>Authentication</h2>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst register --name &lt;name&gt; --email &lt;email&gt; --password &lt;password&gt;</code><span>Create an account. A "Default project" is created and a 6-digit verification code is emailed to you.</span></div>
+            <div class="cmd-row"><code>ezhst verify &lt;code&gt;</code><span>Verify your email with the code. Required before any other command.</span></div>
+            <div class="cmd-row"><code>ezhst login --email &lt;email&gt; --password &lt;password&gt;</code><span>Log in.</span></div>
+            <div class="cmd-row"><code>ezhst logout</code><span>Log out.</span></div>
+            <div class="cmd-row"><code>ezhst whoami</code><span>Show the logged in account.</span></div>
+            <div class="cmd-row"><code>ezhst resend-verification</code><span>Email a new code. Codes expire after 10 minutes, and you can request one every 60 seconds.</span></div>
+            <div class="cmd-row"><code>ezhst forgot-password --email &lt;email&gt;</code><span>Send a password reset link.</span></div>
+          </div>
+          <p>Verification is mandatory. Until you run <code>ezhst verify</code> with the code from your inbox, other commands are rejected. In the dashboard, the same code is entered on the screen shown after sign up.</p>
+          <p><code>login</code> and <code>register</code> save your token in <code>~/.easyhost/config.json</code>. In CI or agent sandboxes, provide the token with the <code>EZHST_TOKEN</code> environment variable instead.</p>
+          <div class="code"><pre>EZHST_TOKEN=&lt;token&gt; npx ezhst deploy --json</pre></div>
+          <h3>Output and prompts</h3>
+          <ul>
+            <li>Every command accepts <code>--json</code> for machine readable output. Agents should always use it.</li>
+            <li>In a terminal, missing values are asked for interactively. Without a TTY the CLI never prompts: it fails with a message naming the missing flag.</li>
+          </ul>
+        </section>
+
+        <section id="projects">
+          <h2>Projects and linking</h2>
+          <p>A project contains up to three apps (Node.js apps and AI Builder apps count together) and five scheduled API calls, with a shared storage bucket and database. Each app has its own subdomain: <code>&lt;app-slug&gt;.easyhost.fun</code>.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst projects list</code><span>List your projects.</span></div>
+            <div class="cmd-row"><code>ezhst projects create &lt;name&gt;</code><span>Create a project.</span></div>
+            <div class="cmd-row"><code>ezhst projects info</code><span>Project details and apps.</span></div>
+            <div class="cmd-row"><code>ezhst projects rename &lt;name&gt;</code><span>Change the display name. The URL stays the same.</span></div>
+            <div class="cmd-row"><code>ezhst projects delete --yes</code><span>Delete all apps, deployments, schedules, storage and the database.</span></div>
+            <div class="cmd-row"><code>ezhst link [--project &lt;slug&gt;]</code><span>Link the current folder to a project (writes <code>.easyhost.json</code>).</span></div>
+          </div>
+          <p>Project-scoped commands use the project linked in <code>.easyhost.json</code>. Pass <code>--project &lt;slug&gt;</code> to any of them to target another project.</p>
+          <div class="code"><pre>ezhst projects create my-project
+ezhst projects list
+ezhst apps create my-api --project &lt;project-slug&gt;
+ezhst link --project &lt;project-slug&gt; --app &lt;app-slug&gt;</pre></div>
+        </section>
+
+        <section id="deploying">
+          <h2>Deploying</h2>
+          <p>Use <code>ezhst apps list</code>, <code>ezhst apps create &lt;name&gt;</code>, and <code>ezhst apps delete --app &lt;slug&gt; --yes</code> to manage up to three apps per project. Deployment, environment, build, domain and runtime commands accept <code>--app &lt;slug-or-id&gt;</code>. Link an app with <code>ezhst link --project &lt;slug&gt; --app &lt;slug&gt;</code>.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst deploy [--verbose]</code><span>Package the Node.js app in the current folder, upload, build and go live.</span></div>
+            <div class="cmd-row"><code>ezhst redeploy [--verbose]</code><span>Rebuild the latest upload. Use after changing env vars or build settings.</span></div>
+            <div class="cmd-row"><code>ezhst start</code><span>Start the app.</span></div>
+            <div class="cmd-row"><code>ezhst stop</code><span>Stop the app.</span></div>
+            <div class="cmd-row"><code>ezhst deployments list</code><span>List deployments.</span></div>
+          </div>
+          <h3>What gets uploaded</h3>
+          <p><code>deploy</code> uploads your project source. It skips <code>node_modules</code>, <code>.next</code>, <code>.git</code> and every <code>.env*</code> file. No changes to your project are needed.</p>
+          <div class="note">
+            <p>Environment variables are not read from your <code>.env</code> files. Set them with <code>ezhst env set</code> or <code>ezhst env import .env</code> before deploying.</p>
+          </div>
+          <p>Your app is live at <code>https://&lt;slug&gt;.easyhost.fun</code> once the build finishes.</p>
+        </section>
+
+        <section id="env">
+          <h2>Environment variables</h2>
+          <p>Variables are applied on the next <code>deploy</code> or <code>redeploy</code>.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst env list</code><span>List variables.</span></div>
+            <div class="cmd-row"><code>ezhst env set KEY=VALUE [KEY=VALUE...]</code><span>Set one or more variables.</span></div>
+            <div class="cmd-row"><code>ezhst env unset KEY [KEY...]</code><span>Remove one or more variables.</span></div>
+            <div class="cmd-row"><code>ezhst env import &lt;file&gt;</code><span>Merge the variables from a .env file.</span></div>
+          </div>
+          <div class="code"><pre>ezhst env set NEXT_PUBLIC_SITE_URL=https://my-app.easyhost.fun
+ezhst env import .env.production
+ezhst redeploy</pre></div>
+        </section>
+
+        <section id="build">
+          <h2>Build settings</h2>
+          <p>Empty settings are auto-detected, which works for most Node.js apps.</p>
+          <p>Supported frameworks include Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. SvelteKit and Astro projects need their Node adapters; any other framework works when its production start command listens on <code>0.0.0.0:$PORT</code>.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst build show</code><span>Show the current settings.</span></div>
+            <div class="cmd-row"><code>ezhst build set [--node 20|22|24] [--root-dir &lt;dir&gt;] [--install &lt;cmd&gt;] [--build &lt;cmd&gt;] [--start &lt;cmd&gt;]</code><span>Override one or more settings. Pass <code>""</code> to reset a field to auto.</span></div>
+            <div class="cmd-row"><code>ezhst build reset</code><span>Reset every setting to auto.</span></div>
+          </div>
+          <h3>Auto-detection</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Setting</th><th>Default</th></tr></thead>
+              <tbody>
+                <tr><td>Node version</td><td><code>engines.node</code> in package.json, otherwise 24</td></tr>
+                <tr><td>Package manager</td><td>From your lockfile</td></tr>
+                <tr><td>Build command</td><td>Package build script if present; skipped otherwise</td></tr>
+                <tr><td>Start command</td><td>Package start script, Next.js, Nuxt, or Node.js entry file; must listen on 0.0.0.0 and $PORT</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="code"><pre>ezhst build set --node 22 --root-dir apps/web
+ezhst build set --install ""
+ezhst redeploy</pre></div>
+        </section>
+
+        <section id="logs">
+          <h2>Logs and build logs</h2>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst logs [--tail &lt;lines&gt;]</code><span>Runtime logs from the running app.</span></div>
+            <div class="cmd-row"><code>ezhst deployments log [deploymentId]</code><span>Full build log. Defaults to the latest deployment.</span></div>
+          </div>
+          <p>When a deploy fails, read the build log, fix the cause and run <code>ezhst deploy</code> again.</p>
+          <div class="code"><pre>ezhst deployments log --json
+ezhst logs --tail 200</pre></div>
+        </section>
+
+        <section id="domains">
+          <h2>Custom domains</h2>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst domains list</code><span>List domains with the DNS target for each.</span></div>
+            <div class="cmd-row"><code>ezhst domains add &lt;hostname&gt;</code><span>Add a domain.</span></div>
+            <div class="cmd-row"><code>ezhst domains verify &lt;hostname&gt;</code><span>Check DNS, then issue HTTPS.</span></div>
+            <div class="cmd-row"><code>ezhst domains remove &lt;hostname&gt;</code><span>Remove a domain.</span></div>
+          </div>
+          <h3>DNS records</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Domain</th><th>Type</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td>Subdomain, like <code>www.example.com</code></td><td>CNAME</td><td><code>&lt;slug&gt;.easyhost.fun</code></td></tr>
+                <tr><td>Root domain, like <code>example.com</code></td><td>A</td><td>Server IP shown by <code>ezhst domains list</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="code"><pre>ezhst domains add www.example.com
+ezhst domains list
+ezhst domains verify www.example.com</pre></div>
+        </section>
+
+        <section id="storage">
+          <h2>Storage <small>S3 compatible</small></h2>
+          <p>Each project gets one bucket. Files are public by URL.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst storage info</code><span>Bucket, public base URL and S3 credentials.</span></div>
+            <div class="cmd-row"><code>ezhst storage create &lt;name&gt;</code><span>Create the bucket.</span></div>
+            <div class="cmd-row"><code>ezhst storage rotate-keys</code><span>Issue new S3 credentials.</span></div>
+            <div class="cmd-row"><code>ezhst storage ls [prefix]</code><span>List files.</span></div>
+            <div class="cmd-row"><code>ezhst storage upload &lt;files...&gt; [--prefix &lt;path/&gt;]</code><span>Upload files.</span></div>
+            <div class="cmd-row"><code>ezhst storage download &lt;key&gt; [output]</code><span>Download a file.</span></div>
+            <div class="cmd-row"><code>ezhst storage rm &lt;key&gt;</code><span>Delete a file.</span></div>
+            <div class="cmd-row"><code>ezhst storage delete --yes</code><span>Delete the bucket.</span></div>
+          </div>
+          <h3>Using it from your app</h3>
+          <p>Run <code>ezhst storage info</code>, store the credentials with <code>ezhst env set</code>, then use any S3 client. The endpoint is <code>https://storage.easyhost.fun</code>, the region is <code>us-east-1</code> and requests must use path-style URLs.</p>
+          <div class="code"><div class="code-label">lib/storage.ts</div><pre>import &#123; S3Client, PutObjectCommand &#125; from "@aws-sdk/client-s3";
+
+export const s3 = new S3Client(&#123;
+  endpoint: "https://storage.easyhost.fun",
+  region: "us-east-1",
+  forcePathStyle: true,
+  credentials: &#123;
+    accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+  &#125;,
+&#125;);
+
+export const uploadAvatar = async (userId: string, body: Buffer) =&gt; &#123;
+  await s3.send(
+    new PutObjectCommand(&#123;
+      Bucket: process.env.S3_BUCKET!,
+      Key: `avatars/$&#123;userId&#125;.png`,
+      Body: body,
+      ContentType: "image/png",
+    &#125;),
+  );
+&#125;;</pre></div>
+          <p>The file is then served at the public base URL from <code>storage info</code> followed by its key.</p>
+        </section>
+
+        <section id="database">
+          <h2>Database <small>Postgres</small></h2>
+          <p>Each project gets one managed Postgres database. See <a href="/free-postgres-hosting">free Postgres hosting</a> for what is included.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst db info</code><span>Connection string, shadow connection string and tables.</span></div>
+            <div class="cmd-row"><code>ezhst db create &lt;name&gt;</code><span>Create the database.</span></div>
+            <div class="cmd-row"><code>ezhst db query "&lt;sql&gt;"</code><span>Run a SQL statement.</span></div>
+            <div class="cmd-row"><code>ezhst db query --file &lt;file.sql&gt;</code><span>Run a SQL file.</span></div>
+            <div class="cmd-row"><code>ezhst db rows &lt;table&gt; [--page &lt;n&gt;]</code><span>Browse rows in a table.</span></div>
+            <div class="cmd-row"><code>ezhst db reset-password</code><span>Rotate the password and print the new connection string.</span></div>
+            <div class="cmd-row"><code>ezhst db delete --yes</code><span>Delete the database.</span></div>
+          </div>
+          <h3>Connecting your app</h3>
+          <p>Copy the connection string from <code>ezhst db info</code> into your app's environment. It works with Prisma, Drizzle or any Postgres client.</p>
+          <div class="code"><pre>ezhst db create main
+ezhst db info --json
+ezhst env set DATABASE_URL="postgresql://..."</pre></div>
+          <h3>Prisma migrations</h3>
+          <p><code>prisma migrate dev</code> needs a shadow database. Use the shadow connection string from <code>ezhst db info</code>.</p>
+          <div class="code"><div class="code-label">prisma/schema.prisma</div><pre>datasource db &#123;
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+&#125;</pre></div>
+          <p>After <code>ezhst db reset-password</code>, update <code>DATABASE_URL</code> with <code>ezhst env set</code> and run <code>ezhst redeploy</code>.</p>
+        </section>
+
+        <section id="schedules">
+          <h2>Scheduled API calls</h2>
+          <p>Create up to five schedules per project. Calls support public HTTP/HTTPS URLs, request headers and a body. Intervals range from 1 to 43200 minutes. Calls time out after 30 seconds and do not follow redirects.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst schedules list</code><span>List schedules.</span></div>
+            <div class="cmd-row"><code>ezhst schedules create &lt;name&gt; --url &lt;url&gt; --every &lt;minutes&gt; [--method POST] [--headers '&lt;json&gt;'] [--body '&lt;text&gt;']</code><span>Create a schedule.</span></div>
+            <div class="cmd-row"><code>ezhst schedules update &lt;id&gt; [--url &lt;url&gt;] [--every &lt;minutes&gt;]</code><span>Update a schedule. Also accepts --name, --method, --headers and --body.</span></div>
+            <div class="cmd-row"><code>ezhst schedules pause &lt;id&gt; | resume &lt;id&gt;</code><span>Pause or resume calls.</span></div>
+            <div class="cmd-row"><code>ezhst schedules logs &lt;id&gt;</code><span>Show the latest 10 results; the latest 100 are retained.</span></div>
+            <div class="cmd-row"><code>ezhst schedules delete &lt;id&gt; --yes</code><span>Delete a schedule and its history.</span></div>
+          </div>
+          <p>The first call follows one full interval. Saving or resuming restarts the interval. Execution may be delayed by the 10-second worker poll or available capacity. Missed intervals are skipped after downtime, and calls to the same schedule do not overlap. Requests already in progress may finish after pausing or deleting.</p>
+        </section>
+
+        <section id="email">
+          <h2>Email <small>coming soon</small></h2>
+          <p>Transactional email for your apps is coming soon. It is not available yet: the dashboard Email page shows Coming soon, and the <code>ezhst email</code> commands and the email API return <code>Email is coming soon.</code> Account emails from EasyHost itself, such as verification codes, password resets and invites, are still sent.</p>
+        </section>
+
+        <section id="members">
+          <h2>Team members</h2>
+          <p>Invite people to a project by email. Members can manage everything in it. Only the owner can invite, revoke invites, remove members, rename or delete the project.</p>
+          <div class="cmds">
+            <div class="cmd-row"><code>ezhst members list</code><span>Show the owner, members and pending invites.</span></div>
+            <div class="cmd-row"><code>ezhst members invite &lt;email&gt;</code><span>Email an invite. The link is valid for 7 days and is also printed.</span></div>
+            <div class="cmd-row"><code>ezhst members revoke &lt;email&gt;</code><span>Revoke a pending invite.</span></div>
+            <div class="cmd-row"><code>ezhst members remove &lt;email&gt; --yes</code><span>Remove a member.</span></div>
+            <div class="cmd-row"><code>ezhst members leave --yes</code><span>Leave a project you were invited to.</span></div>
+            <div class="cmd-row"><code>ezhst accept-invite &lt;link-or-token&gt;</code><span>Join a project. Log in with the invited email first.</span></div>
+          </div>
+        </section>
+
+        <section id="ai-builder">
+          <h2>AI Builder <small>dashboard</small></h2>
+          <p>The AI Builder turns a description into a running app. Open <strong>Builder</strong> in the <a href="https://app.easyhost.fun/builder">dashboard</a>, create an app and describe it. The name becomes its address, <code>https://&lt;name&gt;.easyhost.fun</code>.</p>
+          <p>For a new app or a big feature, the AI asks a few questions, shows a short plan to approve and lets you pick one of 9 themes before it builds. Small changes go straight to code. Every step is shown live: files written, SQL run and packages installed.</p>
+          <p>To point at part of the page, click <strong>Select element</strong> and then the element in the preview. It is tagged in your message so the AI knows exactly what to change. You can also attach up to 5 images per message (png, jpg, gif, webp, avif, svg or ico, up to 5 MB each). They are saved in the app and served at <code>/uploads/&lt;name&gt;</code>, and the AI uses them only as they are, for example as a logo or background. It cannot see, edit, describe or generate images.</p>
+          <p>The menu next to <strong>Select element</strong> opens the <strong>Code</strong> view, where you can edit any file and save it straight into the running app, and <strong>Export</strong>, which downloads all of the app's code as a zip.</p>
+          <p>AI apps are plain JavaScript Hono servers. They use the project's Postgres database and storage when they need them (email is coming soon), and work with environment variables, logs and custom domains like any other app. The AI Builder is not part of the CLI.</p>
+          <p>Each account gets its first AI app and its first build free. After that, AI requests use AI Tokens, bought once in the dashboard and never expiring: 500 tokens for $5, 1,100 for $10, 2,400 for $20 or 6,500 for $50. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. Hosting AI apps stays free, and AI apps count toward the 3 apps per project.</p>
+        </section>
+
+        <section id="limits">
+          <h2>Limits</h2>
+          <p>EasyHost hosting is free within these limits. The AI Builder uses AI Tokens after your first free AI app and build. Node.js apps are supported, including Next.js and HTTP APIs. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Resource</th><th>Limit</th></tr></thead>
+              <tbody>
+                <tr><td>Projects</td><td>3</td></tr>
+                <tr><td>Apps</td><td>3 per project</td></tr>
+                <tr><td>Schedules</td><td>5 per project</td></tr>
+                <tr><td>Storage buckets</td><td>1 per project</td></tr>
+                <tr><td>Databases</td><td>1 per project</td></tr>
+                <tr><td>Email</td><td>Coming soon</td></tr>
+                <tr><td>Team members</td><td>10 per project, including pending invites</td></tr>
+                <tr><td>AI Builder prompts</td><td>30 per day, per project</td></tr>
+                <tr><td>Concurrent builds</td><td>1</td></tr>
+                <tr><td>App container</td><td>512 MB RAM, 1 CPU</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+    <Footer />
+    <CopyCode />
+</Base>

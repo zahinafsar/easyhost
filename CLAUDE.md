@@ -10,6 +10,7 @@ Hosting platform: Node.js app hosting (containers routed by Nginx Proxy Manager)
 - client: Vite + React 19, React Router, React Query, shadcn/ui + Tailwind v4, sonner
 - server: Hono on Node, Prisma + PostgreSQL, Zod, JWT (httpOnly cookie + Bearer), MinIO, pg (customer databases), dockerode, Resend
 - cli: commander, tar, @inquirer/prompts
+- marketing: Astro 5 static site (`marketing/`)
 - infra: docker-compose (postgres, minio, minio-init, registry, registry-init, api in prod); infra/postgres provides TLS and access rules. App images are built on Google Cloud Build and pushed to the self-hosted registry
 
 ## Commands
@@ -18,6 +19,7 @@ Hosting platform: Node.js app hosting (containers routed by Nginx Proxy Manager)
 - `docker compose up -d` - Dev infra: postgres 127.0.0.1:54329, minio 127.0.0.1:19000 (console 19001), and builds the `easyhost/ai-runtime` image AI apps run on (the `ai-runtime` service exits right away; after editing `server/ai-runtime/` run `docker compose up -d --build ai-runtime`)
 - `cd server && npm run dev` - API on :48710
 - `cd client && npm run dev` - Dashboard on :51730 (proxies /api to :48710)
+- `cd marketing && npm run dev` - Marketing site (Astro). `npm run build` also validates generated pages (duplicate titles, broken links, orphans, em dashes)
 - `cd cli && npm run dev -- <command>` - Run CLI (`ezhst`) from source
 - `cd server && npm run prisma -- migrate dev --name <name>` - Create/apply migration (Prisma reads root `.env`)
 - `cd server && npm run prisma -- studio` - Database GUI
@@ -25,7 +27,7 @@ Hosting platform: Node.js app hosting (containers routed by Nginx Proxy Manager)
 ## Production (VPS)
 - The VPS already runs Nginx Proxy Manager (NPM) on 80/443 for other sites and it does all HTTP routing (no Caddy). API and minio join NPM's docker network (`PROXY_NETWORK` in `.env`) as `easyhost-api` and `easyhost-minio`, NPM joins the `easyhost` apps network. Shared Postgres publishes port 5432 directly with TLS
 - NPM terminates TLS with a wildcard certificate (DNS challenge). `easyhost.fun`, `www`, `app`, `api` -> `easyhost-api:48710`; `storage.` -> `easyhost-minio:9000`; `registry.` -> `easyhost-registry:5000` (advanced config `client_max_body_size 0; proxy_request_buffering off;`); `*.easyhost.fun` -> one wildcard proxy host whose advanced config sets `$server` to `eh-app-<subdomain>` (port 3000), resolved at request time
-- In production the API serves by Host (`server/src/index.ts`): `easyhost.fun` = `/marketing`, `www.` = redirect, `app.` = built dashboard (SPA fallback, `/api/*` same origin), anything else = API. Dashboard and marketing are baked into the api image (`server/Dockerfile`, repo root build context)
+- In production the API serves by Host (`server/src/index.ts`): `easyhost.fun` = `/marketing`, `www.` = redirect, `app.` = built dashboard (SPA fallback, `/api/*` same origin), anything else = API. Dashboard and marketing (Astro build stage) are baked into the api image (`server/Dockerfile`, repo root build context)
 - API container mounts the Docker socket
 - Reserved app names (api, app, www, storage, registry, ...) live in `server/src/lib/validations.ts`
 
@@ -48,6 +50,7 @@ Hosting platform: Node.js app hosting (containers routed by Nginx Proxy Manager)
 - `/client/src/lib/queries/*` - React Query option factories
 - `/client/src/providers/*`, `/client/src/hooks/*`
 - `/cli/src/commands/*` - CLI commands (full parity with the dashboard, `--json`, `--project <slug>`, no prompts without TTY, `EZHST_TOKEN`)
+- `/marketing/src/pages/*.astro` - Hand-written marketing pages; `/marketing/src/pages/[...slug].astro` renders the generated pages built from `/marketing/src/seo/` (data.mjs, reference.mjs, pages.mjs; site.mjs holds footer, sitemap rules, held back families, validation). `.md` copies are written by an integration in `astro.config.mjs`; sitemap.xml, llms.txt, llms-index.json are endpoints
 - `/cli/skill/SKILL.md` - Agent skill (`ezhst skill install`, copied to `/skill.md` on the marketing site by `server/Dockerfile`)
 
 ## Key Patterns

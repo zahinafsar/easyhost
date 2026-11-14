@@ -1,0 +1,19 @@
+<script is:inline>
+      const copyIcon = '<svg class="icon icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="icon icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+      document.querySelectorAll(".code").forEach((block) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "copy";
+        button.setAttribute("aria-label", "Copy code");
+        button.innerHTML = copyIcon;
+        button.addEventListener("click", () => {
+          navigator.clipboard.writeText(block.querySelector("pre").textContent).then(() => {
+            button.classList.add("copied");
+            setTimeout(() => {
+              button.classList.remove("copied");
+            }, 1500);
+          });
+        });
+        block.appendChild(button);
+      });
+    </script>

@@ -6,7 +6,6 @@
     "start": "node scripts/start.mjs",
     "restart": "node scripts/start.mjs --force-recreate",
     "stop": "docker compose -f docker-compose.prod.yml --env-file .env down",
-    "logs": "docker compose -f docker-compose.prod.yml --env-file .env logs -f --tail 100",
-    "seo": "node scripts/seo/generate.mjs marketing server/src/lib/limits.ts"
+    "logs": "docker compose -f docker-compose.prod.yml --env-file .env logs -f --tail 100"
   }
 }

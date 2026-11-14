@@ -11,6 +11,14 @@ RUN test -n "$VITE_MARKETING_URL" || (echo "VITE_MARKETING_URL build arg is requ
 ENV VITE_MARKETING_URL=$VITE_MARKETING_URL
 RUN npx vite build
 
+FROM node:22-alpine AS marketing
+WORKDIR /repo/marketing
+COPY marketing/package.json marketing/package-lock.json ./
+RUN npm ci
+COPY marketing/ ./
+COPY server/src/lib/limits.ts /repo/server/src/lib/limits.ts
+RUN npm run build
+
 FROM node:22-bookworm-slim AS build
 RUN apt-get update && apt-get install -y --no-install-recommends openssl python3 make g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
@@ -31,7 +39,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY server/package.json ./
 COPY server/ai-template ./ai-template
-COPY marketing ./public/marketing
+COPY --from=marketing /repo/marketing/dist ./public/marketing
 COPY cli/skill/SKILL.md ./public/marketing/skill.md
 RUN find public/marketing -type f \( -name "*.html" -o -name "*.css" -o -name "*.svg" -o -name "*.xml" -o -name "*.txt" -o -name "*.md" \) -exec gzip -9 -k {} +
 COPY --from=dashboard /repo/client/dist ./public/dashboard

@@ -1,0 +1,35 @@
+---
+import { FOOTER_COLUMNS } from "../seo/site.mjs";
+---
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-brand">
+      <a href="/" class="logo">
+        <img src="/logo.svg" alt="" width="18" height="24" />
+        EasyHost
+      </a>
+      <p>Free Node.js hosting with Postgres, S3 storage and schedules, built for AI coding agents. No credit card.</p>
+    </div>
+    <nav class="footer-columns" aria-label="Footer">
+      {
+        FOOTER_COLUMNS.map((column) => (
+          <div class="footer-column">
+            <p class="footer-title">{column.title}</p>
+            <ul>
+              {column.links.map(([href, label]) => (
+                <li>
+                  <a href={href}>{label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </nav>
+    <div class="footer-bottom">
+      <span>&copy; 2026 EasyHost</span>
+      <code>npx ezhst skill install</code>
+    </div>
+  </div>
+</footer>
