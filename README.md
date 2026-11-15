@@ -1,133 +1,75 @@
-# EasyHost
+# EasyHost Architecture
 
-Hosting platform for Node.js apps with scheduled API calls, object storage, Postgres databases and transactional email. Each project supports up to five apps and five schedules.
+EasyHost hosts Node.js apps, AI-built apps, Postgres databases, S3 storage, scheduled HTTP calls and email. Everything runs on one VPS behind Nginx Proxy Manager. Image builds run on Google Cloud Build so the VPS only pulls and runs images.
 
-## Getting started
+```mermaid
+flowchart LR
+    User[Dashboard / CLI] --> NPM[Nginx Proxy Manager]
+    Visitor[App visitors] --> NPM
 
-All config lives in one root `.env`, locally and on the VPS. Start from `.env.example` locally and `.env.production.example` on the VPS.
+    subgraph VPS
+        NPM --> API[API]
+        NPM --> MinIO[(MinIO storage)]
+        NPM --> Apps[App containers]
+        API --> PG[(Postgres)]
+        API --> MinIO
+        API -->|Docker socket| Apps
+        Registry[(Registry)] --> Apps
+    end
 
-```bash
-cp .env.example .env
-docker compose up -d
+    subgraph Google Cloud
+        GCB[Cloud Build]
+        Gemini[Gemini]
+    end
 
-cd server
-npm install
-npm run prisma -- migrate dev
-npm run dev
-
-cd ../client
-npm install
-npm run dev
+    API --> GCB
+    GCB --> Registry
+    API --> Gemini
+    API --> Resend[Resend email]
+    Visitor -.->|TLS :5432| PG
 ```
 
-Dashboard: http://localhost:51730
-API: http://localhost:48710
-MinIO console: http://localhost:19001 (easyhost / easyhost123)
+## Components
 
-The API provisions per-bucket S3 keys with the MinIO client, so `mc` must be on your PATH locally (`brew install minio/stable/mc`). The production API image ships it.
+- **server**: Hono API on Node with Prisma and Zod. Runs the build queue, schedule worker and AI jobs in the same process. In production it also serves the marketing site and the dashboard, both baked into its image.
+- **client**: React 19 dashboard (Vite, React Query, shadcn/ui), calling the API through a typed Hono client.
+- **cli**: `ezhst`, with the same features as the dashboard. Supports `--json` and token auth so AI agents can drive it.
+- **marketing**: Astro static site with docs and generated SEO pages.
+- **ai-runtime**: Docker image that AI-built apps run on.
 
-## Deploying an app
+## Routing
 
-Any Node.js app with a `package.json`. HTTP apps must listen on `0.0.0.0` and `process.env.PORT` (3000). The build script is optional; start is detected from `scripts.start`, Next.js, Nuxt, or a Node.js entry file. Override commands in Build settings when needed:
+Nginx Proxy Manager terminates TLS with a wildcard certificate and does all HTTP routing:
 
-```bash
-cd cli && npm install && npm run build && npm link
-cd path/to/your-next-app
-ezhst login --api http://localhost:48710
-ezhst projects list
-ezhst apps create my-api --project <project-slug>
-ezhst deploy --project <project-slug> --app <app-slug>
-```
+- `easyhost.fun`, `app.`, `api.` go to the API, which serves marketing, the dashboard or the API by Host.
+- `storage.` goes to MinIO, `registry.` to the Docker registry.
+- `<slug>.easyhost.fun` goes to the container `eh-app-<slug>`, resolved by Docker DNS at request time, so a new app needs no routing setup.
+- Custom domains get their own certificate and proxy host, created through the NPM API after DNS is verified.
 
-`.env` files are not uploaded. Use `ezhst env set KEY=VALUE` or `ezhst env import .env` (or the dashboard) and redeploy.
+## Deploys
 
-The CLI covers everything the dashboard does (projects, apps, schedules, deploys, build logs, env, build settings, domains, storage, database, email, API keys, members). App commands accept `--app <slug-or-id>`; use `ezhst link --project <slug> --app <slug>` to save both selections. A project with multiple apps requires an explicit or linked app. Every command takes `--json`, never prompts without a TTY, and accepts `EZHST_TOKEN` instead of a saved login, so AI agents can drive it. `ezhst --help` lists all commands; the agent skill lives in `cli/skill/SKILL.md` (installed with `ezhst skill install`, served at `https://easyhost.fun/skill.md`).
+1. `ezhst deploy` uploads the source as a tarball, stored in MinIO.
+2. The API queues the build in Postgres. Workers claim jobs with `FOR UPDATE SKIP LOCKED`, run a few at once, and never two for the same app.
+3. The API generates a Dockerfile from the detected package manager, build and start commands (overridable per app) and uploads the context to Cloud Storage.
+4. Cloud Build builds the image and pushes it to the self-hosted registry. The API streams the build log into the deployment.
+5. The API pulls the image and replaces the app container. Old images are deleted.
 
-`ezhst skill install` asks which agent to install for (Claude Code, Codex or Cursor), then whether to install globally or locally. Claude Code uses `.claude/skills`, Codex uses `.agents/skills`, Cursor uses `.cursor/skills` (under `~` for Global, the current directory for Local), each at `skills/easyhost/SKILL.md`. Pass `--agent <claude|codex|cursor>` and `--global` or `--local` to skip the prompts; both are required for noninteractive use, including `--json`.
+App env is passed to builds as a BuildKit secret, never as build args. Builds in progress resume after an API restart.
 
-Locally apps run as containers without routing. In production they are served at `https://<app-name>.easyhost.fun`.
+## AI apps
 
-## Scheduled API calls
+The user chats with a Gemini agent in the dashboard. The agent reads and edits files stored in MinIO, and changes are pushed into a running container that hot reloads, so the preview updates live. For bigger requests it first asks questions, proposes a plan and lets the user pick a theme. Database, storage and email are created only when the agent first needs them. Each user gets one free app and build, then usage is charged from a token balance bought through Lemon Squeezy.
 
-Create up to five schedules per project from the Schedules page or CLI:
+## Data
 
-```bash
-ezhst schedules create sync --project <project-slug> --url https://my-api.example.com/sync --every 15 --method POST --headers '{"Content-Type":"application/json"}' --body '{}'
-ezhst schedules list --project <project-slug>
-ezhst schedules logs <schedule-id> --project <project-slug>
-ezhst schedules pause <schedule-id> --project <project-slug>
-ezhst schedules resume <schedule-id> --project <project-slug>
-```
+- **Postgres**: one instance holds the platform database and every customer database. Each customer database has its own role, customers cannot reach platform databases, and connections require TLS.
+- **MinIO**: S3 compatible. Each bucket has its own access key scoped to that bucket. Files are public by URL.
+- **Email**: sent through Resend from per-project sender addresses.
 
-Intervals range from 1 minute to 30 days. The first call runs after one full interval; saving or resuming restarts the interval. The worker polls every 10 seconds, uses database leases to prevent overlapping calls to the same schedule, and skips missed intervals after downtime. Calls time out after 30 seconds, accept public HTTP/HTTPS URLs, and do not follow redirects. The latest 100 runs are retained; the dashboard and CLI show the latest 10. A request already in progress may finish after pausing or deleting a schedule.
+## Schedules
 
-## Project apps and schedules schema update
+A worker in the API polls every 10 seconds and calls each due URL. Database leases stop the same schedule from running twice, calls time out after 30 seconds, and only public addresses are allowed.
 
-Existing project IDs, app URLs, deployments, and shared resources are retained. Existing apps count as the first app in their projects. New project workspaces start without an app. Deleting an app keeps project services; deleting a project removes all of its apps, schedules, and shared resources. Pending deployments must finish before deletion.
+## Configuration
 
-The Prisma client has been regenerated. Create and apply the additive migration before running the updated server:
-
-```bash
-cd server
-npm run prisma -- migrate dev --name project_apps_schedules
-```
-
-Commit the Prisma-generated migration. Production startup applies committed migrations with `prisma migrate deploy`. Do not reset the database if Prisma reports drift; resolve the migration history first.
-
-## Databases
-
-One `postgres` container hosts both EasyHost's internal `easyhost` database and customer databases. Each customer gets a separate Postgres database with its own role and password, plus a `<name>_shadow` database for `prisma migrate dev`. Customer logins are blocked from `easyhost`, `postgres`, and `template1`; they can connect only over TLS, and each customer database revokes public access. Both Prisma and customer database provisioning use `DATABASE_URL`, with the `easyhost` administrator login.
-
-In production Postgres listens publicly on `db.easyhost.fun:5432` with a trusted Let's Encrypt certificate issued by Nginx Proxy Manager, and customer connection strings use `sslmode=verify-full`. Locally the shared instance listens on `localhost:54329` with a self-signed certificate and customer connection strings use `sslmode=no-verify`. The internal `DATABASE_URL` uses `sslmode=require` in both environments.
-
-Production certificate setup (once):
-
-1. In NPM, SSL Certificates, add a Let's Encrypt certificate for `db.easyhost.fun`.
-2. Find NPM's letsencrypt folder on the host (`docker inspect nginx-proxy-manager_app_1 -f '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{println}}{{end}}'`, the one mounted at `/etc/letsencrypt`) and the certificate folder name (`ls <folder>/live`, e.g. `npm-7`).
-3. Set `NPM_LETSENCRYPT_DIR` and `POSTGRES_CERT_NAME` in `.env`.
-
-The `postgres` container copies the certificate in on start and checks for renewals every 6 hours. Access rules are applied on every start, including when reusing an existing `postgres_data` volume.
-
-## Custom domains
-
-Apps can have custom domains (Domains tab on the app page). The user points the domain at the server (CNAME to `<app>.easyhost.fun`, or an A record to `PUBLIC_IP` for a root domain) and clicks Verify. EasyHost checks DNS, then in production asks Nginx Proxy Manager's API for a Let's Encrypt certificate and a proxy host forwarding straight to the app container (`eh-app-<app>:3000`).
-
-NPM setup (once): in NPM, Users, create a dedicated user (no two-factor) with "Item Visibility: Created Items Only" and "Manage" on Proxy Hosts and SSL Certificates, so EasyHost can only see and change what it created. Put its API URL, email, and password in `NPM_API_URL`, `NPM_API_EMAIL`, and `NPM_API_PASSWORD` in the production `.env`. Local development skips NPM.
-
-## Storage
-
-Storage is S3 compatible. Every bucket gets its own access key and secret (shown on the bucket page, rotatable) limited to that bucket. Use any S3 client with endpoint `https://storage.easyhost.fun`, region `us-east-1`, path-style addressing and the bucket's `eh-...` name. Files are publicly readable at `https://storage.easyhost.fun/<bucket>/<key>`.
-
-## Service API
-
-Create an API key in the dashboard and send it as `Authorization: Bearer <key>`.
-
-- `POST /api/v1/email/send` with `{ "from", "to", "subject", "html" | "text" }`. `from` is required and must be one of your sender addresses (`<username>@easyhost.fun`, up to 10 per account, created on the Email page)
-
-## Production
-
-The VPS runs Nginx Proxy Manager (NPM) on ports 80/443. EasyHost's API and storage run behind it; the shared Postgres service publishes port 5432 directly with TLS.
-
-1. DNS: `easyhost.fun`, `www`, `app`, `api`, `storage` and `*.easyhost.fun` point at the VPS.
-2. Copy `.env.production.example` to `.env` on the server, fill it in, and set `PROXY_NETWORK` to NPM's docker network.
-3. Start:
-
-```bash
-git clone <repo> easyhost && cd easyhost
-npm start
-```
-
-Run `npm run restart` to rebuild and force-recreate the production services without deleting database or storage volumes.
-
-4. Let NPM reach app containers: `docker network connect easyhost nginx-proxy-manager_app_1`, and make NPM resolve container names at request time: `docker exec nginx-proxy-manager_app_1 sh -c 'printf "resolver 127.0.0.11 ipv6=off valid=10s;\n" > /etc/nginx/conf.d/include/resolvers.conf'`.
-5. In NPM, with SSL from the wildcard certificate issued through a DNS challenge:
-   - `easyhost.fun`, `www.easyhost.fun`, `app.easyhost.fun`, `api.easyhost.fun`: forward to `easyhost-api` port `48710` over HTTP. The API serves the marketing site, the dashboard and redirects `www`.
-   - `storage.easyhost.fun`: forward to `easyhost-minio` port `9000` over HTTP.
-   - `*.easyhost.fun`: forward to `eh-app` port `3000` over HTTP with websockets on, and this advanced config so each subdomain goes to its app container:
-
-```nginx
-if ($host ~* "^([a-z0-9-]+)\.easyhost\.fun$") { set $server "eh-app-$1"; }
-client_max_body_size 100m;
-```
-
-`npm start` refuses to run while any value in `.env` is empty or still a `<PLACEHOLDER>`.
+One root `.env` for every environment, validated at startup with no fallbacks. Limits (projects, apps, schedules, builds) live in `server/src/lib/limits.ts`.
