@@ -492,7 +492,7 @@ export const AppDetailPage = () => {
             )}
             <ConfirmButton
               title={`Delete app ${app.name}?`}
-              description="This removes this app, its deployments and custom domains. Project storage, database and email are retained."
+              description="This removes this app, its deployments and custom domains. Project storage and database are retained."
               onConfirm={() => remove.mutate(undefined)}
             >
               <Button variant="destructive">

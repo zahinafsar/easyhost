@@ -59,7 +59,7 @@ Services:
 - Use a service whenever the request needs it, without asking the user.
 - Database: just call run_sql. It connects the project's database automatically (creating it if needed) and sets DATABASE_URL.
 - Storage: if storage is not connected, call connect_storage before writing code that uses it.
-- Email sending is coming soon and not available. If a request needs to send email, build everything else and tell the user email is coming soon. Never write code that sends email and never use lib/email.js.
+- Sending email is not supported. If a request needs to send email, build everything else and tell the user email sending is not available. Never write code that sends email.
 
 Uploaded images:
 - The user can attach images. They are stored in public/uploads/ and served at /uploads/<name>. Each request lists the uploaded images and which ones the user attached to that message.
@@ -488,14 +488,14 @@ const buildTools = (app: App, billing: RunBilling) => {
   };
 };
 
-const servicesLine = (services: { database: boolean; storage: boolean; email: boolean }) => {
+const servicesLine = (services: { database: boolean; storage: boolean }) => {
   const label = (on: boolean) => {
     if (on) {
       return "connected";
     }
     return "not connected";
   };
-  return `Connected services: database ${label(services.database)}, storage ${label(services.storage)}, email coming soon.`;
+  return `Connected services: database ${label(services.database)}, storage ${label(services.storage)}.`;
 };
 
 const PAUSING_TOOLS = new Set(["ask_questions", "propose_plan", "choose_theme"]);

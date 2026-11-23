@@ -1,6 +1,6 @@
 # EasyHost Architecture
 
-EasyHost hosts Node.js apps, AI-built apps, Postgres databases, S3 storage and email. Everything runs on one VPS behind Nginx Proxy Manager. Image builds run on Google Cloud Build so the VPS only pulls and runs images.
+EasyHost hosts Node.js apps, AI-built apps, Postgres databases and S3 storage. Everything runs on one VPS behind Nginx Proxy Manager. Image builds run on Google Cloud Build so the VPS only pulls and runs images.
 
 ```mermaid
 flowchart LR
@@ -25,7 +25,7 @@ flowchart LR
     API --> GCB
     GCB --> Registry
     API --> Gemini
-    API --> Resend[Resend email]
+    API --> Resend[Resend account email]
     Visitor -.->|TLS :5432| PG
 ```
 
@@ -58,13 +58,13 @@ App env is passed to builds as a BuildKit secret, never as build args. Builds in
 
 ## AI apps
 
-The user chats with a Gemini agent in the dashboard. The agent reads and edits files stored in MinIO, and changes are pushed into a running container that hot reloads, so the preview updates live. For bigger requests it first asks questions, proposes a plan and lets the user pick a theme. Database, storage and email are created only when the agent first needs them. Each user gets one free app and build, then usage is charged from a token balance bought through Lemon Squeezy.
+The user chats with a Gemini agent in the dashboard. The agent reads and edits files stored in MinIO, and changes are pushed into a running container that hot reloads, so the preview updates live. For bigger requests it first asks questions, proposes a plan and lets the user pick a theme. Database and storage are created only when the agent first needs them. Each user gets one free app and build, then usage is charged from a token balance bought through Lemon Squeezy.
 
 ## Data
 
 - **Postgres**: one instance holds the platform database and every customer database. Each customer database has its own role, customers cannot reach platform databases, and connections require TLS.
 - **MinIO**: S3 compatible. Each bucket has its own access key scoped to that bucket. Files are public by URL.
-- **Email**: sent through Resend from per-project sender addresses.
+- **Email**: account emails (verification codes, password resets, invites) are sent through Resend.
 
 ## Configuration
 

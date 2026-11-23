@@ -1,22 +1,9 @@
 import { Resend } from "resend";
-import { createMiddleware } from "hono/factory";
 import { env } from "./env.js";
 
 const resend = new Resend(env.resendApiKey);
 const APP_URL = env.appUrl;
 const FROM_EMAIL = env.emailFrom;
-
-export const EMAIL_COMING_SOON = "Email is coming soon.";
-
-export const emailComingSoon = createMiddleware(async (c) => {
-  return c.json({ error: EMAIL_COMING_SOON, code: "EMAIL_COMING_SOON" }, 503);
-});
-
-export class EmailUsageLimitError extends Error {
-  constructor() {
-    super("Service temporarily paused due to over usage");
-  }
-}
 
 const emailLayout = (content: string) => {
   return `
@@ -100,7 +87,7 @@ export const sendProjectDeletedEmail = async (email: string, name: string, proje
         Hi ${escapeHtml(name)}, an EasyHost administrator deleted your project <strong>${escapeHtml(projectName)}</strong> (${escapeHtml(projectHost)}).
       </p>
       <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
-        The app, its deployments, custom domains, storage bucket, database, email sender and API keys were removed and cannot be restored. Your account and other projects are not affected.
+        The app, its deployments, custom domains, storage bucket and database were removed and cannot be restored. Your account and other projects are not affected.
       </p>
       ${button(APP_URL, "Open dashboard")}
       <p style="color: #9ca3af; font-size: 12px; margin-top: 24px; margin-bottom: 0;">
@@ -143,7 +130,7 @@ export const sendProjectInviteEmail = async (email: string, inviterName: string,
     html: emailLayout(`
       <h1 style="margin: 0 0 8px; font-size: 20px; color: #111;">You're invited</h1>
       <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
-        ${escapeHtml(inviterName)} invited you to join the project <strong>${escapeHtml(projectName)}</strong> on EasyHost. Members can manage its apps, deploys, storage, database, email and API keys.
+        ${escapeHtml(inviterName)} invited you to join the project <strong>${escapeHtml(projectName)}</strong> on EasyHost. Members can manage its apps, deploys, storage and database.
       </p>
       ${button(inviteUrl(token), "Accept invite")}
       <p style="color: #9ca3af; font-size: 12px; margin-top: 24px; margin-bottom: 0;">
@@ -151,41 +138,4 @@ export const sendProjectInviteEmail = async (email: string, inviterName: string,
       </p>
     `),
   });
-};
-
-export const EMAIL_DOMAIN = "easyhost.fun";
-
-export const senderAddress = (username: string) => `${username}@${EMAIL_DOMAIN}`;
-
-export const sendCustomerEmail = async ({
-  from,
-  to,
-  subject,
-  html,
-  text,
-  replyTo,
-}: {
-  from: string;
-  to: string[];
-  subject: string;
-  html?: string;
-  text?: string;
-  replyTo?: string;
-}) => {
-  const base = { from, to, subject, replyTo };
-  let result;
-  if (html) {
-    result = await resend.emails.send({ ...base, html, text });
-  } else {
-    result = await resend.emails.send({ ...base, text: text ?? "" });
-  }
-
-  if (result.error) {
-    if (["daily_quota_exceeded", "monthly_quota_exceeded", "rate_limit_exceeded"].includes(result.error.name)) {
-      throw new EmailUsageLimitError();
-    }
-    throw new Error(result.error.message);
-  }
-
-  return { id: result.data?.id ?? null };
 };

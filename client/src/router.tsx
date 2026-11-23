@@ -11,7 +11,6 @@ import { StoragePage } from "@/pages/storage";
 import { BucketPage } from "@/pages/bucket";
 import { DatabasesPage } from "@/pages/databases";
 import { DatabasePage } from "@/pages/database";
-import { EmailComingSoonPage } from "@/pages/email";
 import { SettingsPage } from "@/pages/settings";
 import { MembersPage } from "@/pages/members";
 import { BuilderPage } from "@/pages/builder";
@@ -41,7 +40,6 @@ export const router = createBrowserRouter([
       { path: "/storage/:id", element: <BucketPage /> },
       { path: "/databases", element: <DatabasesPage /> },
       { path: "/databases/:id", element: <DatabasePage /> },
-      { path: "/email", element: <EmailComingSoonPage /> },
       { path: "/builder", element: <BuilderPage /> },
       { path: "/builder/:id", element: <BuilderAppPage /> },
       { path: "/tokens", element: <TokensPage /> },

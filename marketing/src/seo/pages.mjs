@@ -816,7 +816,6 @@ const pricingPage = (limits) => {
 | Apps | ${limits.apps} per project |
 | Storage buckets | 1 per project |
 | Databases | 1 per project |
-| Email | Coming soon |
 | Project members | ${limits.projectMembers} per project, including pending invites |
 | AI Builder prompts | ${limits.aiPromptsPerDay} per day, per project |
 | Concurrent builds | ${limits.concurrentBuilds} |
@@ -1043,7 +1042,7 @@ const indexPages = (pages) => {
     hub("/migrate", "Migrate to EasyHost From Other Hosts | EasyHost", "Move a Node.js app to EasyHost from Vercel, Render, Railway, Netlify, Fly.io, Heroku or Koyeb, along with your Postgres database and S3 files.", "Migrate to EasyHost", "Guides for moving your app and data.", `## Move your app\n\n${migrateLinks}\n\n## Move your data\n\n- [Postgres](/migrate/postgres)\n- [S3 files](/migrate/storage)`),
     hub("/alternatives", "Free Alternatives to Popular Hosting Platforms | EasyHost", "Honest comparisons between EasyHost and Vercel, Render, Railway, Netlify, Fly.io, Heroku and Koyeb, including what you give up by switching.", "Alternatives", "Honest comparisons, including when the other platform is the better choice.", `## Compare\n\n${competitorLinks}`),
     hub("/docs/cli", "ezhst CLI Reference: Every Command | EasyHost", "Reference for every ezhst command: account, deploy, env, build, domains, storage, database and members, with usage and JSON output notes.", "CLI reference", "One page per `ezhst` command. The [main docs](/docs) cover the same commands on a single page.", cliGroups),
-    hub("/products", "EasyHost Products: Hosting, Postgres, Storage, Domains", "On EasyHost: free Node.js hosting, Postgres, S3 storage, custom domains, team members, a CLI, an agent skill and an AI app builder. Email is coming soon.", "Products", "Hosting is free within the [published limits](/pricing). The AI Builder uses AI Tokens after your first free AI app and build.", `## All products\n\n${productLinks}`),
+    hub("/products", "EasyHost Products: Hosting, Postgres, Storage, Domains", "On EasyHost: free Node.js hosting, Postgres, S3 storage, custom domains, team members, a CLI, an agent skill and an AI app builder.", "Products", "Hosting is free within the [published limits](/pricing). The AI Builder uses AI Tokens after your first free AI app and build.", `## All products\n\n${productLinks}`),
   ];
 };
 

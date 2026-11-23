@@ -19,8 +19,6 @@ import {
   uploadStorage,
 } from "./commands/storage.js";
 import { createDatabase, databaseInfo, deleteDatabase, queryDatabase, resetDatabasePassword, tableRows } from "./commands/db.js";
-import { createSender, deleteSender, emailInfo, emailLogs, sendEmail } from "./commands/email.js";
-import { createKey, listKeys, revokeKey } from "./commands/keys.js";
 import { acceptInvite, inviteMember, leaveProject, listMembers, removeMember, revokeInvite } from "./commands/members.js";
 import { installSkill } from "./commands/skill.js";
 import { fail, setJsonMode } from "./lib/ui.js";
@@ -142,28 +140,6 @@ scoped(db.command("query").description("Run SQL").argument("[sql]").option("--fi
 scoped(db.command("rows").description("Browse a table").argument("<table>").option("--page <n>", "Page", "1")).action(tableRows);
 scoped(db.command("reset-password").description("Rotate the database password")).action(resetDatabasePassword);
 scoped(db.command("delete").description("Delete the database and its data").option("--yes", "Confirm")).action(deleteDatabase);
-
-const email = program.command("email", { hidden: true }).description("Transactional email (coming soon)");
-scoped(email.command("info").description("Show the sender address and usage")).action(emailInfo);
-const sender = email.command("sender").description("Sender address");
-scoped(sender.command("create").description("Create <username>@easyhost.fun").argument("<username>")).action(createSender);
-scoped(sender.command("delete").description("Delete the sender address")).action(deleteSender);
-scoped(
-  email
-    .command("send")
-    .description("Send an email")
-    .option("--from <address>")
-    .option("--to <addresses...>")
-    .option("--subject <text>")
-    .option("--text <body>")
-    .option("--html <html>"),
-).action(sendEmail);
-scoped(email.command("logs").description("Show sent emails").option("--page <n>", "Page", "1")).action(emailLogs);
-
-const keys = program.command("keys", { hidden: true }).description("API keys for the HTTP API");
-scoped(keys.command("list").description("List API keys")).action(listKeys);
-scoped(keys.command("create").description("Create an API key").argument("<name>")).action(createKey);
-scoped(keys.command("revoke").description("Revoke an API key").argument("<id>")).action(revokeKey);
 
 const members = program.command("members").description("Project members and invites");
 scoped(members.command("list").description("List the owner, members and pending invites")).action(listMembers);

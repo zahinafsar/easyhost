@@ -39,7 +39,7 @@ export const RegisterPage = () => {
     <Card>
       <CardHeader>
         <CardTitle>Create your account</CardTitle>
-        <CardDescription>Host apps, store files, run databases and send email.</CardDescription>
+        <CardDescription>Host apps, store files and run databases.</CardDescription>
       </CardHeader>
       <form
         onSubmit={(event) => {

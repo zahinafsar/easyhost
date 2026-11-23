@@ -43,7 +43,7 @@ export const renameProject = async (name: string, options: ProjectOption) => {
 
 export const deleteProject = async (options: ProjectOption & { yes?: boolean }) => {
   const project = await resolveProject(options);
-  confirmed(options.yes, `Deleting ${project.slug} removes all apps, deployments, storage, database, email and API keys.`);
+  confirmed(options.yes, `Deleting ${project.slug} removes all apps, deployments, storage and database.`);
   const result = await request<{ message: string }>(`/projects/${project.id}`, { method: "DELETE" });
   output(result, () => log.success(`Deleted ${project.slug}`));
 };

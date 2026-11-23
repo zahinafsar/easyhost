@@ -1,11 +1,11 @@
 ---
 name: easyhost
-description: Deploy and manage apps on EasyHost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship a Node.js app to EasyHost, or to manage its environment variables, build settings, logs, custom domains, S3 storage, Postgres database, transactional email or API keys.
+description: Deploy and manage apps on EasyHost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship a Node.js app to EasyHost, or to manage its environment variables, build settings, logs, custom domains, S3 storage or Postgres database.
 ---
 
 # EasyHost
 
-EasyHost is free hosting for Node.js apps with built-in S3 storage, Postgres and email. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
+EasyHost is free hosting for Node.js apps with built-in S3 storage and Postgres. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
 
 ## Rules for agents
 
@@ -13,7 +13,7 @@ EasyHost is free hosting for Node.js apps with built-in S3 storage, Postgres and
 - The CLI never prompts without a TTY. Pass every value as a flag.
 - Commands that act on a project use the project linked in `.easyhost.json`, or `--project <slug>`. App commands also use `--app <slug-or-id>` or the linked app. With multiple apps, select one explicitly.
 - Destructive commands (`projects delete`, `apps delete`, `storage delete`, `db delete`) need `--yes`. Only run them when the user explicitly asks.
-- Never print secrets (passwords, S3 secret keys, API keys, connection strings) back to the user unless they ask. Put them in env vars with `ezhst env set` instead.
+- Never print secrets (passwords, S3 secret keys, connection strings) back to the user unless they ask. Put them in env vars with `ezhst env set` instead.
 - `.env` files are never uploaded. Environment variables must be set with `ezhst env set` or `ezhst env import .env`.
 
 ## 1. Authenticate
@@ -26,7 +26,7 @@ Check first: `npx ezhst whoami --json`. If it fails with "Not logged in":
 
 ## 2. Pick or create a project
 
-A project contains up to five Node.js apps, and shared storage, database, email sender and API keys. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
+A project contains up to five Node.js apps, and shared storage and database. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
 
 ```
 npx ezhst projects list --json
@@ -86,18 +86,11 @@ Database (Postgres, one per project):
 - `db create <name> | info | query "<sql>" | query --file <file.sql> | rows <table> [--page n] | reset-password | delete --yes`
 - `db info --json` returns `connectionString` and `shadowConnectionString` (for `prisma migrate dev`). Set `DATABASE_URL` with `env set`, and run migrations from the local machine against it (for Prisma: `prisma migrate deploy`).
 
-Email (from `<username>@easyhost.fun`, 20 emails a day):
-- `email sender create <username>`, `email info`, `email send --from <address> --to <address> --subject <text> --text <body>` (or `--html`), `email logs`, `email sender delete`
-- From app code: `POST https://api.easyhost.fun/api/v1/email/send` with header `Authorization: Bearer <api key>` and JSON `{ "from", "to", "subject", "text" | "html" }`. Create the key with `keys create <name>` and store it with `env set EASYHOST_API_KEY=...`.
-
-API keys:
-- `keys list | create <name> | revoke <id>` (a key is shown only once)
-
 Account:
 - `whoami`, `logout`, `resend-verification`, `forgot-password --email <email>`
 
 ## Limits
 
-Free: 10 projects. Per project: five Node.js apps, one bucket, one database, one email sender and 20 emails a day. One build at a time; 512 MB RAM and 1 CPU per app.
+Free: 10 projects. Per project: five Node.js apps, one bucket and one database. One build at a time; 512 MB RAM and 1 CPU per app.
 
 Docs: https://easyhost.fun/docs

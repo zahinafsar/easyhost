@@ -7,9 +7,3 @@ export type UserEnv = {
     projectOwnerId: string;
   };
 };
-
-export type ApiKeyEnv = {
-  Variables: {
-    projectId: string;
-  };
-};

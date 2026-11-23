@@ -79,7 +79,7 @@ export const MembersPage = () => {
     <>
       <PageHeader
         title="Members"
-        description="People who can manage this project's apps, deploys, storage, database, email and API keys."
+        description="People who can manage this project's apps, deploys, storage and database."
         action={
           !isOwner && (
             <ConfirmButton

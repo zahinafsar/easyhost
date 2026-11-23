@@ -4,10 +4,8 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { logger } from "hono/logger";
 import { readFileSync } from "node:fs";
 import { authRoutes } from "./routes/auth.js";
-import { apiKeyRoutes } from "./routes/api-keys.js";
 import { storageRoutes } from "./routes/storage.js";
 import { databaseRoutes } from "./routes/databases.js";
-import { emailRoutes } from "./routes/emails.js";
 import { projectRoutes } from "./routes/projects.js";
 import { inviteRoutes, memberRoutes } from "./routes/members.js";
 import { aiAppRoutes } from "./routes/ai-apps.js";
@@ -15,7 +13,6 @@ import { resetStuckGenerations } from "./lib/ai-agent.js";
 import { appRoutes } from "./routes/apps.js";
 import { adminRoutes } from "./routes/admin.js";
 import { lemonSqueezyWebhookRoutes, tokenRoutes } from "./routes/tokens.js";
-import { v1EmailRoutes } from "./routes/v1/email.js";
 import { env } from "./lib/env.js";
 import { startBuildQueue } from "./lib/build-queue.js";
 import { startRegistryGc } from "./lib/registry.js";
@@ -32,10 +29,8 @@ app.onError((error, c) => {
 const routes = app
   .get("/health", (c) => c.json({ ok: true }))
   .route("/auth", authRoutes)
-  .route("/api-keys", apiKeyRoutes)
   .route("/storage", storageRoutes)
   .route("/databases", databaseRoutes)
-  .route("/emails", emailRoutes)
   .route("/projects", projectRoutes)
   .route("/members", memberRoutes)
   .route("/invites", inviteRoutes)
@@ -43,8 +38,7 @@ const routes = app
   .route("/ai-apps", aiAppRoutes)
   .route("/tokens", tokenRoutes)
   .route("/webhooks/lemonsqueezy", lemonSqueezyWebhookRoutes)
-  .route("/admin", adminRoutes)
-  .route("/v1/email", v1EmailRoutes);
+  .route("/admin", adminRoutes);
 
 export type AppType = typeof routes;
 

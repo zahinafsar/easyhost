@@ -182,7 +182,6 @@ const AnalyticsTab = () => {
   const { data, isLoading } = useQuery(adminQuery().analytics(days));
   const series = data?.series ?? [];
   const failedDeployments = series.reduce((sum, row) => sum + row.failedDeployments, 0);
-  const failedEmails = series.reduce((sum, row) => sum + row.failedEmails, 0);
   return (
     <div className="space-y-4">
       <div className="flex gap-1">
@@ -205,7 +204,6 @@ const AnalyticsTab = () => {
             <Bars title={`Signups, last ${days} days`} points={series.map((row) => ({ day: row.day, value: row.signups }))} />
             <Bars title={`Projects created, last ${days} days`} points={series.map((row) => ({ day: row.day, value: row.projects }))} />
             <Bars title={`Deployments, last ${days} days (${failedDeployments} failed)`} points={series.map((row) => ({ day: row.day, value: row.deployments }))} />
-            <Bars title={`Emails sent, last ${days} days (${failedEmails} failed)`} points={series.map((row) => ({ day: row.day, value: row.emails }))} />
           </div>
         </>
       )}
@@ -232,10 +230,9 @@ const UsageTab = ({ currentUserId }: { currentUserId: string }) => {
   }
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4">
         <Stat label="App memory in use" value={formatBytes(data.totals.memoryBytes)} />
         <Stat label="Customer database size" value={formatBytes(data.totals.databaseBytes)} />
-        <Stat label="Emails sent, 24h" value={data.totals.emailsToday} />
       </div>
       <Card>
         <CardContent>
@@ -248,7 +245,6 @@ const UsageTab = ({ currentUserId }: { currentUserId: string }) => {
                 <TableHead className="text-right">Memory</TableHead>
                 <TableHead className="text-right">CPU</TableHead>
                 <TableHead className="text-right">Database</TableHead>
-                <TableHead className="text-right">Emails, 24h</TableHead>
                 <TableHead className="text-right">Deploys</TableHead>
                 <TableHead />
               </TableRow>
@@ -269,9 +265,6 @@ const UsageTab = ({ currentUserId }: { currentUserId: string }) => {
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{project.container ? `${project.container.cpuPercent}%` : "-"}</TableCell>
                   <TableCell className="text-right tabular-nums">{project.databaseBytes === null ? "-" : formatBytes(project.databaseBytes)}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {project.emailsToday} / {data.limits.emailsPerDay}
-                  </TableCell>
                   <TableCell className="text-right tabular-nums">{project.deployments}</TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
@@ -287,7 +280,7 @@ const UsageTab = ({ currentUserId }: { currentUserId: string }) => {
                       </ConfirmButton>
                       <ConfirmButton
                         title={`Delete ${project.name}?`}
-                        description={`This permanently removes all apps, deployments, domains, storage bucket, database, email sender and API keys of ${project.slug}, and emails ${project.owner.email} that it was deleted.`}
+                        description={`This permanently removes all apps, deployments, domains, storage bucket and database of ${project.slug}, and emails ${project.owner.email} that it was deleted.`}
                         confirmLabel="Delete project"
                         confirmVariant="destructive"
                         onConfirm={() => removeProject.mutate(project.id)}
@@ -332,7 +325,7 @@ const actionDialog = ({ kind, user }: UserAction) => {
   if (kind === "block") {
     return {
       title: `Block ${user.email}?`,
-      description: "The user is signed out and cannot log in, API keys stop working, and every running app they own is stopped. Their data is kept and you can unblock them later.",
+      description: "The user is signed out and cannot log in, and every running app they own is stopped. Their data is kept and you can unblock them later.",
       confirmLabel: "Block user",
       destructive: true,
     };
@@ -424,7 +417,6 @@ const UsersTab = ({ currentUserId }: { currentUserId: string }) => {
                   <TableHead>State</TableHead>
                   <TableHead className="text-right">Projects</TableHead>
                   <TableHead className="text-right">Running</TableHead>
-                  <TableHead className="text-right">Emails, 24h</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead />
                 </TableRow>
@@ -447,7 +439,6 @@ const UsersTab = ({ currentUserId }: { currentUserId: string }) => {
                       {user.projects} / {data.projectLimit}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{user.runningApps}</TableCell>
-                    <TableCell className="text-right tabular-nums">{user.emailsToday}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</TableCell>
                     <TableCell>
                       {user.id !== currentUserId && (

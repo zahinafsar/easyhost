@@ -20,7 +20,6 @@ import {
   FilePen,
   FileText,
   HardDrive,
-  Mail,
   Loader2,
   MousePointerClick,
   Package,
@@ -142,7 +141,6 @@ const TOOL_ICONS: Record<string, typeof FileCode2> = {
   install_packages: Package,
   read_logs: Terminal,
   connect_storage: HardDrive,
-  setup_email: Mail,
 };
 
 const displayStatus = (aiStatus: string, status: string) => {
@@ -868,7 +866,7 @@ export const BuilderAppPage = () => {
         <aside className="flex min-h-0 flex-col border-r">
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
             {!messages.length && !generating && (
-              <p className="text-sm text-muted-foreground">Describe what to build. Your app can use a database, file storage, email and sign up.</p>
+              <p className="text-sm text-muted-foreground">Describe what to build. Your app can use a database, file storage and sign up.</p>
             )}
             {messages.map((message) => {
               if (message.role === "user") {

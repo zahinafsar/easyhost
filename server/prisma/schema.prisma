@@ -12,11 +12,6 @@ enum Role {
   ADMIN
 }
 
-enum EmailStatus {
-  SENT
-  FAILED
-}
-
 enum AppStatus {
   IDLE
   DEPLOYING
@@ -130,20 +125,6 @@ model ProjectInvite {
   @@map("project_invites")
 }
 
-model ApiKey {
-  id         String    @id @default(cuid())
-  projectId  String
-  project    App       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name       String
-  prefix     String
-  hash       String    @unique
-  lastUsedAt DateTime?
-  createdAt  DateTime  @default(now())
-
-  @@index([projectId])
-  @@map("api_keys")
-}
-
 model Bucket {
   id        String   @id @default(cuid())
   projectId String   @unique
@@ -173,32 +154,6 @@ model Database {
   @@map("databases")
 }
 
-model EmailSender {
-  id        String   @id @default(cuid())
-  projectId String   @unique
-  project   App      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  username  String   @unique
-  createdAt DateTime @default(now())
-
-  @@map("email_senders")
-}
-
-model EmailLog {
-  id        String      @id @default(cuid())
-  projectId String
-  project   App         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  from      String
-  to        String[]
-  subject   String
-  status    EmailStatus
-  resendId  String?
-  error     String?
-  createdAt DateTime    @default(now())
-
-  @@index([projectId, createdAt])
-  @@map("email_logs")
-}
-
 model App {
   parentProjectId String?
   parentProject   App?            @relation("ProjectApps", fields: [parentProjectId], references: [id], onDelete: Cascade)
@@ -223,11 +178,8 @@ model App {
   updatedAt       DateTime        @updatedAt
   deployments     Deployment[]
   domains         AppDomain[]
-  apiKeys         ApiKey[]
   bucket          Bucket?
   database        Database?
-  emailLogs       EmailLog[]
-  emailSender     EmailSender?
   members         ProjectMember[]
   invites         ProjectInvite[]
   kind            AppKind         @default(NODE)

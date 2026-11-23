@@ -104,7 +104,7 @@ export const SettingsPage = () => {
             <div className="space-y-1">
               <p className="font-medium">Delete this project</p>
               <p className="max-w-xl text-sm text-muted-foreground">
-                Permanently delete all apps, deployments, domains, storage and files, database, email data, and API keys.
+                Permanently delete all apps, deployments, domains, storage and files, and database.
               </p>
             </div>
             <ConfirmButton

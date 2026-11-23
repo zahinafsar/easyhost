@@ -69,15 +69,6 @@ const check = async (name: string, run: () => Promise<string>): Promise<Check> =
 
 const dayAgo = () => new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-const emailsSince = async (since: Date) => {
-  const rows = await prisma.emailLog.groupBy({
-    by: ["projectId"],
-    where: { createdAt: { gte: since }, status: "SENT" },
-    _count: { _all: true },
-  });
-  return new Map(rows.map((row) => [row.projectId, row._count._all]));
-};
-
 type ContainerStats = {
   memory_stats: { usage?: number };
   cpu_stats: { cpu_usage: { total_usage: number }; system_cpu_usage?: number; online_cpus?: number };
@@ -105,8 +96,6 @@ type AnalyticsRow = {
   projects: number;
   deployments: number;
   failedDeployments: number;
-  emails: number;
-  failedEmails: number;
 };
 
 export const adminRoutes = new Hono<UserEnv>()
@@ -171,9 +160,7 @@ export const adminRoutes = new Hono<UserEnv>()
           (SELECT count(*)::int FROM users u WHERE u."createdAt" >= d.day AND u."createdAt" < d.day + interval '1 day') AS signups,
           (SELECT count(*)::int FROM apps a WHERE a."parentProjectId" IS NULL AND a."createdAt" >= d.day AND a."createdAt" < d.day + interval '1 day') AS projects,
           (SELECT count(*)::int FROM deployments p WHERE p."createdAt" >= d.day AND p."createdAt" < d.day + interval '1 day') AS deployments,
-          (SELECT count(*)::int FROM deployments p WHERE p.status = 'FAILED' AND p."createdAt" >= d.day AND p."createdAt" < d.day + interval '1 day') AS "failedDeployments",
-          (SELECT count(*)::int FROM email_logs e WHERE e.status = 'SENT' AND e."createdAt" >= d.day AND e."createdAt" < d.day + interval '1 day') AS emails,
-          (SELECT count(*)::int FROM email_logs e WHERE e.status = 'FAILED' AND e."createdAt" >= d.day AND e."createdAt" < d.day + interval '1 day') AS "failedEmails"
+          (SELECT count(*)::int FROM deployments p WHERE p.status = 'FAILED' AND p."createdAt" >= d.day AND p."createdAt" < d.day + interval '1 day') AS "failedDeployments"
         FROM generate_series(
           date_trunc('day', now() AT TIME ZONE 'utc') - (${days}::int - 1) * interval '1 day',
           date_trunc('day', now() AT TIME ZONE 'utc'),
@@ -197,8 +184,7 @@ export const adminRoutes = new Hono<UserEnv>()
     });
   })
   .get("/usage", async (c) => {
-    const [projects, emails] = await Promise.all([
-      prisma.app.findMany({
+    const projects = await prisma.app.findMany({
         where: { parentProjectId: null },
         take: USAGE_PROJECTS,
         orderBy: { updatedAt: "desc" },
@@ -214,9 +200,7 @@ export const adminRoutes = new Hono<UserEnv>()
           bucket: { select: { id: true } },
           _count: { select: { deployments: true, domains: true } },
         },
-      }),
-      emailsSince(dayAgo()),
-    ]);
+      });
 
     const dbNames = projects.flatMap((project) => {
       if (project.database) {
@@ -254,7 +238,6 @@ export const adminRoutes = new Hono<UserEnv>()
         container: containers[index],
         databaseBytes,
         hasBucket: !!project.bucket,
-        emailsToday: emails.get(project.id) ?? 0,
         deployments: project._count.deployments + project.projectApps.reduce((sum, app) => sum + app._count.deployments, 0),
         domains: project._count.domains + project.projectApps.reduce((sum, app) => sum + app._count.domains, 0),
       };
@@ -262,11 +245,10 @@ export const adminRoutes = new Hono<UserEnv>()
 
     return c.json({
       projects: rows,
-      limits: { memoryBytes: 512 * 1024 * 1024 * LIMITS.apps, emailsPerDay: LIMITS.emailsPerDay },
+      limits: { memoryBytes: 512 * 1024 * 1024 * LIMITS.apps },
       totals: {
         memoryBytes: rows.reduce((sum, row) => sum + (row.container?.memoryBytes ?? 0), 0),
         databaseBytes: rows.reduce((sum, row) => sum + (row.databaseBytes ?? 0), 0),
-        emailsToday: rows.reduce((sum, row) => sum + row.emailsToday, 0),
       },
     });
   })
@@ -282,7 +264,7 @@ export const adminRoutes = new Hono<UserEnv>()
       };
     }
 
-    const [users, total, emails] = await Promise.all([
+    const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
         orderBy: { createdAt: "desc" },
@@ -300,7 +282,6 @@ export const adminRoutes = new Hono<UserEnv>()
         },
       }),
       prisma.user.count({ where }),
-      emailsSince(dayAgo()),
     ]);
 
     return c.json({
@@ -308,7 +289,6 @@ export const adminRoutes = new Hono<UserEnv>()
         ...user,
         projects: apps.filter((app) => app.parentProjectId === null).length,
         runningApps: apps.filter((app) => app.appEnabled && app.status === "RUNNING").length,
-        emailsToday: apps.reduce((sum, app) => sum + (emails.get(app.id) ?? 0), 0),
       })),
       total,
       page,

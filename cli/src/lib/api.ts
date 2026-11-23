@@ -86,9 +86,6 @@ export const request = async <T>(pathname: string, init: RequestInit = {}, proje
         res.status,
       );
     }
-    if (data.code === "EMAIL_COMING_SOON") {
-      throw new ApiError("Email is coming soon. It is not available on EasyHost yet.", res.status);
-    }
     if (typeof data.error === "string") {
       throw new ApiError(data.error, res.status);
     }

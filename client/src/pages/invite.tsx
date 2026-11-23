@@ -55,7 +55,7 @@ export const InvitePage = () => {
             You are logged in as {user?.email}. Log out and sign in or sign up with {invite.email} to accept.
           </p>
         )}
-        {!invite.expired && !wrongAccount && <p>You will be able to manage its apps, deploys, storage, database, email and API keys.</p>}
+        {!invite.expired && !wrongAccount && <p>You will be able to manage its apps, deploys, storage and database.</p>}
       </CardContent>
       <CardFooter className="gap-2">
         {!invite.expired && !wrongAccount && (

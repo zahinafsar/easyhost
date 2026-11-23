@@ -5,9 +5,6 @@ import { prisma } from "./prisma.js";
 import { S3_REGION, createProjectBucket, minio, publicBaseUrl, s3Endpoint } from "./minio.js";
 import { env } from "./env.js";
 import { appUrl } from "./domains.js";
-import { senderAddress } from "./email.js";
-import { generateApiKey } from "./api-key.js";
-import { isReservedEmailUsername } from "./validations.js";
 import { APP_PORT, containerExists, containerName, execInContainer, publishedPort, putContainerFiles, removeContainerFiles, restartContainer, runAiContainer } from "./docker.js";
 import { connectionString, createUserDatabase, generateCredentials, restoreUserDatabase } from "./userdb.js";
 import { LIMITS } from "./limits.js";
@@ -248,15 +245,6 @@ export const removeAllAiFiles = async (appId: string) => {
 
 export const generateAuthSecret = () => randomBytes(32).toString("hex");
 
-const DEV_API_ORIGIN = "http://host.docker.internal:48710";
-
-const emailApiOrigin = () => {
-  if (env.isProduction) {
-    return env.appUrl;
-  }
-  return DEV_API_ORIGIN;
-};
-
 const forContainer = (url: string) => {
   if (env.isProduction) {
     return url;
@@ -272,7 +260,6 @@ const forContainer = (url: string) => {
 type AiEnvApp = Pick<App, "env" | "aiAuthSecret" | "parentProjectId" | "id" | "aiDatabaseId" | "aiBucketId">;
 
 const findLinked = async (app: AiEnvApp) => {
-  const projectId = app.parentProjectId ?? app.id;
   let database = null;
   if (app.aiDatabaseId) {
     database = await prisma.database.findUnique({ where: { id: app.aiDatabaseId } });
@@ -281,20 +268,16 @@ const findLinked = async (app: AiEnvApp) => {
   if (app.aiBucketId) {
     bucket = await prisma.bucket.findUnique({ where: { id: app.aiBucketId } });
   }
-  let sender = null;
-  if ((app.env as Record<string, string>).EASYHOST_API_KEY) {
-    sender = await prisma.emailSender.findUnique({ where: { projectId } });
-  }
-  return { database, bucket, sender };
+  return { database, bucket };
 };
 
 export const connectedServices = async (app: AiEnvApp) => {
-  const { database, bucket, sender } = await findLinked(app);
-  return { database: !!database, storage: !!bucket, email: !!sender };
+  const { database, bucket } = await findLinked(app);
+  return { database: !!database, storage: !!bucket };
 };
 
 export const aiAppEnv = async (app: AiEnvApp) => {
-  const { database, bucket, sender } = await findLinked(app);
+  const { database, bucket } = await findLinked(app);
   const values: Record<string, string> = {
     ...(app.env as Record<string, string>),
     PORT: String(APP_PORT),
@@ -313,10 +296,6 @@ export const aiAppEnv = async (app: AiEnvApp) => {
     values.S3_ACCESS_KEY_ID = bucket.accessKey;
     values.S3_SECRET_ACCESS_KEY = bucket.secretKey;
     values.S3_PUBLIC_URL = publicBaseUrl(bucket.minioName);
-  }
-  if (sender) {
-    values.EMAIL_FROM = senderAddress(sender.username);
-    values.EASYHOST_EMAIL_URL = `${emailApiOrigin()}/api/v1/email/send`;
   }
   return values;
 };
@@ -366,45 +345,6 @@ export const aiPreviewUrl = async (app: Pick<App, "slug">) => {
     return null;
   }
   return `http://localhost:${port}`;
-};
-
-const senderUsername = (slug: string) => {
-  return slug.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32).replace(/-+$/, "");
-};
-
-const ensureProjectSender = async (projectId: string, slug: string) => {
-  const existing = await prisma.emailSender.findUnique({ where: { projectId } });
-  if (existing) {
-    return existing;
-  }
-  const base = senderUsername(slug);
-  const candidates = [base, `${base.slice(0, 27)}-app`, `app-${randomBytes(3).toString("hex")}`];
-  for (const username of candidates) {
-    if (username.length < 2 || isReservedEmailUsername(username)) {
-      continue;
-    }
-    const taken = await prisma.emailSender.findUnique({ where: { username } });
-    if (!taken) {
-      return prisma.emailSender.create({ data: { projectId, username } });
-    }
-  }
-  throw new Error("Could not create an email sender address for this app");
-};
-
-export const setupAiEmail = async (app: App) => {
-  const projectId = app.parentProjectId ?? app.id;
-  const sender = await ensureProjectSender(projectId, app.slug);
-  let current = app;
-  if (!(app.env as Record<string, string>).EASYHOST_API_KEY) {
-    const { key, prefix, hash } = generateApiKey();
-    await prisma.apiKey.create({ data: { projectId, name: `ai-${app.slug}`, prefix, hash } });
-    current = await prisma.app.update({
-      where: { id: app.id },
-      data: { env: { ...(app.env as Record<string, string>), EASYHOST_API_KEY: key } },
-    });
-  }
-  await startAiApp(current);
-  return senderAddress(sender.username);
 };
 
 export const connectProjectDatabase = async (app: App) => {

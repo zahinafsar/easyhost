@@ -24,7 +24,6 @@ export const FOOTER_COLUMNS = [
       ["/products/app-hosting", "Node.js hosting"],
       ["/products/postgres", "Postgres database"],
       ["/products/storage", "S3 storage"],
-      ["/products/email", "Email (coming soon)"],
       ["/products/custom-domains", "Custom domains"],
       ["/products/cli", "ezhst CLI"],
       ["/products/agent-skill", "Agent skill"],

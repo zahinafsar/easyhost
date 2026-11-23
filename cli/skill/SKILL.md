@@ -5,7 +5,7 @@ description: Deploy and manage apps on EasyHost (free hosting) with the ezhst CL
 
 # EasyHost
 
-EasyHost is free hosting for Node.js apps with built-in S3 storage and Postgres (email is coming soon). It is in beta. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
+EasyHost is free hosting for Node.js apps with built-in S3 storage and Postgres. It is in beta. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
 
 ## Rules for agents
 
@@ -13,7 +13,7 @@ EasyHost is free hosting for Node.js apps with built-in S3 storage and Postgres 
 - The CLI never prompts without a TTY. Pass every value as a flag.
 - Commands that act on a project use the project linked in `.easyhost.json`, or `--project <slug>`. App commands also use `--app <slug-or-id>` or the linked app. With multiple apps, select one explicitly.
 - Destructive commands (`projects delete`, `apps delete`, `storage delete`, `db delete`) need `--yes`. Only run them when the user explicitly asks.
-- Never print secrets (passwords, S3 secret keys, API keys, connection strings) back to the user unless they ask. Put them in env vars with `ezhst env set` instead.
+- Never print secrets (passwords, S3 secret keys, connection strings) back to the user unless they ask. Put them in env vars with `ezhst env set` instead.
 - `.env` files are never uploaded. Environment variables must be set with `ezhst env set` or `ezhst env import .env`.
 
 ## 1. Authenticate
@@ -85,8 +85,6 @@ Storage (S3 compatible, one bucket per project, files are public by URL):
 Database (Postgres, one per project):
 - `db create <name> | info | query "<sql>" | query --file <file.sql> | rows <table> [--page n] | reset-password | delete --yes`
 - `db info --json` returns `connectionString` and `shadowConnectionString` (for `prisma migrate dev`). Set `DATABASE_URL` with `env set`, and run migrations from the local machine against it (for Prisma: `prisma migrate deploy`).
-
-Email: coming soon. The `email` commands and the email API return "Email is coming soon." Do not set up or send email on EasyHost yet.
 
 Members:
 - `members list | invite <email> | revoke <email> | remove <email> --yes | leave --yes`. Only the owner can invite, revoke, remove, rename or delete the project. Members can do everything else.

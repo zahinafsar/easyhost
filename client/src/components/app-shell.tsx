@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Coins, Database, FolderKanban, HardDrive, LogOut, Mail, Rocket, Settings, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { Coins, Database, FolderKanban, HardDrive, LogOut, Rocket, Settings, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,7 +18,6 @@ const navItems = [
   { to: "/builder", label: "Builder", icon: Sparkles },
   { to: "/storage", label: "Storage", icon: HardDrive },
   { to: "/databases", label: "Databases", icon: Database },
-  { to: "/email", label: "Email", icon: Mail, soon: true },
   { to: "/members", label: "Members", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
@@ -144,7 +143,6 @@ export const AppShell = () => {
             >
               <item.icon className="size-4" />
               {item.label}
-              {item.soon && <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Soon</span>}
             </NavLink>
           ))}
         </nav>

@@ -9,7 +9,5 @@ export const LIMITS = {
   aiAttachments: 5,
   buckets: 10,
   databases: 10,
-  emailSenders: 1,
-  emailsPerDay: 20,
   concurrentBuilds: 5,
 } as const;

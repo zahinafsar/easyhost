@@ -37,10 +37,6 @@ export const updateProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
 });
 
-export const createApiKeySchema = z.object({
-  name: z.string().min(1, "Name is required").max(60, "Name too long"),
-});
-
 export const createBucketSchema = z.object({
   name: resourceName,
 });
@@ -59,36 +55,6 @@ export const createDatabaseSchema = z.object({
 
 export const runQuerySchema = z.object({
   sql: z.string().min(1, "SQL is required").max(100_000, "SQL too long"),
-});
-
-const RESERVED_EMAIL_USERNAMES = [
-  "hello", "support", "admin", "administrator", "noreply", "no-reply", "postmaster", "abuse", "security",
-  "billing", "root", "webmaster", "hostmaster", "info", "team", "mail", "mailer-daemon", "easyhost", "help",
-];
-
-export const isReservedEmailUsername = (username: string) => RESERVED_EMAIL_USERNAMES.includes(username);
-
-const emailUsernameSchema = z
-  .string()
-  .min(2, "Username must be at least 2 characters")
-  .max(32, "Username must be at most 32 characters")
-  .regex(/^[a-z0-9]+([._-][a-z0-9]+)*$/, "Use lowercase letters, numbers, dots, dashes or underscores")
-  .refine((username) => !RESERVED_EMAIL_USERNAMES.includes(username), "This email username is reserved");
-
-export const createEmailSenderSchema = z.object({
-  username: emailUsernameSchema,
-});
-
-export const sendEmailSchema = z.object({
-  from: z.email("from must be one of your sender addresses, e.g. you@easyhost.fun"),
-  to: z.union([z.email(), z.array(z.email()).min(1).max(50)]),
-  subject: z.string().min(1, "Subject is required").max(300, "Subject too long"),
-  html: z.string().optional(),
-  text: z.string().optional(),
-  replyTo: z.email().optional(),
-}).refine((data) => !!data.html || !!data.text, {
-  message: "Either html or text is required",
-  path: ["html"],
 });
 
 const RESERVED_APP_NAMES = [

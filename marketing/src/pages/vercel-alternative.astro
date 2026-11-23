@@ -131,7 +131,7 @@ import CopyCode from "../components/CopyCode.astro";
           <h2>The summary</h2>
           <ul>
             <li><strong>Runtime.</strong> Vercel splits your app into serverless functions behind a CDN. EasyHost runs <code>next start</code> in one container that stays up.</li>
-            <li><strong>Backend.</strong> EasyHost includes Postgres and S3 compatible storage in the free account, with transactional email coming soon. On Vercel Hobby, a database and email come from other providers.</li>
+            <li><strong>Backend.</strong> EasyHost includes Postgres and S3 compatible storage in the free account. On Vercel Hobby, a database comes from another provider.</li>
             <li><strong>Workflow.</strong> Vercel deploys from Git and gives every branch a preview URL. EasyHost deploys from a CLI that coding agents can drive end to end.</li>
             <li><strong>Reach.</strong> Vercel serves from a global edge network. EasyHost serves from one region.</li>
           </ul>
@@ -151,7 +151,6 @@ import CopyCode from "../components/CopyCode.astro";
                 <tr><td>Projects</td><td>3</td><td>200</td></tr>
                 <tr><td>Postgres</td><td>Included, 1 per project</td><td>Through integrations</td></tr>
                 <tr><td>File storage</td><td>S3 compatible bucket, 1 per project</td><td>Vercel Blob</td></tr>
-                <tr><td>Email sending</td><td>Coming soon</td><td>Not included</td></tr>
                 <tr><td>Git deploys and previews</td><td>No</td><td>Yes</td></tr>
                 <tr><td>Global CDN</td><td>No</td><td>Yes</td></tr>
                 <tr><td>Frameworks</td><td>Node.js apps, including Next.js</td><td>Many</td></tr>
@@ -165,7 +164,7 @@ import CopyCode from "../components/CopyCode.astro";
           <h3>You want a server, not functions</h3>
           <p>Your app is a single Node.js process that stays running. In-memory caches survive between requests, there are no cold starts, and you do not need to think about function size or invocation counts.</p>
           <h3>You want the backend in the same place</h3>
-          <p>A side project usually needs a database and somewhere to put uploads. On EasyHost those are two commands in the same CLI: <code>ezhst db create</code> and <code>ezhst storage create</code>. Email is coming soon. See <a href="/free-postgres-hosting">free Postgres hosting</a> for the database details.</p>
+          <p>A side project usually needs a database and somewhere to put uploads. On EasyHost those are two commands in the same CLI: <code>ezhst db create</code> and <code>ezhst storage create</code>. See <a href="/free-postgres-hosting">free Postgres hosting</a> for the database details.</p>
           <h3>Your coding agent does the deploying</h3>
           <p>Every <code>ezhst</code> command takes <code>--json</code>, never prompts without a terminal, and returns errors an agent can act on. Sign-up works from the command line too: after you give the agent the 6-digit code from your inbox, it can go from an empty account to a live URL without a browser. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> shows how.</p>
           <h3>You want limits you can predict</h3>
