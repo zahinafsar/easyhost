@@ -12,13 +12,6 @@ const TOKEN_USD = 0.01;
 
 export const MIN_TOKENS_TO_BUILD = 20;
 
-export const TOKEN_PACKS = [
-  { id: "starter", name: "Starter", tokens: 500, cents: 500 },
-  { id: "builder", name: "Builder", tokens: 1100, cents: 1000 },
-  { id: "pro", name: "Pro", tokens: 2400, cents: 2000 },
-  { id: "scale", name: "Scale", tokens: 6500, cents: 5000 },
-] as const;
-
 export type UsageTotals = { input: number; cachedInput: number; output: number };
 
 export const emptyUsage = (): UsageTotals => {
@@ -43,10 +36,6 @@ export const tokensForUsage = (totals: UsageTotals) => {
   return Math.ceil((usd * MARKUP) / TOKEN_USD);
 };
 
-export const findPack = (id: string) => {
-  return TOKEN_PACKS.find((pack) => pack.id === id) ?? null;
-};
-
 export type RunBilling = { userId: string; free: boolean; balance: number };
 
 export const billingForRun = async (userId: string): Promise<RunBilling | null> => {
@@ -63,7 +52,7 @@ export const billingForRun = async (userId: string): Promise<RunBilling | null> 
   return { userId, free: false, balance: account.tokenBalance };
 };
 
-export const OUT_OF_TOKENS = "You are out of tokens. Buy tokens on the Tokens page to keep building with AI.";
+export const OUT_OF_TOKENS = "You are out of tokens. Upgrade to Pro on the Subscription page for 1,000 tokens every month.";
 
 export const markFreeBuildUsed = (userId: string) => {
   return prisma.user.updateMany({ where: { id: userId, freeAiBuildUsed: false }, data: { freeAiBuildUsed: true } });

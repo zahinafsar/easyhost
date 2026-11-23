@@ -12,7 +12,9 @@ import { aiAppRoutes } from "./routes/ai-apps.js";
 import { resetStuckGenerations } from "./lib/ai-agent.js";
 import { appRoutes } from "./routes/apps.js";
 import { adminRoutes } from "./routes/admin.js";
-import { lemonSqueezyWebhookRoutes, tokenRoutes } from "./routes/tokens.js";
+import { tokenRoutes } from "./routes/tokens.js";
+import { billingRoutes, paymentWebhookRoutes } from "./routes/billing.js";
+import { startBillingWorker } from "./lib/billing.js";
 import { env } from "./lib/env.js";
 import { startBuildQueue } from "./lib/build-queue.js";
 import { startRegistryGc } from "./lib/registry.js";
@@ -37,7 +39,8 @@ const routes = app
   .route("/apps", appRoutes)
   .route("/ai-apps", aiAppRoutes)
   .route("/tokens", tokenRoutes)
-  .route("/webhooks/lemonsqueezy", lemonSqueezyWebhookRoutes)
+  .route("/billing", billingRoutes)
+  .route("/webhooks/lemonsqueezy", paymentWebhookRoutes)
   .route("/admin", adminRoutes);
 
 export type AppType = typeof routes;
@@ -107,4 +110,5 @@ serve({ fetch: server.fetch, port }, (info) => {
   resetStuckGenerations().catch((error) => console.error("Failed to reset AI generations", error));
   startBuildQueue().catch((error) => console.error("Build queue failed to start", error));
   startRegistryGc();
+  startBillingWorker();
 });

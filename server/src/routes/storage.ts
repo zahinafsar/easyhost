@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
 import {
   S3_REGION,
+  bucketSize,
   createBucketCredentials,
   createProjectBucket,
   emptyAndRemoveBucket,
@@ -12,6 +13,7 @@ import {
   removeBucketCredentials,
   s3Endpoint,
 } from "../lib/minio.js";
+import { projectEntitlement } from "../lib/billing.js";
 import { validate } from "../lib/validator.js";
 import { createBucketSchema, listObjectsSchema, objectKeySchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
@@ -48,7 +50,12 @@ export const storageRoutes = new Hono<UserEnv>()
       where: { projectId: c.get("projectId") },
       orderBy: { createdAt: "desc" },
     });
-    return c.json({ buckets: buckets.map(summary), limit: 1 });
+    const entitlement = await projectEntitlement(c.get("projectId"));
+    let usedBytes = 0;
+    for (const bucket of buckets) {
+      usedBytes += await bucketSize(bucket.minioName);
+    }
+    return c.json({ buckets: buckets.map(summary), limit: 1, usedBytes, limitBytes: entitlement.limits.storageBytes });
   })
   .post("/buckets", validate("json", createBucketSchema), async (c) => {
     const projectId = c.get("projectId");
@@ -59,7 +66,8 @@ export const storageRoutes = new Hono<UserEnv>()
       return c.json({ error: "This project already has storage" }, 400);
     }
 
-    const bucket = await createProjectBucket(projectId, name);
+    const entitlement = await projectEntitlement(projectId);
+    const bucket = await createProjectBucket(projectId, name, entitlement.limits.storageBytes);
     return c.json({ bucket: withCredentials(bucket) }, 201);
   })
   .delete("/buckets/:id", async (c) => {

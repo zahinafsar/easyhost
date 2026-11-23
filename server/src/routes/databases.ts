@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
 import {
+  clearTable,
   connectionString,
   createUserDatabase,
   databaseSizes,
@@ -14,13 +15,16 @@ import {
   updateTableCell,
 } from "../lib/userdb.js";
 import { validate } from "../lib/validator.js";
-import { createDatabaseSchema, runQuerySchema, tableRowsQuerySchema, updateCellSchema } from "../lib/validations.js";
+import { clearTableSchema, createDatabaseSchema, runQuerySchema, tableRowsQuerySchema, updateCellSchema } from "../lib/validations.js";
+import { enforceProject, projectEntitlement } from "../lib/billing.js";
 import { requireUser } from "../middleware/require-user.js";
 import { restartAiApps } from "../lib/ai-apps.js";
 import { requireProject } from "../middleware/require-project.js";
 import type { UserEnv } from "../lib/types.js";
 
-const publicFields = { id: true, name: true, dbName: true, createdAt: true, updatedAt: true };
+const publicFields = { id: true, name: true, dbName: true, blocked: true, createdAt: true, updatedAt: true };
+
+const BLOCKED_ERROR = "This database is over its size limit and is blocked. Truncate or drop tables to free space.";
 
 const findDatabase = (projectId: string, id: string) => prisma.database.findFirst({ where: { id, projectId } });
 
@@ -40,10 +44,14 @@ export const databaseRoutes = new Hono<UserEnv>()
       orderBy: { createdAt: "desc" },
       select: publicFields,
     });
-    const sizes = await databaseSizes(databases.map((database) => database.dbName));
+    const [sizes, entitlement] = await Promise.all([
+      databaseSizes(databases.map((database) => database.dbName)),
+      projectEntitlement(c.get("projectId")),
+    ]);
     return c.json({
       databases: databases.map((database) => ({ ...database, sizeBytes: sizes.get(database.dbName) ?? 0 })),
       limit: 1,
+      limitBytes: entitlement.limits.dbBytes,
     });
   })
   .post("/", validate("json", createDatabaseSchema), async (c) => {
@@ -69,7 +77,11 @@ export const databaseRoutes = new Hono<UserEnv>()
       return c.json({ error: "Database not found" }, 404);
     }
 
-    const [sizes, tables] = await Promise.all([databaseSizes([database.dbName]), listTables(database)]);
+    const [sizes, tables, entitlement] = await Promise.all([
+      databaseSizes([database.dbName]),
+      listTables(database),
+      projectEntitlement(c.get("projectId")),
+    ]);
     return c.json({
       database: {
         id: database.id,
@@ -78,6 +90,8 @@ export const databaseRoutes = new Hono<UserEnv>()
         createdAt: database.createdAt,
         updatedAt: database.updatedAt,
         sizeBytes: sizes.get(database.dbName) ?? 0,
+        limitBytes: entitlement.limits.dbBytes,
+        blocked: database.blocked,
         connectionString: connectionString(database),
         shadowConnectionString: shadowConnectionString(database),
       },
@@ -88,6 +102,9 @@ export const databaseRoutes = new Hono<UserEnv>()
     const database = await findDatabase(c.get("projectId"), c.req.param("id"));
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
+    }
+    if (database.blocked) {
+      return c.json({ error: BLOCKED_ERROR }, 402);
     }
 
     try {
@@ -102,6 +119,9 @@ export const databaseRoutes = new Hono<UserEnv>()
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
     }
+    if (database.blocked) {
+      return c.json({ error: BLOCKED_ERROR }, 402);
+    }
 
     try {
       const data = await readTableRows(database, c.req.param("table"), c.req.valid("query").page);
@@ -115,6 +135,9 @@ export const databaseRoutes = new Hono<UserEnv>()
     if (!database) {
       return c.json({ error: "Database not found" }, 404);
     }
+    if (database.blocked) {
+      return c.json({ error: BLOCKED_ERROR }, 402);
+    }
 
     const { key, column, value } = c.req.valid("json");
     try {
@@ -123,6 +146,20 @@ export const databaseRoutes = new Hono<UserEnv>()
     } catch (error) {
       return c.json({ error: errorMessage(error) }, 400);
     }
+  })
+  .post("/:id/tables/:table/clear", validate("json", clearTableSchema), async (c) => {
+    const database = await findDatabase(c.get("projectId"), c.req.param("id"));
+    if (!database) {
+      return c.json({ error: "Database not found" }, 404);
+    }
+
+    try {
+      await clearTable(database.dbName, c.req.param("table"), c.req.valid("json").mode);
+    } catch (error) {
+      return c.json({ error: errorMessage(error) }, 400);
+    }
+    await enforceProject(c.get("projectId"), { quotas: false });
+    return c.json({ message: "Table cleared" });
   })
   .post("/:id/reset-password", async (c) => {
     const database = await findDatabase(c.get("projectId"), c.req.param("id"));

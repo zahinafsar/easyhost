@@ -2,6 +2,7 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import type { App, Database } from "@prisma/client";
 import { prisma } from "./prisma.js";
+import { projectEntitlement } from "./billing.js";
 import { S3_REGION, createProjectBucket, minio, publicBaseUrl, s3Endpoint } from "./minio.js";
 import { env } from "./env.js";
 import { appUrl } from "./domains.js";
@@ -359,7 +360,8 @@ export const connectProjectStorage = async (app: App) => {
   const projectId = app.parentProjectId ?? app.id;
   let bucket = await prisma.bucket.findUnique({ where: { projectId } });
   if (!bucket) {
-    bucket = await createProjectBucket(projectId, "app");
+    const entitlement = await projectEntitlement(projectId);
+    bucket = await createProjectBucket(projectId, "app", entitlement.limits.storageBytes);
   }
   const updated = await prisma.app.update({ where: { id: app.id }, data: { aiBucketId: bucket.id } });
   await startAiApp(updated);

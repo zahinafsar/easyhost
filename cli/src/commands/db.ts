@@ -6,7 +6,7 @@ import { confirmed, fail, formatBytes, log, output, table } from "../lib/ui.js";
 
 type Database = { id: string; name: string; dbName: string; sizeBytes: number; createdAt: string };
 
-type DatabaseDetail = Database & { connectionString: string; shadowConnectionString: string };
+type DatabaseDetail = Database & { connectionString: string; shadowConnectionString: string; limitBytes: number; blocked: boolean };
 
 type QueryResult = { command: string; rowCount: number | null; columns: string[]; rows: Record<string, unknown>[]; truncated: boolean };
 
@@ -25,7 +25,10 @@ export const databaseInfo = async (options: ProjectOption) => {
   const detail = await request<{ database: DatabaseDetail; tables: { name: string }[] }>(`/databases/${database.id}`, {}, project.id);
   output(detail, () => {
     const info = detail.database;
-    log.info(`${pc.bold(info.name)} ${pc.dim(`(${info.dbName}, ${formatBytes(info.sizeBytes)})`)}`);
+    log.info(`${pc.bold(info.name)} ${pc.dim(`(${info.dbName}, ${formatBytes(info.sizeBytes)} of ${formatBytes(info.limitBytes)} used)`)}`);
+    if (info.blocked) {
+      log.warn("Blocked: the database is over its size limit. Truncate or drop tables in the dashboard to free space.");
+    }
     log.info(`DATABASE_URL:        ${info.connectionString}`);
     log.info(`SHADOW_DATABASE_URL: ${info.shadowConnectionString}`);
     log.info(`Tables: ${detail.tables.length}`);

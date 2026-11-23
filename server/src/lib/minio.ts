@@ -160,10 +160,32 @@ export const emptyAndRemoveBucket = async (minioName: string) => {
   await minio.removeBucket(minioName);
 };
 
-export const createProjectBucket = async (projectId: string, name: string) => {
+export const setBucketQuota = async (minioName: string, bytes: number) => {
+  await mc(["quota", "set", `eh/${minioName}`, "--size", String(bytes)]);
+};
+
+export const bucketSize = (minioName: string) => {
+  return new Promise<number>((resolve, reject) => {
+    let total = 0;
+    const stream = minio.listObjectsV2(minioName, "", true);
+    stream.on("data", (item) => {
+      total += item.size ?? 0;
+    });
+    stream.on("error", reject);
+    stream.on("end", () => resolve(total));
+  });
+};
+
+export const createProjectBucket = async (projectId: string, name: string, quotaBytes: number) => {
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
   const minioName = minioBucketName(id);
   await createPublicBucket(minioName);
+  try {
+    await setBucketQuota(minioName, quotaBytes);
+  } catch (error) {
+    await emptyAndRemoveBucket(minioName);
+    throw error;
+  }
 
   let credentials: Awaited<ReturnType<typeof createBucketCredentials>>;
   try {

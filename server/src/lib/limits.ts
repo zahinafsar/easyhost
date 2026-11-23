@@ -1,6 +1,4 @@
 export const LIMITS = {
-  projects: 3,
-  apps: 3,
   projectMembers: 10,
   aiPromptsPerDay: 30,
   aiFiles: 200,

@@ -63,7 +63,7 @@ const hostingPages = (limits) => {
 - An always-on container with 512 MB of RAM and 1 CPU
 - A URL at ${q("<app-slug>.easyhost.fun")}, plus custom domains with HTTPS
 - One Postgres 16 database and one S3 bucket per project
-- Up to ${limits.apps} apps per project
+- ${limits.apps} apps per project, with a ${limits.dbMb} MB database and ${limits.storageMb} MB of storage
 
 ## How ${framework.name} builds and runs
 
@@ -429,7 +429,7 @@ Nx works the same way with ${q("npx nx build <project>")}.
 
 ## Several apps, one project
 
-A project holds up to ${limits.apps} apps. Create one EasyHost app per deployable folder and set each root directory. They share the project's database and bucket.
+A project holds ${limits.apps} apps. Create one EasyHost app per deployable folder and set each root directory. They share the project's database and bucket.
 
 ${frameworkLinks(framework)}`,
       faq: [
@@ -804,18 +804,27 @@ const pricingPage = (limits) => {
     family: "products",
     path: "/pricing",
     title: "EasyHost Pricing: $0 With Published Limits",
-    description: `EasyHost hosting is free with no credit card. See every limit: ${limits.projects} projects, ${limits.apps} apps per project, Postgres and S3 storage.`,
+    description: `EasyHost is free for ${limits.projects} projects with ${limits.apps} apps each, Postgres and S3 storage. Pro is $${limits.proPrice} a month for ${limits.proProjects} projects and AI tokens.`,
     h1: "Pricing and limits",
-    lead: "Hosting on EasyHost costs $0 per month, with no credit card and no trial period. The only paid item is AI Tokens for the AI Builder, after your first free AI app and build.",
+    lead: `Hosting on EasyHost starts at $0 per month, with no credit card and no trial period. Pro costs $${limits.proPrice} a month and adds more projects and monthly AI tokens.`,
     crumbs: [HOME, { name: "Pricing", path: "/pricing" }],
-    body: `## Limits
+    body: `## Plans
+
+| | Free | Pro |
+| --- | --- | --- |
+| Price | $0 | $${limits.proPrice} per month |
+| Projects | ${limits.projects} | ${limits.proProjects} |
+| Apps | ${limits.apps} per project | ${limits.apps} per project |
+| Postgres database | 1 per project, ${limits.dbMb} MB | 1 per project, ${limits.dbMb} MB |
+| Storage | 1 bucket per project, ${limits.storageMb} MB | 1 bucket per project, ${limits.storageMb} MB |
+| AI tokens | First AI app and build free | ${limits.proTokens.toLocaleString("en-US")} every month |
+
+Upgrade from the Subscription page in the dashboard or with \`ezhst billing upgrade\`. A full storage bucket rejects uploads. A database that grows past its size is blocked, and the project's apps stop until you free space.
+
+## Other limits
 
 | Resource | Limit |
 | --- | --- |
-| Projects | ${limits.projects} |
-| Apps | ${limits.apps} per project |
-| Storage buckets | 1 per project |
-| Databases | 1 per project |
 | Project members | ${limits.projectMembers} per project, including pending invites |
 | AI Builder prompts | ${limits.aiPromptsPerDay} per day, per project |
 | Concurrent builds | ${limits.concurrentBuilds} |
@@ -823,16 +832,7 @@ const pricingPage = (limits) => {
 
 ## AI Builder tokens
 
-Each account gets its first AI app and its first build free. After that, AI requests use AI Tokens. Tokens are bought once and never expire.
-
-| Pack | Price |
-| --- | --- |
-| 500 tokens | $5 |
-| 1,100 tokens | $10 |
-| 2,400 tokens | $20 |
-| 6,500 tokens | $50 |
-
-Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. Hosting an AI app stays free. See the [AI Builder](/products/ai-builder).
+Each account gets its first AI app and its first build free. After that, AI requests use AI tokens. Pro tops your balance up to ${limits.proTokens.toLocaleString("en-US")} tokens every month. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. See the [AI Builder](/products/ai-builder).
 
 ## What it does not include
 
@@ -844,7 +844,8 @@ Each request is charged by how much work it takes, and a typical full build is a
 
 See how EasyHost differs from [other hosts](/alternatives), or browse [products](/products).`,
     faq: [
-      { q: "Do I need a credit card?", a: "No. Hosting needs no card. You only pay if you buy AI Tokens for the AI Builder after your free AI app and build." },
+      { q: "Do I need a credit card?", a: "No. The free plan needs no card. You only pay if you upgrade to Pro." },
+      { q: "What happens if a Pro payment fails?", a: "Your account goes back to the free plan until the payment goes through. Projects beyond the free limit are paused." },
       { q: "Is there a trial period?", a: "No. There is no expiry date on the free plan." },
     ],
   };
@@ -1042,7 +1043,7 @@ const indexPages = (pages) => {
     hub("/migrate", "Migrate to EasyHost From Other Hosts | EasyHost", "Move a Node.js app to EasyHost from Vercel, Render, Railway, Netlify, Fly.io, Heroku or Koyeb, along with your Postgres database and S3 files.", "Migrate to EasyHost", "Guides for moving your app and data.", `## Move your app\n\n${migrateLinks}\n\n## Move your data\n\n- [Postgres](/migrate/postgres)\n- [S3 files](/migrate/storage)`),
     hub("/alternatives", "Free Alternatives to Popular Hosting Platforms | EasyHost", "Honest comparisons between EasyHost and Vercel, Render, Railway, Netlify, Fly.io, Heroku and Koyeb, including what you give up by switching.", "Alternatives", "Honest comparisons, including when the other platform is the better choice.", `## Compare\n\n${competitorLinks}`),
     hub("/docs/cli", "ezhst CLI Reference: Every Command | EasyHost", "Reference for every ezhst command: account, deploy, env, build, domains, storage, database and members, with usage and JSON output notes.", "CLI reference", "One page per `ezhst` command. The [main docs](/docs) cover the same commands on a single page.", cliGroups),
-    hub("/products", "EasyHost Products: Hosting, Postgres, Storage, Domains", "On EasyHost: free Node.js hosting, Postgres, S3 storage, custom domains, team members, a CLI, an agent skill and an AI app builder.", "Products", "Hosting is free within the [published limits](/pricing). The AI Builder uses AI Tokens after your first free AI app and build.", `## All products\n\n${productLinks}`),
+    hub("/products", "EasyHost Products: Hosting, Postgres, Storage, Domains", "On EasyHost: free Node.js hosting, Postgres, S3 storage, custom domains, team members, a CLI, an agent skill and an AI app builder.", "Products", "Hosting is free within the [published limits](/pricing). Pro adds more projects and monthly AI tokens.", `## All products\n\n${productLinks}`),
   ];
 };
 
@@ -1087,7 +1088,7 @@ We do not sell your data and we never use it for advertising.
 
 - Google Cloud Build and Cloud Storage build your app images from your source code.
 - Google Gemini powers the AI Builder and sees your prompts and app files.
-- Lemon Squeezy handles payments for AI Tokens. We never see your card details.
+- Lemon Squeezy handles Pro subscription payments. We never see your card details.
 - Resend sends account emails such as verification codes and invites.
 - Microsoft Clarity provides dashboard usage analytics.
 
@@ -1147,9 +1148,9 @@ Please do not use EasyHost to:
 
 If a project breaks these terms or puts the platform at risk, we may pause or remove it. We will try to contact you first, unless there is an urgent risk to others.
 
-## AI Tokens
+## Pro subscription
 
-AI Tokens are bought once and used by the AI Builder. They are not refundable, except where the law requires it, and they have no cash value.
+Pro is billed monthly until you cancel. You can cancel at any time from the Subscription page, and Pro stays active until the end of the paid period. Payments already made are not refundable, except where the law requires it. AI tokens come with Pro, are topped up each month and have no cash value.
 
 ## Availability
 

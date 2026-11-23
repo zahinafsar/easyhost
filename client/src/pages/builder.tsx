@@ -71,15 +71,15 @@ export const BuilderPage = () => {
       <PageHeader title="Builder" description="Describe an app and AI builds it, live at its own address." action={
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link to="/tokens"><Coins className="size-4" />{tokens.data?.balance.toLocaleString("en-US") ?? 0} tokens</Link>
+            <Link to="/subscription"><Coins className="size-4" />{tokens.data?.balance.toLocaleString("en-US") ?? 0} tokens</Link>
           </Button>
           <Button disabled={used >= limit || needsTokens} onClick={() => setOpen(true)}><Plus className="size-4" />Create app</Button>
         </div>
       } />
       {needsTokens && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span>Your free AI app is used. Buy tokens to create more AI apps.</span>
-          <Button asChild size="sm"><Link to="/tokens">Buy tokens</Link></Button>
+          <span>Your free AI app is used. Upgrade to Pro for 1,000 tokens every month.</span>
+          <Button asChild size="sm"><Link to="/subscription">Upgrade</Link></Button>
         </div>
       )}
       <div className="mb-6 flex items-center justify-between border-b pb-3 text-sm">

@@ -61,7 +61,7 @@ import Footer from "../components/Footer.astro";
               {
                 "@type": "Question",
                 "name": "Is EasyHost really free?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes, for hosting. EasyHost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed limits: 3 projects, and per project up to three apps, one Postgres database and one storage bucket. The AI Builder gives each account its first AI app and first build free, then uses AI Tokens you buy once (see pricing)." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes, for hosting. EasyHost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed limits: 3 projects, and per project 2 apps, a 128 MB Postgres database and a 256 MB storage bucket. The AI Builder gives each account its first AI app and first build free. Pro ($10 a month) adds 10 projects and 1,000 AI tokens a month (see pricing)." }
               },
               {
                 "@type": "Question",
@@ -76,7 +76,7 @@ import Footer from "../components/Footer.astro";
               {
                 "@type": "Question",
                 "name": "Can I build an app without writing code?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the AI Builder in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres and storage at its own address. Your first AI app and its first build are free; after that, AI requests use AI Tokens." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the AI Builder in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres and storage at its own address. Your first AI app and its first build are free; after that, AI requests use AI tokens, which come with Pro." }
               },
               {
                 "@type": "Question",
@@ -373,18 +373,19 @@ import Footer from "../components/Footer.astro";
           <div>
             <p class="eyebrow">Limits</p>
             <h2>Free. These are the limits.</h2>
-            <p class="lead">Hosting is free within these limits, with no credit card. The AI Builder includes your first AI app and build, then uses AI Tokens. EasyHost runs Node.js apps, including Next.js, Express, Fastify and other Node.js services.</p>
+            <p class="lead">Hosting is free within these limits, with no credit card. The AI Builder includes your first AI app and build. Pro adds projects and monthly AI tokens. EasyHost runs Node.js apps, including Next.js, Express, Fastify and other Node.js services.</p>
             <p class="price">$0 <span>/ month</span></p>
             <p class="limits-more">See what the <a href="/free-nextjs-hosting">free Next.js hosting</a> plan includes, or how it compares as a <a href="/vercel-alternative">Vercel alternative</a>.</p>
           </div>
           <div class="limit-table">
             <div class="limit-row"><span>Projects</span><b>3</b></div>
-            <div class="limit-row"><span>Apps</span><b>3 per project</b></div>
-            <div class="limit-row"><span>Storage buckets</span><b>1 per project</b></div>
-            <div class="limit-row"><span>Postgres databases</span><b>1 per project</b></div>
+            <div class="limit-row"><span>Apps</span><b>2 per project</b></div>
+            <div class="limit-row"><span>Storage</span><b>256 MB per project</b></div>
+            <div class="limit-row"><span>Postgres database</span><b>128 MB per project</b></div>
             <div class="limit-row"><span>Team members</span><b>10 per project</b></div>
             <div class="limit-row"><span>AI Builder prompts</span><b>30 / day</b></div>
-            <div class="limit-row"><span>AI Builder</span><b>First app and build free, then AI Tokens</b></div>
+            <div class="limit-row"><span>AI Builder</span><b>First app and build free</b></div>
+            <div class="limit-row"><span>Pro, $10 / month</span><b>10 projects, 1,000 AI tokens / month</b></div>
             <div class="limit-row"><span>Concurrent builds</span><b>1</b></div>
             <div class="limit-row"><span>App container</span><b>512 MB RAM, 1 CPU</b></div>
           </div>
@@ -398,7 +399,7 @@ import Footer from "../components/Footer.astro";
           <div class="faq">
             <div>
               <h3>Is EasyHost really free?</h3>
-              <p>Yes, for hosting. EasyHost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed <a href="#limits">limits</a>: 3 projects, and per project up to three apps, one Postgres database and one storage bucket. The AI Builder gives each account its first AI app and first build free, then uses AI Tokens you buy once (see <a href="/pricing">pricing</a>).</p>
+              <p>Yes, for hosting. EasyHost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed <a href="#limits">limits</a>: 3 projects, and per project 2 apps, a 128 MB Postgres database and a 256 MB storage bucket. The AI Builder gives each account its first AI app and first build free. Pro ($10 a month) adds 10 projects and 1,000 AI tokens a month (see <a href="/pricing">pricing</a>).</p>
             </div>
             <div>
               <h3>What can I host on EasyHost?</h3>
@@ -426,7 +427,7 @@ import Footer from "../components/Footer.astro";
             </div>
             <div>
               <h3>Can I build an app without writing code?</h3>
-              <p>Yes. Open the <a href="/products/ai-builder">AI Builder</a> in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres and storage at its own address. Your first AI app and its first build are free; after that, AI requests use AI Tokens.</p>
+              <p>Yes. Open the <a href="/products/ai-builder">AI Builder</a> in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres and storage at its own address. Your first AI app and its first build are free; after that, AI requests use AI tokens, which come with Pro.</p>
             </div>
             <div>
               <h3>Is the database a real Postgres?</h3>

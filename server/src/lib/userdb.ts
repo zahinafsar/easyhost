@@ -34,6 +34,8 @@ const withClient = async <T>(config: pg.ClientConfig, run: (client: pg.Client) =
 
 const asAdmin = <T>(run: (client: pg.Client) => Promise<T>) => withClient(adminConfig, run);
 
+const asAdminOn = <T>(dbName: string, run: (client: pg.Client) => Promise<T>) => withClient({ ...adminConfig, database: dbName }, run);
+
 const asOwner = <T>(credentials: DatabaseCredentials, run: (client: pg.Client) => Promise<T>) => {
   return withClient(
     {
@@ -125,8 +127,34 @@ export const databaseSizes = async (dbNames: string[]) => {
   return new Map(rows.map((row) => [row.datname, Number(row.size)]));
 };
 
+export const setRoleLogin = (roleName: string, allowed: boolean) => {
+  return asAdmin(async (client) => {
+    if (allowed) {
+      await client.query(`ALTER ROLE "${roleName}" LOGIN`);
+      return;
+    }
+    await client.query(`ALTER ROLE "${roleName}" NOLOGIN`);
+    await client.query("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = $1", [roleName]);
+  });
+};
+
+export const clearTable = (dbName: string, table: string, mode: "truncate" | "drop") => {
+  return asAdminOn(dbName, async (client) => {
+    const found = await client.query("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1", [table]);
+    if (!found.rowCount) {
+      throw new Error("Table not found");
+    }
+    const identifier = `public."${table.replace(/"/g, '""')}"`;
+    if (mode === "drop") {
+      await client.query(`DROP TABLE ${identifier} CASCADE`);
+      return;
+    }
+    await client.query(`TRUNCATE TABLE ${identifier} CASCADE`);
+  });
+};
+
 export const listTables = (credentials: DatabaseCredentials) => {
-  return asOwner(credentials, async (client) => {
+  return asAdminOn(credentials.dbName, async (client) => {
     const result = await client.query<{ name: string }>(
       "SELECT table_name AS name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name",
     );

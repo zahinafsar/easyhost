@@ -135,7 +135,7 @@ npx ezhst deploy</pre></div>
 
         <section id="projects">
           <h2>Projects and linking</h2>
-          <p>A project contains up to three apps (Node.js apps and AI Builder apps count together) with a shared storage bucket and database. Each app has its own subdomain: <code>&lt;app-slug&gt;.easyhost.fun</code>.</p>
+          <p>A project contains up to 2 apps (Node.js apps and AI Builder apps count together) with a shared storage bucket and database. Each app has its own subdomain: <code>&lt;app-slug&gt;.easyhost.fun</code>.</p>
           <div class="cmds">
             <div class="cmd-row"><code>ezhst projects list</code><span>List your projects.</span></div>
             <div class="cmd-row"><code>ezhst projects create &lt;name&gt;</code><span>Create a project.</span></div>
@@ -153,7 +153,7 @@ ezhst link --project &lt;project-slug&gt; --app &lt;app-slug&gt;</pre></div>
 
         <section id="deploying">
           <h2>Deploying</h2>
-          <p>Use <code>ezhst apps list</code>, <code>ezhst apps create &lt;name&gt;</code>, and <code>ezhst apps delete --app &lt;slug&gt; --yes</code> to manage up to three apps per project. Deployment, environment, build, domain and runtime commands accept <code>--app &lt;slug-or-id&gt;</code>. Link an app with <code>ezhst link --project &lt;slug&gt; --app &lt;slug&gt;</code>.</p>
+          <p>Use <code>ezhst apps list</code>, <code>ezhst apps create &lt;name&gt;</code>, and <code>ezhst apps delete --app &lt;slug&gt; --yes</code> to manage up to 2 apps per project. Deployment, environment, build, domain and runtime commands accept <code>--app &lt;slug-or-id&gt;</code>. Link an app with <code>ezhst link --project &lt;slug&gt; --app &lt;slug&gt;</code>.</p>
           <div class="cmds">
             <div class="cmd-row"><code>ezhst deploy [--verbose]</code><span>Package the Node.js app in the current folder, upload, build and go live.</span></div>
             <div class="cmd-row"><code>ezhst redeploy [--verbose]</code><span>Rebuild the latest upload. Use after changing env vars or build settings.</span></div>
@@ -331,20 +331,20 @@ ezhst env set DATABASE_URL="postgresql://..."</pre></div>
           <p>To point at part of the page, click <strong>Select element</strong> and then the element in the preview. It is tagged in your message so the AI knows exactly what to change. You can also attach up to 5 images per message (png, jpg, gif, webp, avif, svg or ico, up to 5 MB each). They are saved in the app and served at <code>/uploads/&lt;name&gt;</code>, and the AI uses them only as they are, for example as a logo or background. It cannot see, edit, describe or generate images.</p>
           <p>The menu next to <strong>Select element</strong> opens the <strong>Code</strong> view, where you can edit any file and save it straight into the running app, and <strong>Export</strong>, which downloads all of the app's code as a zip.</p>
           <p>AI apps are plain JavaScript Hono servers. They use the project's Postgres database and storage when they need them, and work with environment variables, logs and custom domains like any other app. The AI Builder is not part of the CLI.</p>
-          <p>Each account gets its first AI app and its first build free. After that, AI requests use AI Tokens, bought once in the dashboard and never expiring: 500 tokens for $5, 1,100 for $10, 2,400 for $20 or 6,500 for $50. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. Hosting AI apps stays free, and AI apps count toward the 3 apps per project.</p>
+          <p>Each account gets its first AI app and its first build free. After that, AI requests use AI tokens, and Pro ($10 a month) tops your balance up to 1,000 tokens every month. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. AI apps count toward the 2 apps per project.</p>
         </section>
 
         <section id="limits">
           <h2>Limits</h2>
-          <p>EasyHost hosting is free within these limits. The AI Builder uses AI Tokens after your first free AI app and build. Node.js apps are supported, including Next.js and HTTP APIs. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
+          <p>EasyHost hosting is free within these limits. Pro costs $10 a month for 10 projects and 1,000 AI tokens a month; see <a href="/pricing">pricing</a>. Run <code>ezhst billing</code> to see your plan and usage, and <code>ezhst billing upgrade</code> for a Pro checkout link. Node.js apps are supported, including Next.js and HTTP APIs. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Resource</th><th>Limit</th></tr></thead>
               <tbody>
-                <tr><td>Projects</td><td>3</td></tr>
-                <tr><td>Apps</td><td>3 per project</td></tr>
-                <tr><td>Storage buckets</td><td>1 per project</td></tr>
-                <tr><td>Databases</td><td>1 per project</td></tr>
+                <tr><td>Projects</td><td>3 (10 on Pro)</td></tr>
+                <tr><td>Apps</td><td>2 per project</td></tr>
+                <tr><td>Storage</td><td>1 bucket per project, 256 MB</td></tr>
+                <tr><td>Database</td><td>1 Postgres database per project, 128 MB</td></tr>
                 <tr><td>Team members</td><td>10 per project, including pending invites</td></tr>
                 <tr><td>AI Builder prompts</td><td>30 per day, per project</td></tr>
                 <tr><td>Concurrent builds</td><td>1</td></tr>

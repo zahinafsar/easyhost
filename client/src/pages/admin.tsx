@@ -432,11 +432,12 @@ const UsersTab = ({ currentUserId }: { currentUserId: string }) => {
                       <div className="flex flex-wrap gap-1">
                         {user.role === "ADMIN" && <Badge>Admin</Badge>}
                         {user.blocked && <Badge variant="destructive">Blocked</Badge>}
+                        {user.plan === "Pro" && <Badge variant="secondary">Pro</Badge>}
                         <Badge variant="outline">{user.verified ? "Verified" : "Unverified"}</Badge>
                       </div>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {user.projects} / {data.projectLimit}
+                      {user.projects} / {user.projectLimit}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{user.runningApps}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</TableCell>

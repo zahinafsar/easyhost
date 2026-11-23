@@ -15,12 +15,16 @@ type StorageObject = { key: string; size: number; lastModified: string | null; i
 
 const findBucket = async (options: ProjectOption) => {
   const project = await resolveProject(options);
-  const { buckets } = await request<{ buckets: Bucket[] }>("/storage/buckets", {}, project.id);
+  const { buckets, usedBytes, limitBytes } = await request<{ buckets: Bucket[]; usedBytes: number; limitBytes: number }>(
+    "/storage/buckets",
+    {},
+    project.id,
+  );
   const bucket = buckets[0];
   if (!bucket) {
     return fail("This project has no storage yet. Create it with `ezhst storage create <name>`.");
   }
-  return { project, bucket };
+  return { project, bucket, usedBytes, limitBytes };
 };
 
 const listObjects = async (projectId: string, bucketId: string, prefix = "") => {
@@ -44,9 +48,12 @@ const printCredentials = (bucket: BucketWithCredentials) => {
 };
 
 export const storageInfo = async (options: ProjectOption) => {
-  const { project, bucket } = await findBucket(options);
+  const { project, bucket, usedBytes, limitBytes } = await findBucket(options);
   const { bucket: detail } = await listObjects(project.id, bucket.id);
-  output({ bucket: detail }, () => printCredentials(detail));
+  output({ bucket: detail, usedBytes, limitBytes }, () => {
+    printCredentials(detail);
+    log.info(`Used: ${formatBytes(usedBytes)} of ${formatBytes(limitBytes)}`);
+  });
 };
 
 export const createStorage = async (name: string, options: ProjectOption) => {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Coins, Database, FolderKanban, HardDrive, LogOut, Rocket, Settings, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { CreditCard, Database, FolderKanban, HardDrive, LogOut, Rocket, Settings, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -123,13 +123,13 @@ export const AppShell = () => {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-60 shrink-0 flex-col border-r bg-muted/30 md:flex">
+      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-muted/30 md:flex">
         <div className="flex h-14 items-center gap-2 border-b px-5 font-semibold">
           <img src="/logo.svg" alt="" className="h-6 w-auto" />
           EasyHost
           <span className="bg-foreground px-1.5 py-0.5 text-[10px] font-medium uppercase leading-none tracking-wide text-background">Beta</span>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {projectNavItems.map((item) => (
             <NavLink
               key={item.to}
@@ -151,9 +151,9 @@ export const AppShell = () => {
           <p className="truncate px-3 text-sm font-medium">{user.name}</p>
           <p className="truncate px-3 text-xs text-muted-foreground">{user.email}</p>
           <Button asChild variant="ghost" size="sm" className="mt-2 w-full justify-start">
-            <NavLink to="/tokens">
-              <Coins className="size-4" />
-              AI Token
+            <NavLink to="/subscription">
+              <CreditCard className="size-4" />
+              Subscription
             </NavLink>
           </Button>
           {user.role === "ADMIN" && !user.impersonatorId && (
@@ -186,11 +186,11 @@ export const AppShell = () => {
             </NavLink>
           ))}
           <NavLink
-            to="/tokens"
+            to="/subscription"
             className={({ isActive }) => cn("flex shrink-0 items-center gap-2 px-3 py-1.5 text-sm", isActive && "bg-muted font-medium")}
           >
-            <Coins className="size-4" />
-            AI Token
+            <CreditCard className="size-4" />
+            Subscription
           </NavLink>
         </nav>
         {user.impersonatorId && (

@@ -4,6 +4,7 @@ import { streamSSE } from "hono/streaming";
 import { liveSession, subscribeLive, type AiLiveEvent, type AiStep } from "../lib/ai-live.js";
 import { prisma } from "../lib/prisma.js";
 import { LIMITS } from "../lib/limits.js";
+import { SUSPENDED_ERROR, appLimitMessage, projectEntitlement } from "../lib/billing.js";
 import { validate } from "../lib/validator.js";
 import { aiAppAvailabilitySchema, aiAppNameSchema, aiFileQuerySchema, aiPromptSchema, aiWriteFileSchema, aiRespondSchema, createAiAppSchema, type AiElement } from "../lib/validations.js";
 import { AI_THEMES, findTheme, themeCss } from "../lib/ai-themes.js";
@@ -72,14 +73,15 @@ export const aiAppRoutes = new Hono<UserEnv>()
 
     const projectId = c.get("projectId");
     const userId = c.get("user").id;
+    const entitlement = await projectEntitlement(projectId);
     const app = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM apps WHERE id = ${projectId} FOR UPDATE`;
       const project = await tx.app.findUnique({ where: { id: projectId } });
       if (!project || project.deleting) {
         return null;
       }
-      const count = await tx.app.count({ where: { appEnabled: true, OR: [{ id: projectId }, { parentProjectId: projectId }] } });
-      if (count >= LIMITS.apps) {
+      const count = await tx.app.count({ where: projectAppsWhere(projectId) });
+      if (count >= entitlement.limits.apps) {
         return null;
       }
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
@@ -110,10 +112,10 @@ export const aiAppRoutes = new Hono<UserEnv>()
       return c.json({ error: `${name} is already taken` }, 400);
     }
     if (app === "tokens") {
-      return c.json({ error: "Your free AI app is used. Buy tokens on the Tokens page to create more AI apps." }, 402);
+      return c.json({ error: "Your free AI app is used. Upgrade to Pro on the Subscription page to create more AI apps." }, 402);
     }
     if (!app) {
-      return c.json({ error: `Each project can have at most ${LIMITS.apps} apps.` }, 400);
+      return c.json({ error: appLimitMessage(entitlement.limits.apps) }, 400);
     }
 
     for (const file of starterFiles()) {
@@ -255,6 +257,9 @@ export const aiAppRoutes = new Hono<UserEnv>()
     if (!app) {
       return c.json({ error: "AI app not found" }, 404);
     }
+    if (app.suspended) {
+      return c.json({ error: SUSPENDED_ERROR }, 402);
+    }
 
     const projectId = c.get("projectId");
     const used = await prisma.aiMessage.count({
@@ -291,6 +296,9 @@ export const aiAppRoutes = new Hono<UserEnv>()
     const app = await findAiApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "AI app not found" }, 404);
+    }
+    if (app.suspended) {
+      return c.json({ error: SUSPENDED_ERROR }, 402);
     }
     const body = c.req.valid("json");
     const message = await prisma.aiMessage.findFirst({

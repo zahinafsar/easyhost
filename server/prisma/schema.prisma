@@ -31,9 +31,11 @@ enum AiStatus {
   FAILED
 }
 
-enum TokenPurchaseStatus {
-  PENDING
-  PAID
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
 }
 
 enum DomainStatus {
@@ -84,7 +86,7 @@ model User {
   apps           App[]
   projectMembers ProjectMember[]
   sentInvites    ProjectInvite[]
-  tokenPurchases TokenPurchase[]
+  subscription   Subscription?
   tokenUsages    TokenUsage[]
 
   @@map("users")
@@ -147,6 +149,7 @@ model Database {
   dbName    String   @unique
   roleName  String   @unique
   password  String
+  blocked   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   aiApps    App[]    @relation("AiAppDatabase")
@@ -160,6 +163,7 @@ model App {
   projectApps     App[]           @relation("ProjectApps")
   appName         String?
   appEnabled      Boolean         @default(true)
+  suspended       Boolean         @default(false)
   deleting        Boolean         @default(false)
   id              String          @id @default(cuid())
   userId          String
@@ -248,22 +252,21 @@ model AiMessage {
   @@map("ai_messages")
 }
 
-model TokenPurchase {
-  id           String              @id @default(cuid())
-  userId       String
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokens       Int
-  amountCents  Int
-  status       TokenPurchaseStatus @default(PENDING)
-  lsCheckoutId String?             @unique
-  lsOrderId    String?             @unique
-  lsEventId    String?             @unique
-  paidAt       DateTime?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String             @unique
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider               String
+  providerSubscriptionId String             @unique
+  status                 SubscriptionStatus
+  renewsAt               DateTime?
+  endsAt                 DateTime?
+  portalUrl              String?
+  lastPaymentId          String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-  @@index([userId, status, createdAt])
-  @@map("token_purchases")
+  @@map("subscriptions")
 }
 
 model TokenUsage {

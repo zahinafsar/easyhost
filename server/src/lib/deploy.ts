@@ -123,6 +123,11 @@ export const runDeployment = async (deploymentId: string) => {
     cleanupImage = true;
     await removeSource(sourceObjectName(deploymentId));
 
+    const latest = await prisma.app.findUniqueOrThrow({ where: { id: app.id }, select: { suspended: true } });
+    if (latest.suspended) {
+      throw new Error("The app was paused because the project is over its plan limits");
+    }
+
     await setStep("STARTING");
     logger.log("Downloading image");
     await pullImage(tag, (line) => logger.log(line));

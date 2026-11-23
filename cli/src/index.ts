@@ -21,6 +21,7 @@ import {
 import { createDatabase, databaseInfo, deleteDatabase, queryDatabase, resetDatabasePassword, tableRows } from "./commands/db.js";
 import { acceptInvite, inviteMember, leaveProject, listMembers, removeMember, revokeInvite } from "./commands/members.js";
 import { installSkill } from "./commands/skill.js";
+import { billingPortal, showBilling, upgradeBilling } from "./commands/billing.js";
 import { fail, setJsonMode } from "./lib/ui.js";
 
 const packageMetadata: unknown = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
@@ -116,10 +117,15 @@ appScoped(domains.command("add").description("Add a domain").argument("<hostname
 appScoped(domains.command("verify").description("Check DNS and issue HTTPS").argument("<hostname>")).action(verifyDomain);
 appScoped(domains.command("remove").description("Remove a domain").argument("<hostname>")).action(removeDomain);
 
-const apps = program.command("apps").description("Manage up to three apps per project");
+const apps = program.command("apps").description("Manage the apps in a project (2 per project)");
 scoped(apps.command("list").description("List apps in a project")).action(listApps);
 scoped(apps.command("create").description("Create an app").argument("<name>")).action(createApp);
 appScoped(apps.command("delete").description("Delete one app and its deployments").option("--yes", "Confirm")).action(deleteApp);
+
+const billing = program.command("billing").description("Plan, usage and the Pro subscription");
+billing.command("show", { isDefault: true }).description("Show your plan, limits and usage").action(showBilling);
+billing.command("upgrade").description("Print a checkout link for Pro ($10/mo)").action(upgradeBilling);
+billing.command("portal").description("Print the link to manage or cancel your subscription").action(billingPortal);
 
 const storage = program.command("storage").description("S3 compatible storage");
 scoped(storage.command("info").description("Show the bucket and S3 credentials")).action(storageInfo);

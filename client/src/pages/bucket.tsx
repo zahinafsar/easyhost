@@ -15,6 +15,13 @@ import { storageQuery, userQuery } from "@/lib/queries";
 import { formatBytes, formatDate } from "@/lib/format";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 
+const usageDescription = (location: string, usage: { usedBytes: number; limitBytes: number } | undefined) => {
+  if (!usage) {
+    return location;
+  }
+  return `${location}, ${formatBytes(usage.usedBytes)} of ${formatBytes(usage.limitBytes)} used`;
+};
+
 export const BucketPage = () => {
   const { id = "" } = useParams();
   const navigate = useNavigate();
@@ -22,6 +29,7 @@ export const BucketPage = () => {
   const [revealed, setRevealed] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const { data, isLoading } = useQuery(storageQuery().objects(id, prefix));
+  const usage = useQuery(storageQuery().buckets());
 
   const invalidate = [storageQuery().all];
 
@@ -89,7 +97,7 @@ export const BucketPage = () => {
     <>
       <PageHeader
         title={bucket.name}
-        description={prefix || "Root"}
+        description={usageDescription(prefix || "Root", usage.data)}
         action={
           <div className="flex flex-wrap items-center gap-3">
             <input

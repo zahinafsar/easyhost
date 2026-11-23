@@ -12,6 +12,8 @@ import { cleanJunk, scanJunk } from "../lib/cleanup.js";
 import { appHost } from "../lib/domains.js";
 import { sendAccountDeletedEmail, sendProjectDeletedEmail } from "../lib/email.js";
 import { LIMITS } from "../lib/limits.js";
+import { FREE, PRO } from "../lib/plans.js";
+import { isSubscriptionActive } from "../lib/billing.js";
 import { emailDomain } from "../lib/email-domains.js";
 import { validate } from "../lib/validator.js";
 import { adminAnalyticsQuerySchema, adminUsersQuerySchema } from "../lib/validations.js";
@@ -245,7 +247,7 @@ export const adminRoutes = new Hono<UserEnv>()
 
     return c.json({
       projects: rows,
-      limits: { memoryBytes: 512 * 1024 * 1024 * LIMITS.apps },
+      limits: { memoryBytes: 512 * 1024 * 1024 * FREE.apps },
       totals: {
         memoryBytes: rows.reduce((sum, row) => sum + (row.container?.memoryBytes ?? 0), 0),
         databaseBytes: rows.reduce((sum, row) => sum + (row.databaseBytes ?? 0), 0),
@@ -279,21 +281,29 @@ export const adminRoutes = new Hono<UserEnv>()
           blocked: true,
           createdAt: true,
           apps: { select: { id: true, status: true, parentProjectId: true, appEnabled: true } },
+          subscription: { select: { status: true, endsAt: true } },
         },
       }),
       prisma.user.count({ where }),
     ]);
 
     return c.json({
-      users: users.map(({ apps, ...user }) => ({
-        ...user,
-        projects: apps.filter((app) => app.parentProjectId === null).length,
-        runningApps: apps.filter((app) => app.appEnabled && app.status === "RUNNING").length,
-      })),
+      users: users.map(({ apps, subscription, ...user }) => {
+        let plan = FREE;
+        if (isSubscriptionActive(subscription)) {
+          plan = PRO;
+        }
+        return {
+          ...user,
+          plan: plan.name,
+          projectLimit: plan.projects,
+          projects: apps.filter((app) => app.parentProjectId === null).length,
+          runningApps: apps.filter((app) => app.appEnabled && app.status === "RUNNING").length,
+        };
+      }),
       total,
       page,
       pages: Math.max(1, Math.ceil(total / USERS_PER_PAGE)),
-      projectLimit: LIMITS.projects,
     });
   })
   .delete("/projects/:id", async (c) => {

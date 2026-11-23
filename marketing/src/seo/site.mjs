@@ -177,6 +177,7 @@ const NAV_LINKS = ["/", "/frameworks", "/guides", "/docs"];
 const BANNED_CHARACTERS = new RegExp("[\\u2014\\u2190-\\u21ff]");
 const root = process.cwd();
 const limitsFile = path.join(root, "..", "server", "src", "lib", "limits.ts");
+const plansFile = path.join(root, "..", "server", "src", "lib", "plans.ts");
 
 const readLimits = () => {
   const source = readFileSync(limitsFile, "utf8");
@@ -184,11 +185,35 @@ const readLimits = () => {
   for (const [, key, value] of source.matchAll(/(\w+):\s*(\d+)/g)) {
     limits[key] = Number(value);
   }
-  for (const key of ["projects", "apps", "concurrentBuilds", "projectMembers", "aiPromptsPerDay"]) {
+  for (const key of ["concurrentBuilds", "projectMembers", "aiPromptsPerDay"]) {
     if (limits[key] === undefined) {
       throw new Error(`${limitsFile} does not define ${key}`);
     }
   }
+  const plans = readFileSync(plansFile, "utf8");
+  const block = (name) => {
+    const match = new RegExp(`export const ${name}: Plan = \\{([^}]*)\\}`).exec(plans);
+    if (!match) {
+      throw new Error(`${plansFile} does not define ${name}`);
+    }
+    return match[1];
+  };
+  const pick = (source, pattern, name) => {
+    const match = pattern.exec(source);
+    if (!match) {
+      throw new Error(`${plansFile} does not define ${name}`);
+    }
+    return Number(match[1]);
+  };
+  const free = block("FREE");
+  const pro = block("PRO");
+  limits.projects = pick(free, /projects:\s*(\d+)/, "FREE.projects");
+  limits.apps = pick(free, /apps:\s*(\d+)/, "FREE.apps");
+  limits.dbMb = pick(free, /dbBytes:\s*(\d+)\s*\*\s*MB/, "FREE.dbBytes");
+  limits.storageMb = pick(free, /storageBytes:\s*(\d+)\s*\*\s*MB/, "FREE.storageBytes");
+  limits.proProjects = pick(pro, /projects:\s*(\d+)/, "PRO.projects");
+  limits.proPrice = pick(pro, /price:\s*(\d+)/, "PRO.price");
+  limits.proTokens = pick(pro, /monthlyTokens:\s*(\d+)/, "PRO.monthlyTokens");
   return limits;
 };
 

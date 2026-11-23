@@ -26,7 +26,7 @@ Check first: `npx ezhst whoami --json`. If it fails with "Not logged in":
 
 ## 2. Pick or create a project
 
-A project contains up to three apps, and shared storage and database. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
+A project contains up to 2 apps, and shared storage and database. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
 
 ```
 npx ezhst projects list --json
@@ -93,10 +93,14 @@ Members:
 Account:
 - `whoami`, `logout`, `verify <code>`, `resend-verification`, `forgot-password --email <email>`
 - If a command fails with "Your email is not verified", ask the user for the 6-digit code from their inbox and run `verify <code>`. Codes expire after 10 minutes; `resend-verification` sends a new one (once a minute).
-- Limit errors ("You can have at most 3 projects.", "Each project can have at most 3 apps.") are hard limits: suggest deleting something the user no longer needs.
+- Limit errors ("You can have 3 projects on the Free plan...", "This project can have 2 apps.") are plan limits: suggest deleting something the user no longer needs, or Pro for more projects.
+- "This app is paused" or "This database is over its size limit": the project is over its plan, so its apps are stopped. Free space (drop tables or delete files) or, for paused projects, upgrade to Pro.
+
+Billing:
+- `billing` shows the plan, limits and usage per project. `billing upgrade` prints a Pro checkout link for the user to open (never pay for them). `billing portal` prints the link to manage or cancel.
 
 ## Limits
 
-Free: 3 projects. Per project: three apps, one bucket and one database. One build at a time; 512 MB RAM and 1 CPU per app.
+Free: 3 projects. Pro ($10/mo): 10 projects and the AI token balance topped up to 1,000 every month. Per project on both: 2 apps, one bucket (256 MB) and one database (128 MB). One build at a time; 512 MB RAM and 1 CPU per app. A full bucket rejects uploads; a database over its size is blocked and the project's apps stop.
 
 Docs: https://easyhost.fun/docs

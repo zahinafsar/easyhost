@@ -73,7 +73,10 @@ export const AppsPage = () => {
                   {app.kind === "AI" && <Badge variant="secondary" className="ml-2">AI</Badge>}
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">{app.url}</TableCell>
-                <TableCell><StatusBadge status={app.status} /></TableCell>
+                <TableCell>
+                  <StatusBadge status={app.status} />
+                  {app.suspended && <Badge variant="destructive" className="ml-2">Paused</Badge>}
+                </TableCell>
                 <TableCell className="text-right text-sm text-muted-foreground">{formatDate(app.updatedAt)}</TableCell>
               </TableRow>
             ))}

@@ -59,6 +59,7 @@ Services:
 - Use a service whenever the request needs it, without asking the user.
 - Database: just call run_sql. It connects the project's database automatically (creating it if needed) and sets DATABASE_URL.
 - Storage: if storage is not connected, call connect_storage before writing code that uses it.
+- Size limits: the project database holds 128 MB and storage holds 256 MB. Keep data lean: store files in storage, never as blobs in Postgres, and limit upload sizes.
 - Sending email is not supported. If a request needs to send email, build everything else and tell the user email sending is not available. Never write code that sends email.
 
 Uploaded images:

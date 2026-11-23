@@ -1,14 +1,15 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { createCheckout, getOrder, lemonSqueezySetup } from "@lemonsqueezy/lemonsqueezy.js";
-import { prisma } from "./prisma.js";
+import { createCheckout, getSubscription, lemonSqueezySetup } from "@lemonsqueezy/lemonsqueezy.js";
+import type { SubscriptionStatus } from "@prisma/client";
 import { env } from "./env.js";
+import type { PaymentEvent, PaymentProvider, ProviderSubscription } from "./payments.js";
 
 lemonSqueezySetup({
   apiKey: env.lemonSqueezy.apiKey,
   onError: (error) => console.error("[lemonsqueezy]", error),
 });
 
-export const verifyLemonSignature = (rawBody: string, signature: string | undefined) => {
+const verifySignature = (rawBody: string, signature: string | undefined) => {
   if (!signature || !/^[0-9a-f]+$/i.test(signature)) {
     return false;
   }
@@ -21,97 +22,138 @@ export const verifyLemonSignature = (rawBody: string, signature: string | undefi
   return timingSafeEqual(a, b);
 };
 
-export const createTokenCheckout = async (purchase: { id: string; tokens: number; amountCents: number }, user: { id: string; email: string }) => {
-  const { data, error } = await createCheckout(env.lemonSqueezy.storeId, env.lemonSqueezy.variantId, {
-    testMode: !env.isProduction,
-    customPrice: purchase.amountCents,
-    productOptions: {
-      name: `${purchase.tokens.toLocaleString("en-US")} EasyHost tokens`,
-      description: "Tokens for the EasyHost AI builder. One-time purchase, tokens never expire.",
-      redirectUrl: `${env.appUrl}/tokens?purchase=${purchase.id}`,
-      receiptButtonText: "Back to EasyHost",
-      receiptLinkUrl: `${env.appUrl}/tokens`,
-    },
-    checkoutOptions: {
-      embed: false,
-      media: false,
-      logo: true,
-    },
-    checkoutData: {
-      email: user.email,
-      custom: {
-        purchase_id: purchase.id,
-        user_id: user.id,
-      },
-    },
-  });
-  if (error || !data) {
-    console.error("Lemon Squeezy createCheckout failed", error);
-    return null;
+const mapStatus = (status: string): SubscriptionStatus => {
+  if (status === "active" || status === "on_trial") {
+    return "ACTIVE";
   }
-  return { id: data.data.id, url: data.data.attributes.url };
+  if (status === "cancelled") {
+    return "CANCELLED";
+  }
+  if (status === "expired") {
+    return "EXPIRED";
+  }
+  return "PAST_DUE";
 };
 
-type ProcessResult = { ok: true; alreadyProcessed: boolean } | { ok: false; reason: string };
+const toDate = (value: unknown) => {
+  if (typeof value !== "string" || !value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date;
+};
 
-export const processTokenOrder = async (lsOrderId: string, purchaseId: string, lsEventId: string): Promise<ProcessResult> => {
-  const { data: order, error } = await getOrder(lsOrderId);
-  if (error || !order) {
-    return { ok: false, reason: "ls-order-not-found" };
-  }
-  const attrs = order.data.attributes;
-  if (attrs.status !== "paid") {
-    return { ok: false, reason: "not-paid" };
-  }
-  if (String(attrs.store_id) !== env.lemonSqueezy.storeId) {
-    return { ok: false, reason: "store-mismatch" };
-  }
-  if (String(attrs.first_order_item?.variant_id) !== env.lemonSqueezy.variantId) {
-    return { ok: false, reason: "variant-mismatch" };
-  }
-  if (attrs.currency && attrs.currency.toLowerCase() !== "usd") {
-    return { ok: false, reason: "currency-mismatch" };
-  }
+type LsSubscription = {
+  id?: string | number;
+  attributes?: {
+    store_id?: number;
+    variant_id?: number;
+    status?: string;
+    renews_at?: string | null;
+    ends_at?: string | null;
+    urls?: { customer_portal?: string | null } | null;
+  };
+};
 
-  const purchase = await prisma.tokenPurchase.findUnique({ where: { id: purchaseId } });
-  if (!purchase) {
-    return { ok: false, reason: "purchase-not-found" };
+const toSubscription = (data: LsSubscription): ProviderSubscription | null => {
+  const attrs = data.attributes;
+  if (!data.id || !attrs) {
+    return null;
   }
-  if (purchase.status === "PAID") {
-    if (purchase.lsOrderId === lsOrderId) {
-      return { ok: true, alreadyProcessed: true };
+  if (String(attrs.store_id) !== env.lemonSqueezy.storeId || String(attrs.variant_id) !== env.lemonSqueezy.variantId) {
+    return null;
+  }
+  return {
+    providerSubscriptionId: String(data.id),
+    status: mapStatus(attrs.status ?? ""),
+    renewsAt: toDate(attrs.renews_at),
+    endsAt: toDate(attrs.ends_at),
+    portalUrl: attrs.urls?.customer_portal ?? null,
+  };
+};
+
+type LsWebhook = {
+  meta?: { event_name?: string; custom_data?: Record<string, string> };
+  data?: LsSubscription & { attributes?: { subscription_id?: number; billing_reason?: string; status?: string } };
+};
+
+const parseWebhook = (rawBody: string, headers: Record<string, string | undefined>): PaymentEvent | null => {
+  if (!verifySignature(rawBody, headers["x-signature"])) {
+    return null;
+  }
+  let body: LsWebhook;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return null;
+  }
+  const eventName = body.meta?.event_name ?? headers["x-event-name"] ?? "";
+  const data = body.data ?? {};
+
+  if (eventName === "subscription_payment_success") {
+    const subscriptionId = data.attributes?.subscription_id;
+    if (!subscriptionId || data.attributes?.billing_reason !== "renewal" || data.attributes?.status !== "paid") {
+      return { type: "ignored" };
     }
-    return { ok: false, reason: "purchase-bound-to-other-order" };
+    return { type: "subscription.renewed", providerSubscriptionId: String(subscriptionId), paymentId: String(data.id) };
   }
-
-  const reused = await prisma.tokenPurchase.findFirst({
-    where: { lsOrderId, id: { not: purchase.id } },
-    select: { id: true },
-  });
-  if (reused) {
-    return { ok: false, reason: "order-already-used" };
+  if (eventName === "subscription_payment_failed") {
+    const subscriptionId = data.attributes?.subscription_id;
+    if (!subscriptionId) {
+      return { type: "ignored" };
+    }
+    return { type: "subscription.payment_failed", providerSubscriptionId: String(subscriptionId) };
   }
-
-  const orderCreatedAt = new Date(attrs.created_at).getTime();
-  if (Number.isFinite(orderCreatedAt) && orderCreatedAt < purchase.createdAt.getTime() - 60_000) {
-    return { ok: false, reason: "order-predates-purchase" };
+  if (!eventName.startsWith("subscription_")) {
+    return { type: "ignored" };
   }
-
-  const paidCents = Number(attrs.subtotal) - Number(attrs.discount_total ?? 0);
-  if (!Number.isFinite(paidCents) || paidCents < purchase.amountCents) {
-    return { ok: false, reason: "amount-mismatch" };
+  const subscription = toSubscription(data);
+  if (!subscription) {
+    return { type: "ignored" };
   }
+  if (eventName === "subscription_created") {
+    return { type: "subscription.created", userId: body.meta?.custom_data?.user_id ?? null, subscription };
+  }
+  return { type: "subscription.updated", subscription };
+};
 
-  const credited = await prisma.$transaction(async (tx) => {
-    const { count } = await tx.tokenPurchase.updateMany({
-      where: { id: purchase.id, status: "PENDING" },
-      data: { status: "PAID", lsOrderId, lsEventId, paidAt: new Date() },
+export const lemonSqueezyProvider: PaymentProvider = {
+  name: "lemonsqueezy",
+  createSubscriptionCheckout: async (user, redirectUrl) => {
+    const { data, error } = await createCheckout(env.lemonSqueezy.storeId, env.lemonSqueezy.variantId, {
+      testMode: !env.isProduction,
+      productOptions: {
+        redirectUrl,
+        receiptButtonText: "Back to EasyHost",
+        receiptLinkUrl: `${env.appUrl}/subscription`,
+      },
+      checkoutOptions: {
+        embed: false,
+        media: false,
+        logo: true,
+      },
+      checkoutData: {
+        email: user.email,
+        custom: {
+          user_id: user.id,
+        },
+      },
     });
-    if (!count) {
-      return false;
+    if (error || !data) {
+      console.error("Lemon Squeezy createCheckout failed", error);
+      return null;
     }
-    await tx.user.update({ where: { id: purchase.userId }, data: { tokenBalance: { increment: purchase.tokens } } });
-    return true;
-  });
-  return { ok: true, alreadyProcessed: !credited };
+    return { url: data.data.attributes.url };
+  },
+  fetchSubscription: async (providerSubscriptionId) => {
+    const { data, error } = await getSubscription(providerSubscriptionId);
+    if (error || !data) {
+      return null;
+    }
+    return toSubscription(data.data as unknown as LsSubscription);
+  },
+  parseWebhook,
 };

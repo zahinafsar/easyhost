@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { prisma } from "../lib/prisma.js";
-import { LIMITS } from "../lib/limits.js";
+import { projectLimitMessage, userPlan } from "../lib/billing.js";
 import { projectAccessWhere, projectSummary, resourceSlug } from "../lib/project-apps.js";
 import { deleteProject } from "../lib/delete-project.js";
 import { validate } from "../lib/validator.js";
@@ -35,22 +35,23 @@ export const projectRoutes = new Hono<UserEnv>()
         role: projectRole(ownerId, userId),
         appIds: [...(appEnabled ? [project.id] : []), ...projectApps.map((app) => app.id)],
       })),
-      limit: LIMITS.projects,
+      limit: (await userPlan(userId)).projects,
     });
   })
   .post("/", validate("json", createAppSchema), async (c) => {
     const userId = c.get("user").id;
     const { name } = c.req.valid("json");
+    const plan = await userPlan(userId);
     const project = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
-      const count = await tx.app.count({ where: { userId, parentProjectId: null } });
-      if (count >= LIMITS.projects) {
+      const count = await tx.app.count({ where: { userId, parentProjectId: null, deleting: false } });
+      if (count >= plan.projects) {
         return null;
       }
       return tx.app.create({ data: { userId, name, slug: resourceSlug(name), appEnabled: false }, select: projectSummary });
     });
     if (!project) {
-      return c.json({ error: `You can have at most ${LIMITS.projects} projects.` }, 400);
+      return c.json({ error: projectLimitMessage(plan) }, 400);
     }
     return c.json({ project }, 201);
   })

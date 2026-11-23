@@ -135,3 +135,11 @@
 - Kept: Resend for platform account emails only (verification code, password reset, project invites, admin deletion notices) in server/src/lib/email.ts; blocked email domains (lib/email-domains.ts); reserved app names mail/email/smtp
 - AI agent instructions say sending email is not supported
 
+
+## Pro subscription (2026-11-23)
+- An earlier per-project configurable billing build was fully reverted by the user. Current model is simple: Free (3 projects) and Pro ($10/mo, 10 projects), both 2 apps, 128MB DB, 256MB storage per project (server/src/lib/plans.ts). LIMITS.projects/apps removed; marketing site.mjs readLimits reads FREE/PRO from plans.ts
+- Lemon Squeezy only. Token packs removed (TokenPurchase model gone). LEMONSQUEEZY_VARIANT_ID is now the Pro subscription variant. Provider layer: payments.ts (PaymentProvider + normalized events) and lemonsqueezy.ts (impl), so the provider can be swapped. Webhook /api/webhooks/lemonsqueezy needs subscription_created, subscription_updated, subscription_cancelled, subscription_expired, subscription_resumed, subscription_payment_success, subscription_payment_failed. Checkout passes custom user_id
+- Tokens: Pro tops tokenBalance up to 1000 (never lowers it) on subscription_created and each renewal. Free first AI app + first build kept
+- Enforcement (billing.ts enforceUser): newest projects beyond plan paused, newest apps beyond 2 paused (App.suspended, container stopped, deploy/start/AI prompt rejected), DB over 128MB = role NOLOGIN + Database.blocked + project apps paused, cleared via POST /api/databases/:id/tables/:table/clear (truncate|drop, admin connection); bucket quota via `mc quota set` at creation, on billing events and on the first worker run. Worker every 5 min. PAST_DUE = Free
+- UI: /subscription page (Free vs Pro cards, upgrade, Manage billing via LS portal, usage table), sidebar Subscription item replaces AI Token (AI Token page removed per user), sidebar is sticky (h-dvh). CLI: ezhst billing, billing upgrade, billing portal
+- Migration not created: user runs `cd server && npm run prisma -- migrate dev --name pro_subscription`

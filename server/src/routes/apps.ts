@@ -12,7 +12,7 @@ import { validate } from "../lib/validator.js";
 import { addDomainSchema, createAppSchema, logsQuerySchema, updateBuildSchema, updateEnvSchema, updateProjectSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
 import type { UserEnv } from "../lib/types.js";
-import { LIMITS } from "../lib/limits.js";
+import { SUSPENDED_ERROR, appLimitMessage, projectEntitlement } from "../lib/billing.js";
 import { NODE_VERSIONS } from "../lib/build-plan.js";
 import { startAiApp } from "../lib/ai-apps.js";
 
@@ -38,26 +38,28 @@ export const appRoutes = new Hono<UserEnv>()
       orderBy: { createdAt: "desc" },
       include: { deployments: { select: deploymentSummary, orderBy: { createdAt: "desc" }, take: 1 } },
     });
-    return c.json({ apps: apps.map(withAppUrl), limit: LIMITS.apps });
+    const entitlement = await projectEntitlement(c.get("projectId"));
+    return c.json({ apps: apps.map(withAppUrl), limit: entitlement.limits.apps });
   })
   .post("/", validate("json", createAppSchema), async (c) => {
     const { name } = c.req.valid("json");
 
     const projectId = c.get("projectId");
+    const entitlement = await projectEntitlement(projectId);
     const app = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM apps WHERE id = ${projectId} FOR UPDATE`;
       const project = await tx.app.findUnique({ where: { id: projectId } });
       if (!project || project.deleting) {
         return null;
       }
-      const count = await tx.app.count({ where: { appEnabled: true, OR: [{ id: projectId }, { parentProjectId: projectId }] } });
-      if (count >= LIMITS.apps) {
+      const count = await tx.app.count({ where: projectAppsWhere(projectId) });
+      if (count >= entitlement.limits.apps) {
         return null;
       }
       return tx.app.create({ data: { userId: project.userId, parentProjectId: projectId, name, slug: resourceSlug(name) } });
     });
     if (!app) {
-      return c.json({ error: `Each project can have at most ${LIMITS.apps} apps.` }, 400);
+      return c.json({ error: appLimitMessage(entitlement.limits.apps) }, 400);
     }
     return c.json({ app: withAppUrl(app) }, 201);
   })
@@ -196,6 +198,9 @@ export const appRoutes = new Hono<UserEnv>()
     if (app.kind === "AI") {
       return c.json({ error: AI_APP_ERROR }, 400);
     }
+    if (app.suspended) {
+      return c.json({ error: SUSPENDED_ERROR }, 402);
+    }
 
     const body = await c.req.parseBody();
     const file = body.file;
@@ -221,6 +226,9 @@ export const appRoutes = new Hono<UserEnv>()
     }
     if (app.kind === "AI") {
       return c.json({ error: AI_APP_ERROR }, 400);
+    }
+    if (app.suspended) {
+      return c.json({ error: SUSPENDED_ERROR }, 402);
     }
 
     const latest = await prisma.deployment.findFirst({
@@ -271,6 +279,9 @@ export const appRoutes = new Hono<UserEnv>()
     const app = await findProjectApp(c.get("projectId"), c.req.param("id"));
     if (!app) {
       return c.json({ error: "App not found" }, 404);
+    }
+    if (app.suspended) {
+      return c.json({ error: SUSPENDED_ERROR }, 402);
     }
     if (app.kind === "AI") {
       const started = await startAiApp(app);

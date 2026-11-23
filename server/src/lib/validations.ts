@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { NODE_VERSIONS } from "./build-plan.js";
-import { TOKEN_PACKS } from "./tokens.js";
 import { LIMITS } from "./limits.js";
 
 const resourceName = z
@@ -184,6 +183,6 @@ export const aiRespondSchema = z.object({
   theme: z.string().optional(),
 });
 
-export const tokenCheckoutSchema = z.object({
-  pack: z.enum(TOKEN_PACKS.map((pack) => pack.id) as [string, ...string[]], "Choose a token pack"),
+export const clearTableSchema = z.object({
+  mode: z.enum(["truncate", "drop"], "Choose truncate or drop"),
 });

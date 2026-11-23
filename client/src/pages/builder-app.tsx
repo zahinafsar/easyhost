@@ -1012,7 +1012,7 @@ export const BuilderAppPage = () => {
               <p className="flex items-center justify-between text-xs text-muted-foreground">
                 {tokens.data.freeBuildAvailable && <span>Your first build is free</span>}
                 {!tokens.data.freeBuildAvailable && <span className="tabular-nums">{tokens.data.balance.toLocaleString("en-US")} tokens left</span>}
-                <Link to="/tokens" className="underline-offset-4 hover:underline">Buy tokens</Link>
+                <Link to="/subscription" className="underline-offset-4 hover:underline">Get more tokens</Link>
               </p>
             )}
           </form>

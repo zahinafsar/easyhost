@@ -609,7 +609,7 @@ export const PRODUCTS = [
     name: "Node.js app hosting",
     title: "Free Node.js App Hosting That Stays On",
     summary: "Always-on Node.js containers with 512 MB of RAM and 1 CPU, built from your source with no Dockerfile.",
-    points: ["Up to three apps per project, each on its own `<app-slug>.easyhost.fun` URL", "Node 20, 22 and 24, with npm, pnpm, yarn or bun picked from your lockfile", "Build and start commands detected automatically, and overridable", "HTTPS included, and runtime logs and build logs through the CLI"],
+    points: ["Two apps per project, each on its own `<app-slug>.easyhost.fun` URL", "Node 20, 22 and 24, with npm, pnpm, yarn or bun picked from your lockfile", "Build and start commands detected automatically, and overridable", "HTTPS included, and runtime logs and build logs through the CLI"],
     commands: "ezhst apps create my-api\nezhst deploy\nezhst logs --tail 200",
     limits: "One build at a time. One region. No preview deployments or Git integration.",
     docs: "/docs#deploying",
@@ -651,7 +651,7 @@ export const PRODUCTS = [
     summary: "Describe an app in the dashboard and AI builds the frontend and the backend, live at `<name>.easyhost.fun` while you chat.",
     points: ["Plain JavaScript and Hono, running as a real Node.js app", "The AI asks a few questions, shows a short plan to approve, then lets you pick one of 9 themes", "Uses your project's Postgres and storage when the app needs them", "Every step is shown as it happens: files written, SQL run, packages installed", "Select an element in the preview, attach images to use as assets, edit the code yourself and export it as a zip"],
     tryIt: "1. Open **Builder** in the [dashboard](https://app.easyhost.fun/builder) and create an app. The name becomes its address.\n2. Describe what it should do.\n3. Answer the questions, approve the plan and pick a theme. The app goes live as the AI builds it.",
-    limits: "Your first AI app and its first build are free. After that, AI requests use AI Tokens, bought once and never expiring: 500 tokens for $5, 1,100 for $10, 2,400 for $20 or 6,500 for $50. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. Hosting the app stays free. 30 AI prompts per day per project, and AI apps count toward the 3 apps per project. The AI Builder is in the dashboard only, not the CLI.",
+    limits: "Your first AI app and its first build are free. After that, AI requests use AI tokens, and Pro ($10 a month) tops your balance up to 1,000 tokens every month. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. 30 AI prompts per day per project, and AI apps count toward the 2 apps per project. The AI Builder is in the dashboard only, not the CLI.",
     docs: "/docs#ai-builder",
   },
   {

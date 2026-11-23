@@ -107,6 +107,52 @@ const EditableCell = ({
   );
 };
 
+const BlockedTables = ({ databaseId, tables }: { databaseId: string; tables: { name: string }[] }) => {
+  const clear = useApiMutation({
+    mutationFn: (input: { table: string; mode: "truncate" | "drop" }) =>
+      unwrap(api.databases[":id"].tables[":table"].clear.$post({ param: { id: databaseId, table: input.table }, json: { mode: input.mode } })),
+    invalidate: [databasesQuery().all],
+    success: "Table cleared",
+  });
+
+  return (
+    <Card className="border-red-300">
+      <CardHeader>
+        <CardTitle className="text-base">Database is blocked</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          This database is larger than its size limit, so connections are blocked and the project's apps are stopped. Truncate or drop tables to get under the limit.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {!tables.length && <p className="text-sm text-muted-foreground">No tables.</p>}
+        {tables.map((table) => (
+          <div key={table.name} className="flex items-center justify-between gap-3 border p-3">
+            <span className="font-mono text-sm">{table.name}</span>
+            <div className="flex gap-2">
+              <ConfirmButton
+                title={`Truncate ${table.name}?`}
+                description="Every row in this table will be permanently deleted. The table itself stays."
+                confirmLabel="Truncate"
+                onConfirm={() => clear.mutate({ table: table.name, mode: "truncate" })}
+              >
+                <Button variant="outline" size="sm" disabled={clear.isPending}>Truncate</Button>
+              </ConfirmButton>
+              <ConfirmButton
+                title={`Drop ${table.name}?`}
+                description="The table and all its rows will be permanently deleted."
+                confirmLabel="Drop"
+                onConfirm={() => clear.mutate({ table: table.name, mode: "drop" })}
+              >
+                <Button variant="destructive" size="sm" disabled={clear.isPending}>Drop</Button>
+              </ConfirmButton>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+
 const TableEditor = ({ databaseId, tables }: { databaseId: string; tables: { name: string }[] }) => {
   const [selected, setSelected] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -329,7 +375,7 @@ export const DatabasePage = () => {
     <>
       <PageHeader
         title={database.name}
-        description={`Postgres, ${formatBytes(database.sizeBytes)}`}
+        description={`Postgres, ${formatBytes(database.sizeBytes)} of ${formatBytes(database.limitBytes)} used`}
         action={
           <ConfirmButton
             title={`Delete ${database.name}?`}
@@ -385,7 +431,9 @@ export const DatabasePage = () => {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="tables">
+      {database.blocked && <BlockedTables databaseId={database.id} tables={tables} />}
+
+      {!database.blocked && <Tabs defaultValue="tables">
         <TabsList>
           <TabsTrigger value="tables">Table editor</TabsTrigger>
           <TabsTrigger value="sql">SQL console</TabsTrigger>
@@ -396,7 +444,7 @@ export const DatabasePage = () => {
         <TabsContent value="sql" className="mt-4">
           <SqlConsole databaseId={database.id} />
         </TabsContent>
-      </Tabs>
+      </Tabs>}
     </>
   );
 };
