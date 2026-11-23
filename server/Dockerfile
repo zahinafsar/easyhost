@@ -17,6 +17,7 @@ COPY marketing/package.json marketing/package-lock.json ./
 RUN npm ci
 COPY marketing/ ./
 COPY server/src/lib/limits.ts /repo/server/src/lib/limits.ts
+COPY server/src/lib/plans.ts /repo/server/src/lib/plans.ts
 RUN npm run build
 
 FROM node:22-bookworm-slim AS build
