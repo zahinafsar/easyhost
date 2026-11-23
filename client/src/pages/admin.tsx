@@ -287,7 +287,7 @@ const UsageTab = ({ currentUserId }: { currentUserId: string }) => {
                       </ConfirmButton>
                       <ConfirmButton
                         title={`Delete ${project.name}?`}
-                        description={`This permanently removes all apps, deployments, domains, schedules, storage bucket, database, email sender and API keys of ${project.slug}, and emails ${project.owner.email} that it was deleted.`}
+                        description={`This permanently removes all apps, deployments, domains, storage bucket, database, email sender and API keys of ${project.slug}, and emails ${project.owner.email} that it was deleted.`}
                         confirmLabel="Delete project"
                         confirmVariant="destructive"
                         onConfirm={() => removeProject.mutate(project.id)}
@@ -313,7 +313,7 @@ type UserActionKind = "impersonate" | "delete" | "blockEmail" | "block" | "unblo
 type UserAction = { kind: UserActionKind; user: { id: string; email: string; projects: number } };
 
 const actionDialog = ({ kind, user }: UserAction) => {
-  const deleted = `all ${user.projects} of its projects, including apps, deployments, domains, schedules, storage, databases, memberships and AI tokens. The user is emailed that the account was closed due to unusual activity. This cannot be undone.`;
+  const deleted = `all ${user.projects} of its projects, including apps, deployments, domains, storage, databases, memberships and AI tokens. The user is emailed that the account was closed due to unusual activity. This cannot be undone.`;
   if (kind === "impersonate") {
     return { title: `Impersonate ${user.email}?`, description: IMPERSONATE_NOTICE, confirmLabel: "Impersonate", destructive: false };
   }
@@ -332,7 +332,7 @@ const actionDialog = ({ kind, user }: UserAction) => {
   if (kind === "block") {
     return {
       title: `Block ${user.email}?`,
-      description: "The user is signed out and cannot log in, API keys and schedules stop working, and every running app they own is stopped. Their data is kept and you can unblock them later.",
+      description: "The user is signed out and cannot log in, API keys stop working, and every running app they own is stopped. Their data is kept and you can unblock them later.",
       confirmLabel: "Block user",
       destructive: true,
     };

@@ -5,7 +5,6 @@ import { LoginPage } from "@/pages/login";
 import { RegisterPage } from "@/pages/register";
 import { ForgotPasswordPage } from "@/pages/forgot-password";
 import { ResetPasswordPage } from "@/pages/reset-password";
-import { SchedulesPage } from "@/pages/schedules";
 import { AppsPage } from "@/pages/apps";
 import { AppDetailPage } from "@/pages/app-detail";
 import { StoragePage } from "@/pages/storage";
@@ -36,7 +35,6 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { path: "/", element: <Navigate to="/apps" replace /> },
-      { path: "/schedules", element: <SchedulesPage /> },
       { path: "/apps", element: <AppsPage /> },
       { path: "/apps/:id", element: <AppDetailPage /> },
       { path: "/storage", element: <StoragePage /> },

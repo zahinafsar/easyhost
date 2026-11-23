@@ -3,7 +3,6 @@ import { Command } from "commander";
 import { readFileSync } from "node:fs";
 import { forgotPassword, login, logout, register, resendVerification, verify, whoami } from "./commands/auth.js";
 import { createApp, deleteApp, listApps } from "./commands/apps.js";
-import { createSchedule, deleteSchedule, listSchedules, scheduleLogs, setScheduleState, updateSchedule } from "./commands/schedules.js";
 import { createProject, deleteProject, link, listProjects, logs, projectInfo, renameProject, start, stop } from "./commands/projects.js";
 import { deploy, deploymentLog, listDeployments, redeploy } from "./commands/deploy.js";
 import { importEnv, listEnv, setEnv, unsetEnv } from "./commands/env.js";
@@ -123,22 +122,6 @@ const apps = program.command("apps").description("Manage up to three apps per pr
 scoped(apps.command("list").description("List apps in a project")).action(listApps);
 scoped(apps.command("create").description("Create an app").argument("<name>")).action(createApp);
 appScoped(apps.command("delete").description("Delete one app and its deployments").option("--yes", "Confirm")).action(deleteApp);
-
-const schedules = program.command("schedules").description("Scheduled API calls, up to five per project");
-scoped(schedules.command("list").description("List schedules and recent results")).action(listSchedules);
-const scheduleOptions = (command: Command) => scoped(command)
-  .option("--url <url>", "Public API URL")
-  .option("--every <minutes>", "Interval in minutes, 1 to 43200")
-  .option("--method <method>", "HTTP method")
-  .option("--headers <json>", "Headers as a JSON object")
-  .option("--body <text>", "Request body")
-  .option("--paused", "Save the schedule paused");
-scheduleOptions(schedules.command("create").description("Create a schedule").argument("<name>")).action(createSchedule);
-scheduleOptions(schedules.command("update").description("Edit a schedule").argument("<id>").option("--name <name>")).action(updateSchedule);
-scoped(schedules.command("pause").description("Pause a schedule").argument("<id>")).action((id, options) => setScheduleState(id, false, options));
-scoped(schedules.command("resume").description("Resume a schedule").argument("<id>")).action((id, options) => setScheduleState(id, true, options));
-scoped(schedules.command("logs").description("Show recent runs").argument("<id>")).action(scheduleLogs);
-scoped(schedules.command("delete").description("Delete a schedule").argument("<id>").option("--yes", "Confirm")).action(deleteSchedule);
 
 const storage = program.command("storage").description("S3 compatible storage");
 scoped(storage.command("info").description("Show the bucket and S3 credentials")).action(storageInfo);

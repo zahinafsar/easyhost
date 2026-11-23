@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Clock3, Coins, Database, FolderKanban, HardDrive, LogOut, Mail, Rocket, Settings, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { Coins, Database, FolderKanban, HardDrive, LogOut, Mail, Rocket, Settings, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +16,6 @@ import { VerifyEmailScreen } from "@/pages/verify";
 const navItems = [
   { to: "/apps", label: "Apps", icon: Rocket },
   { to: "/builder", label: "Builder", icon: Sparkles },
-  { to: "/schedules", label: "Schedules", icon: Clock3 },
   { to: "/storage", label: "Storage", icon: HardDrive },
   { to: "/databases", label: "Databases", icon: Database },
   { to: "/email", label: "Email", icon: Mail, soon: true },

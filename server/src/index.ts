@@ -12,8 +12,6 @@ import { projectRoutes } from "./routes/projects.js";
 import { inviteRoutes, memberRoutes } from "./routes/members.js";
 import { aiAppRoutes } from "./routes/ai-apps.js";
 import { resetStuckGenerations } from "./lib/ai-agent.js";
-import { scheduleRoutes } from "./routes/schedules.js";
-import { startScheduleWorker } from "./lib/schedule-worker.js";
 import { appRoutes } from "./routes/apps.js";
 import { adminRoutes } from "./routes/admin.js";
 import { lemonSqueezyWebhookRoutes, tokenRoutes } from "./routes/tokens.js";
@@ -41,7 +39,6 @@ const routes = app
   .route("/projects", projectRoutes)
   .route("/members", memberRoutes)
   .route("/invites", inviteRoutes)
-  .route("/schedules", scheduleRoutes)
   .route("/apps", appRoutes)
   .route("/ai-apps", aiAppRoutes)
   .route("/tokens", tokenRoutes)
@@ -113,7 +110,6 @@ server.route("/", app);
 
 serve({ fetch: server.fetch, port }, (info) => {
   console.log(`EasyHost API listening on http://localhost:${info.port}`);
-  startScheduleWorker();
   resetStuckGenerations().catch((error) => console.error("Failed to reset AI generations", error));
   startBuildQueue().catch((error) => console.error("Build queue failed to start", error));
   startRegistryGc();

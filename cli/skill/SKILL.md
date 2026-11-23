@@ -12,7 +12,7 @@ EasyHost is free hosting for Node.js apps with built-in S3 storage and Postgres 
 - Always pass `--json` and parse stdout. Progress and hints go to stderr. On failure the process exits with code 1 and prints `{"error": "..."}`.
 - The CLI never prompts without a TTY. Pass every value as a flag.
 - Commands that act on a project use the project linked in `.easyhost.json`, or `--project <slug>`. App commands also use `--app <slug-or-id>` or the linked app. With multiple apps, select one explicitly.
-- Destructive commands (`projects delete`, `apps delete`, `schedules delete`, `storage delete`, `db delete`) need `--yes`. Only run them when the user explicitly asks.
+- Destructive commands (`projects delete`, `apps delete`, `storage delete`, `db delete`) need `--yes`. Only run them when the user explicitly asks.
 - Never print secrets (passwords, S3 secret keys, API keys, connection strings) back to the user unless they ask. Put them in env vars with `ezhst env set` instead.
 - `.env` files are never uploaded. Environment variables must be set with `ezhst env set` or `ezhst env import .env`.
 
@@ -26,7 +26,7 @@ Check first: `npx ezhst whoami --json`. If it fails with "Not logged in":
 
 ## 2. Pick or create a project
 
-A project contains up to three apps, five schedules, and shared storage and database. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
+A project contains up to three apps, and shared storage and database. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
 
 ```
 npx ezhst projects list --json
@@ -88,12 +88,6 @@ Database (Postgres, one per project):
 
 Email: coming soon. The `email` commands and the email API return "Email is coming soon." Do not set up or send email on EasyHost yet.
 
-Schedules (up to five per project, intervals in minutes):
-- `schedules list`, `schedules create <name> --url <url> --every <minutes> [--method POST] [--headers '<json>'] [--body '<text>'] [--paused]`
-- `schedules update <id> [--name <name>] [--url <url>] [--every <minutes>] [--method <method>] [--headers '<json>'] [--body '<text>']`
-- `schedules pause <id>`, `schedules resume <id>`, `schedules logs <id>`, `schedules delete <id> --yes`
-- Public HTTP/HTTPS URLs only, intervals 1 to 43200 minutes, 30-second timeout, no redirects. First call follows one interval; saving/resuming restarts it. Latest 100 runs retained, latest 10 shown. Missed intervals are skipped; execution has up to 10 seconds of polling delay. Requests in progress may finish after pausing/deleting.
-
 Members:
 - `members list | invite <email> | revoke <email> | remove <email> --yes | leave --yes`. Only the owner can invite, revoke, remove, rename or delete the project. Members can do everything else.
 - `accept-invite <link-or-token>` joins a project. The logged-in email must match the invited email.
@@ -105,6 +99,6 @@ Account:
 
 ## Limits
 
-Free: 3 projects. Per project: three apps, five schedules, one bucket and one database. One build at a time; 512 MB RAM and 1 CPU per app.
+Free: 3 projects. Per project: three apps, one bucket and one database. One build at a time; 512 MB RAM and 1 CPU per app.
 
 Docs: https://easyhost.fun/docs

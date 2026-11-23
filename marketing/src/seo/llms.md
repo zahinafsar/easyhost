@@ -1,16 +1,15 @@
 # EasyHost
 
-> EasyHost is free hosting for Node.js apps, including Next.js with managed Postgres, S3 compatible storage, schedules and custom domains. Everything is operated through the `ezhst` CLI, which is built to be driven by AI coding agents (Claude Code, Cursor, Codex). Hosting costs $0 per month and needs no credit card. EasyHost is in beta.
+> EasyHost is free hosting for Node.js apps, including Next.js with managed Postgres, S3 compatible storage and custom domains. Everything is operated through the `ezhst` CLI, which is built to be driven by AI coding agents (Claude Code, Cursor, Codex). Hosting costs $0 per month and needs no credit card. EasyHost is in beta.
 
 Key facts:
 
 - Each app runs in an always-on Node.js container (512 MB RAM, 1 CPU) using package build/start scripts or a Node.js entry file. Apps do not sleep when idle.
-- Limits: 3 projects per account. Per project: three apps (Node.js apps and AI Builder apps share this limit), five schedules, one Postgres 16 database, one storage bucket, 10 team members (including pending invites), 30 AI Builder prompts per day. One build at a time.
+- Limits: 3 projects per account. Per project: three apps (Node.js apps and AI Builder apps share this limit), one Postgres 16 database, one storage bucket, 10 team members (including pending invites), 30 AI Builder prompts per day. One build at a time.
 - Email is coming soon and is not available yet. The `ezhst email` commands and the email API return "Email is coming soon."
 - Sign-up needs email verification with a 6-digit code: after `ezhst register`, run `ezhst verify <code>` with the code from your inbox before any other command. `ezhst resend-verification` emails a new code (60 second cooldown, codes expire after 10 minutes).
 - Projects can be shared: the owner invites people by email (`ezhst members invite <email>`), and members manage everything except inviting, removing, renaming or deleting.
 - The AI Builder in the dashboard builds an app from a description: it asks a few questions, shows a plan, offers 9 themes, then writes a plain JavaScript Hono app that runs at `https://<name>.easyhost.fun` and uses the project's Postgres and storage. You can select an element in the preview to tag it in your message, attach up to 5 images per message (used only as assets at `/uploads/<name>`; the AI cannot see, edit or generate images), edit the code directly in the Code view and export the app as a zip. It is not part of the CLI. Each account gets its first AI app and first build free; after that, AI requests use AI Tokens, bought once and never expiring (500 for $5, 1,100 for $10, 2,400 for $20, 6,500 for $50), charged by how much work each request takes (a typical full build is a few hundred tokens). Hosting stays free.
-- Schedules call public HTTP/HTTPS APIs every 1 to 43200 minutes, with method, headers and body; 30-second timeout, no redirects, latest 100 runs retained.
 - Node 20, 22 and 24. npm, pnpm, yarn and bun. Supported frameworks include Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. Any framework works when it builds and starts as a Node.js service; adapter-based frameworks need their Node adapter.
 - Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
 - There is no Git integration, no preview deployments and no edge network.
@@ -20,7 +19,7 @@ Key facts:
 ## Docs
 
 - [Agent skill](https://easyhost.fun/skill.md): Complete instructions for an agent using the ezhst CLI
-- [CLI reference](https://easyhost.fun/docs): Every command for accounts, deploys, env vars, build settings, logs, domains, storage, Postgres, schedules and team members
+- [CLI reference](https://easyhost.fun/docs): Every command for accounts, deploys, env vars, build settings, logs, domains, storage, Postgres and team members
 - [Deploy with an AI agent](https://easyhost.fun/guides/deploy-nextjs-with-ai-agents): Step by step guide for Claude Code, Cursor and Codex
 
 ## Product

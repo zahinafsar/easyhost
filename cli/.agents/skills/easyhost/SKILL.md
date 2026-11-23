@@ -12,7 +12,7 @@ EasyHost is free hosting for Node.js apps with built-in S3 storage, Postgres and
 - Always pass `--json` and parse stdout. Progress and hints go to stderr. On failure the process exits with code 1 and prints `{"error": "..."}`.
 - The CLI never prompts without a TTY. Pass every value as a flag.
 - Commands that act on a project use the project linked in `.easyhost.json`, or `--project <slug>`. App commands also use `--app <slug-or-id>` or the linked app. With multiple apps, select one explicitly.
-- Destructive commands (`projects delete`, `apps delete`, `schedules delete`, `storage delete`, `db delete`) need `--yes`. Only run them when the user explicitly asks.
+- Destructive commands (`projects delete`, `apps delete`, `storage delete`, `db delete`) need `--yes`. Only run them when the user explicitly asks.
 - Never print secrets (passwords, S3 secret keys, API keys, connection strings) back to the user unless they ask. Put them in env vars with `ezhst env set` instead.
 - `.env` files are never uploaded. Environment variables must be set with `ezhst env set` or `ezhst env import .env`.
 
@@ -26,7 +26,7 @@ Check first: `npx ezhst whoami --json`. If it fails with "Not logged in":
 
 ## 2. Pick or create a project
 
-A project contains up to five Node.js apps, five schedules, and shared storage, database, email sender and API keys. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
+A project contains up to five Node.js apps, and shared storage, database, email sender and API keys. Each app has its own slug and URL: `https://<app-slug>.easyhost.fun`. Existing project apps retain their URLs.
 
 ```
 npx ezhst projects list --json
@@ -90,12 +90,6 @@ Email (from `<username>@easyhost.fun`, 20 emails a day):
 - `email sender create <username>`, `email info`, `email send --from <address> --to <address> --subject <text> --text <body>` (or `--html`), `email logs`, `email sender delete`
 - From app code: `POST https://api.easyhost.fun/api/v1/email/send` with header `Authorization: Bearer <api key>` and JSON `{ "from", "to", "subject", "text" | "html" }`. Create the key with `keys create <name>` and store it with `env set EASYHOST_API_KEY=...`.
 
-Schedules (up to five per project, intervals in minutes):
-- `schedules list`, `schedules create <name> --url <url> --every <minutes> [--method POST] [--headers '<json>'] [--body '<text>'] [--paused]`
-- `schedules update <id> [--name <name>] [--url <url>] [--every <minutes>] [--method <method>] [--headers '<json>'] [--body '<text>']`
-- `schedules pause <id>`, `schedules resume <id>`, `schedules logs <id>`, `schedules delete <id> --yes`
-- Public HTTP/HTTPS URLs only, intervals 1 to 43200 minutes, 30-second timeout, no redirects. First call follows one interval; saving/resuming restarts it. Latest 100 runs retained, latest 10 shown. Missed intervals are skipped; execution has up to 10 seconds of polling delay. Requests in progress may finish after pausing/deleting.
-
 API keys:
 - `keys list | create <name> | revoke <id>` (a key is shown only once)
 
@@ -104,6 +98,6 @@ Account:
 
 ## Limits
 
-Free: 10 projects. Per project: five Node.js apps, five schedules, one bucket, one database, one email sender and 20 emails a day. One build at a time; 512 MB RAM and 1 CPU per app.
+Free: 10 projects. Per project: five Node.js apps, one bucket, one database, one email sender and 20 emails a day. One build at a time; 512 MB RAM and 1 CPU per app.
 
 Docs: https://easyhost.fun/docs

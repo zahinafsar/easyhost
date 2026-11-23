@@ -26,8 +26,6 @@ export type Project = {
   updatedAt: string;
 };
 
-export type ScheduleRun = { id: string; startedAt: string; statusCode: number | null; error: string | null; durationMs: number };
-export type Schedule = { id: string; name: string; url: string; method: string; headers: Record<string, string>; body: string | null; intervalMinutes: number; enabled: boolean; nextRunAt: string; runs: ScheduleRun[] };
 
 let activeProjectId: string | undefined;
 export const setProjectScope = (projectId: string) => { activeProjectId = projectId; };

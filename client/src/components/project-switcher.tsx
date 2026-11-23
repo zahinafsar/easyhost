@@ -94,7 +94,7 @@ export const ProjectSwitcher = ({
           <form onSubmit={submit} className="space-y-4">
             <DialogHeader>
               <DialogTitle>New project</DialogTitle>
-              <DialogDescription>Create a workspace for up to three apps, five schedules, a database and storage.</DialogDescription>
+              <DialogDescription>Create a workspace for up to three apps, a database and storage.</DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
               <Label htmlFor="project-name">Project name</Label>

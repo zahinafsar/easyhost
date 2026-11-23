@@ -24,12 +24,9 @@ const hostingPath = (framework) => {
 
 const hubPath = (framework) => `/frameworks/${framework.id}`;
 
-const makeRoute = (framework, { method, path, body, result, secret, imports = "" }) => {
+const makeRoute = (framework, { method, path, body, result, imports = "" }) => {
   const route = framework.route;
   const lines = [];
-  if (secret) {
-    lines.push(`  if (${route.header("x-schedule-secret")} !== process.env.SCHEDULE_SECRET) {\n    ${route.deny}\n  }`);
-  }
   if (body) {
     lines.push(`  ${body}`);
   }
@@ -57,7 +54,7 @@ const hostingPages = (limits) => {
       family: "hosting",
       path: hostingPath(framework),
       title: `Free ${framework.name} Hosting With Postgres and S3 | EasyHost`,
-      description: `Host a ${framework.name} app for $0 on an always-on container, with Postgres, S3 storage, schedules and custom domains. No credit card. See the exact limits.`,
+      description: `Host a ${framework.name} app for $0 on an always-on container, with Postgres, S3 storage and custom domains. No credit card. See the exact limits.`,
       h1: `Free ${framework.name} hosting`,
       lead: `EasyHost runs ${framework.name}, a ${framework.kind}, in an always-on Node.js container for $0. No credit card is needed, and your agent can deploy it with one instruction.`,
       crumbs: [HOME, FRAMEWORKS_HUB, { name: framework.name, path: hubPath(framework) }, { name: "Free hosting", path: hostingPath(framework) }],
@@ -66,7 +63,7 @@ const hostingPages = (limits) => {
 - An always-on container with 512 MB of RAM and 1 CPU
 - A URL at ${q("<app-slug>.easyhost.fun")}, plus custom domains with HTTPS
 - One Postgres 16 database and one S3 bucket per project
-- Up to ${limits.apps} apps and ${limits.schedules} schedules per project
+- Up to ${limits.apps} apps per project
 
 ## How ${framework.name} builds and runs
 
@@ -353,53 +350,6 @@ Local disk is lost on each deploy, which is why uploads belong in the bucket. ${
   return pages;
 };
 
-const cronPages = () => {
-  return FRAMEWORKS.map((framework) => {
-    const path = `/guides/${framework.id}-cron-jobs`;
-    const route = makeRoute(framework, { method: "POST", path: "/api/tasks", body: "", result: "{ ok: true }", secret: true });
-    return {
-      family: "schedule-guides",
-      path,
-      title: `Free Cron Jobs for ${framework.name} Apps | EasyHost`,
-      description: `Run scheduled tasks in ${framework.name} without a cron server. Create a protected route and let EasyHost call it every 1 to 43200 minutes, for free.`,
-      h1: `Cron jobs for ${framework.name}`,
-      lead: `Put your scheduled task in a normal ${framework.name} route, protect it with a secret, and let EasyHost call it on an interval.`,
-      crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: "Cron jobs", path }],
-      body: `## Create a protected route
-
-${fence(route.code, route.label)}
-
-Set the secret, then deploy.
-
-${fence("npx ezhst env set SCHEDULE_SECRET=<long-random-value>\nnpx ezhst deploy")}
-
-## Create the schedule
-
-This calls the route once a day.
-
-${fence(`npx ezhst schedules create nightly \\
-  --url https://<app-slug>.easyhost.fun/api/tasks \\
-  --every 1440 \\
-  --method POST \\
-  --headers '{"x-schedule-secret":"<long-random-value>"}'`)}
-
-## How schedules behave
-
-- Requests time out after 30 seconds, so hand long work to a queue or split it up
-- Redirects are not followed, so use the final URL
-- Missed intervals are skipped after downtime, and calls to one schedule do not overlap
-- A project can have five schedules, and the latest 100 runs are retained
-
-${fence("npx ezhst schedules logs <id>")}
-
-${frameworkLinks(framework)} See also the [schedules product page](/products/schedules).`,
-      faq: [
-        { q: "What is the shortest interval?", a: "One minute. The longest is 43200 minutes, which is 30 days." },
-      ],
-    };
-  });
-};
-
 const envPages = () => {
   return FRAMEWORKS.map((framework) => {
     const path = `/guides/${framework.id}-environment-variables`;
@@ -585,7 +535,7 @@ According to [${competitor.name}'s own page](${competitor.source}) as of October
 | Area | ${competitor.name} | EasyHost |
 | --- | --- | --- |
 ${rows}
-| Included with each app | Varies by plan | Postgres, S3 bucket and schedules per project |
+| Included with each app | Varies by plan | Postgres and S3 bucket per project |
 
 ## When EasyHost fits
 
@@ -691,7 +641,7 @@ ${framework.setup}
 
 ${fence(deploySteps(framework))}
 
-Test your ${q("easyhost.fun")} URL before changing DNS. ${competitor.name} runs your app on ${competitor.runtime}, so check anything that depends on it, such as platform functions or cron configuration. Schedules move to [EasyHost schedules](/guides/${framework.id}-cron-jobs).
+Test your ${q("easyhost.fun")} URL before changing DNS. ${competitor.name} runs your app on ${competitor.runtime}, so check anything that depends on it, such as platform functions or cron configuration. EasyHost does not run scheduled jobs.
 
 ## Switch your domain
 
@@ -854,7 +804,7 @@ const pricingPage = (limits) => {
     family: "products",
     path: "/pricing",
     title: "EasyHost Pricing: $0 With Published Limits",
-    description: `EasyHost hosting is free with no credit card. See every limit: ${limits.projects} projects, ${limits.apps} apps per project, Postgres, S3 storage and schedules.`,
+    description: `EasyHost hosting is free with no credit card. See every limit: ${limits.projects} projects, ${limits.apps} apps per project, Postgres and S3 storage.`,
     h1: "Pricing and limits",
     lead: "Hosting on EasyHost costs $0 per month, with no credit card and no trial period. The only paid item is AI Tokens for the AI Builder, after your first free AI app and build.",
     crumbs: [HOME, { name: "Pricing", path: "/pricing" }],
@@ -864,7 +814,6 @@ const pricingPage = (limits) => {
 | --- | --- |
 | Projects | ${limits.projects} |
 | Apps | ${limits.apps} per project |
-| Schedules | ${limits.schedules} per project |
 | Storage buckets | 1 per project |
 | Databases | 1 per project |
 | Email | Coming soon |
@@ -1031,9 +980,9 @@ const frameworkHubPages = () => {
       family: "frameworks",
       path: hubPath(framework),
       title: `${framework.name} on EasyHost: Guides and Hosting`,
-      description: `Everything for running ${framework.name} on EasyHost: free hosting, AI agent deploys, Postgres, file uploads, cron jobs and migration guides.`,
+      description: `Everything for running ${framework.name} on EasyHost: free hosting, AI agent deploys, Postgres, file uploads and migration guides.`,
       h1: `${framework.name} on EasyHost`,
-      lead: `${framework.name} is a ${framework.kind}. These guides cover hosting it for free and connecting it to Postgres, storage and schedules.`,
+      lead: `${framework.name} is a ${framework.kind}. These guides cover hosting it for free and connecting it to Postgres and storage.`,
       crumbs: [HOME, FRAMEWORKS_HUB, { name: framework.name, path: hubPath(framework) }],
       body: `## Start here
 
@@ -1054,11 +1003,7 @@ ${managers}
 
 ${databases}
 
-${storageBlock}## Schedules
-
-- [Cron jobs](/guides/${framework.id}-cron-jobs)
-
-## Migrate
+${storageBlock}## Migrate
 
 ${migrations}`,
       faq: [],
@@ -1092,13 +1037,13 @@ const indexPages = (pages) => {
   const productLinks = PRODUCTS.map((product) => `- [${product.name}](/products/${product.id})`).join("\n");
   return [
     hub("/frameworks", "Frameworks You Can Host for Free | EasyHost", "Free hosting and deployment guides for Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi.", "Frameworks", "EasyHost runs any Node.js service. These frameworks have dedicated guides.", `## Choose a framework\n\n${guideLinks}`),
-    hub("/guides", "EasyHost Guides: Deploy, Database, Storage and Cron Jobs", "Step by step guides for deploying Node.js apps on EasyHost, connecting Postgres and S3 storage, running cron jobs and adding custom domains.", "Guides", "Practical guides, grouped by framework.", `## By framework\n\n${guideLinks}\n\n## Custom domains\n\n${listFamily("domain-guides")}\n\n## Agents\n\n- [Deploy Next.js with AI agents](/guides/deploy-nextjs-with-ai-agents)`),
+    hub("/guides", "EasyHost Guides: Deploy, Database, Storage and Domains", "Step by step guides for deploying Node.js apps on EasyHost, connecting Postgres and S3 storage and adding custom domains.", "Guides", "Practical guides, grouped by framework.", `## By framework\n\n${guideLinks}\n\n## Custom domains\n\n${listFamily("domain-guides")}\n\n## Agents\n\n- [Deploy Next.js with AI agents](/guides/deploy-nextjs-with-ai-agents)`),
     hub("/errors", "Node.js Deployment Errors and Fixes | EasyHost", "Fixes for common Node.js deployment errors: lockfile failures, missing modules, memory limits, database connections, S3 signatures and domain verification.", "Deployment errors", "Find your error message, why it happens and the commands that fix it.", `## All errors\n\n${listFamily("errors")}`),
     hub("/learn", "Learn Hosting Concepts for Developers | EasyHost", "Short, plain explanations of hosting concepts for developers: object storage, connection pooling, migrations, DNS records, cold starts and more.", "Learn", "Short explanations of the hosting concepts that come up when you deploy an app.", `## Concepts\n\n${listFamily("learn")}`),
     hub("/migrate", "Migrate to EasyHost From Other Hosts | EasyHost", "Move a Node.js app to EasyHost from Vercel, Render, Railway, Netlify, Fly.io, Heroku or Koyeb, along with your Postgres database and S3 files.", "Migrate to EasyHost", "Guides for moving your app and data.", `## Move your app\n\n${migrateLinks}\n\n## Move your data\n\n- [Postgres](/migrate/postgres)\n- [S3 files](/migrate/storage)`),
     hub("/alternatives", "Free Alternatives to Popular Hosting Platforms | EasyHost", "Honest comparisons between EasyHost and Vercel, Render, Railway, Netlify, Fly.io, Heroku and Koyeb, including what you give up by switching.", "Alternatives", "Honest comparisons, including when the other platform is the better choice.", `## Compare\n\n${competitorLinks}`),
-    hub("/docs/cli", "ezhst CLI Reference: Every Command | EasyHost", "Reference for every ezhst command: account, deploy, env, build, domains, storage, database, schedules and members, with usage and JSON output notes.", "CLI reference", "One page per `ezhst` command. The [main docs](/docs) cover the same commands on a single page.", cliGroups),
-    hub("/products", "EasyHost Products: Hosting, Postgres, Storage, Schedules", "On EasyHost: free Node.js hosting, Postgres, S3 storage, schedules, custom domains, team members, a CLI, an agent skill and an AI app builder. Email is coming soon.", "Products", "Hosting is free within the [published limits](/pricing). The AI Builder uses AI Tokens after your first free AI app and build.", `## All products\n\n${productLinks}`),
+    hub("/docs/cli", "ezhst CLI Reference: Every Command | EasyHost", "Reference for every ezhst command: account, deploy, env, build, domains, storage, database and members, with usage and JSON output notes.", "CLI reference", "One page per `ezhst` command. The [main docs](/docs) cover the same commands on a single page.", cliGroups),
+    hub("/products", "EasyHost Products: Hosting, Postgres, Storage, Domains", "On EasyHost: free Node.js hosting, Postgres, S3 storage, custom domains, team members, a CLI, an agent skill and an AI app builder. Email is coming soon.", "Products", "Hosting is free within the [published limits](/pricing). The AI Builder uses AI Tokens after your first free AI app and build.", `## All products\n\n${productLinks}`),
   ];
 };
 
@@ -1116,7 +1061,7 @@ const legalPages = () => {
       body: `## What we collect
 
 - Account details: your name, email address and a hashed password.
-- What you create on EasyHost: source code, build logs, environment variables, database contents, storage files, schedules and AI Builder chats and files.
+- What you create on EasyHost: source code, build logs, environment variables, database contents, storage files and AI Builder chats and files.
 - Usage data: deployments, builds, app logs, resource usage, IP addresses in server logs, and AI Token purchases and usage.
 - Dashboard analytics: the dashboard uses Microsoft Clarity to understand how pages are used, so we can improve them.
 
@@ -1172,7 +1117,7 @@ ${contact}`,
       crumbs: [HOME, { name: "Terms and conditions", path: "/terms" }],
       body: `## The service
 
-EasyHost hosts Node.js apps, Postgres databases, S3 storage, schedules and AI built apps, within the [published limits](/pricing). EasyHost is in beta, so features and limits may change as the platform grows.
+EasyHost hosts Node.js apps, Postgres databases, S3 storage and AI built apps, within the [published limits](/pricing). EasyHost is in beta, so features and limits may change as the platform grows.
 
 ## Your account
 
@@ -1236,7 +1181,6 @@ export const buildPages = (limits) => {
     ...managerPages(),
     ...databasePages(),
     ...storagePages(),
-    ...cronPages(),
     ...envPages(),
     ...monorepoPages(limits),
     ...dnsPages(),

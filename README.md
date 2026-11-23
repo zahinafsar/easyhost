@@ -1,6 +1,6 @@
 # EasyHost Architecture
 
-EasyHost hosts Node.js apps, AI-built apps, Postgres databases, S3 storage, scheduled HTTP calls and email. Everything runs on one VPS behind Nginx Proxy Manager. Image builds run on Google Cloud Build so the VPS only pulls and runs images.
+EasyHost hosts Node.js apps, AI-built apps, Postgres databases, S3 storage and email. Everything runs on one VPS behind Nginx Proxy Manager. Image builds run on Google Cloud Build so the VPS only pulls and runs images.
 
 ```mermaid
 flowchart LR
@@ -31,7 +31,7 @@ flowchart LR
 
 ## Components
 
-- **server**: Hono API on Node with Prisma and Zod. Runs the build queue, schedule worker and AI jobs in the same process. In production it also serves the marketing site and the dashboard, both baked into its image.
+- **server**: Hono API on Node with Prisma and Zod. Runs the build queue and AI jobs in the same process. In production it also serves the marketing site and the dashboard, both baked into its image.
 - **client**: React 19 dashboard (Vite, React Query, shadcn/ui), calling the API through a typed Hono client.
 - **cli**: `ezhst`, with the same features as the dashboard. Supports `--json` and token auth so AI agents can drive it.
 - **marketing**: Astro static site with docs and generated SEO pages.
@@ -66,10 +66,6 @@ The user chats with a Gemini agent in the dashboard. The agent reads and edits f
 - **MinIO**: S3 compatible. Each bucket has its own access key scoped to that bucket. Files are public by URL.
 - **Email**: sent through Resend from per-project sender addresses.
 
-## Schedules
-
-A worker in the API polls every 10 seconds and calls each due URL. Database leases stop the same schedule from running twice, calls time out after 30 seconds, and only public addresses are allowed.
-
 ## Configuration
 
-One root `.env` for every environment, validated at startup with no fallbacks. Limits (projects, apps, schedules, builds) live in `server/src/lib/limits.ts`.
+One root `.env` for every environment, validated at startup with no fallbacks. Limits (projects, apps, builds) live in `server/src/lib/limits.ts`.

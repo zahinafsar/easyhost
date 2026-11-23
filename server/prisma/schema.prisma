@@ -206,7 +206,6 @@ model App {
   appName         String?
   appEnabled      Boolean         @default(true)
   deleting        Boolean         @default(false)
-  schedules       Schedule[]
   id              String          @id @default(cuid())
   userId          String
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -280,43 +279,6 @@ model Deployment {
 
   @@index([appId, createdAt])
   @@map("deployments")
-}
-
-model Schedule {
-  id              String        @id @default(cuid())
-  projectId       String
-  project         App           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name            String
-  url             String
-  method          String        @default("GET")
-  headers         Json          @default("{}")
-  body            String?
-  intervalMinutes Int
-  enabled         Boolean       @default(true)
-  nextRunAt       DateTime
-  lockedUntil     DateTime?
-  lockToken       String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  runs            ScheduleRun[]
-
-  @@index([enabled, nextRunAt])
-  @@index([projectId])
-  @@map("schedules")
-}
-
-model ScheduleRun {
-  id         String   @id @default(cuid())
-  scheduleId String
-  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  startedAt  DateTime
-  finishedAt DateTime
-  statusCode Int?
-  error      String?
-  durationMs Int
-
-  @@index([scheduleId, startedAt])
-  @@map("schedule_runs")
 }
 
 model AiMessage {

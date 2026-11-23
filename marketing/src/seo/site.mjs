@@ -12,7 +12,6 @@ export const HELD_BACK_FAMILIES = new Set([
   "package-manager-guides",
   "database-guides",
   "storage-guides",
-  "schedule-guides",
   "env-guides",
   "monorepo-guides",
   "migration-framework-guides",
@@ -26,7 +25,6 @@ export const FOOTER_COLUMNS = [
       ["/products/postgres", "Postgres database"],
       ["/products/storage", "S3 storage"],
       ["/products/email", "Email (coming soon)"],
-      ["/products/schedules", "Cron schedules"],
       ["/products/custom-domains", "Custom domains"],
       ["/products/cli", "ezhst CLI"],
       ["/products/agent-skill", "Agent skill"],
@@ -64,7 +62,6 @@ export const FOOTER_COLUMNS = [
       ["/guides/nextjs-prisma-postgres", "Next.js with Prisma"],
       ["/guides/nestjs-typeorm-postgres", "NestJS with TypeORM"],
       ["/guides/express-file-uploads-aws-sdk", "Express file uploads"],
-      ["/guides/nextjs-cron-jobs", "Next.js cron jobs"],
       ["/guides/custom-domain-cloudflare", "Cloudflare custom domain"],
       ["/guides", "All guides"],
     ],
@@ -188,7 +185,7 @@ const readLimits = () => {
   for (const [, key, value] of source.matchAll(/(\w+):\s*(\d+)/g)) {
     limits[key] = Number(value);
   }
-  for (const key of ["projects", "apps", "schedules", "concurrentBuilds", "projectMembers", "aiPromptsPerDay"]) {
+  for (const key of ["projects", "apps", "concurrentBuilds", "projectMembers", "aiPromptsPerDay"]) {
     if (limits[key] === undefined) {
       throw new Error(`${limitsFile} does not define ${key}`);
     }
