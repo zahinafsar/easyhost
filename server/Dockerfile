@@ -18,6 +18,7 @@ RUN npm ci
 COPY marketing/ ./
 COPY server/src/lib/limits.ts /repo/server/src/lib/limits.ts
 COPY server/src/lib/plans.ts /repo/server/src/lib/plans.ts
+COPY --from=dashboard /repo/client/dist/index.html /tmp/after-dashboard
 RUN npm run build
 
 FROM node:22-bookworm-slim AS build
@@ -28,6 +29,7 @@ RUN npm ci
 COPY server/prisma ./prisma
 COPY server/tsconfig.json ./
 COPY server/src ./src
+COPY --from=marketing /repo/marketing/dist/404.html /tmp/after-marketing
 RUN npx prisma generate && npx tsc && npm prune --omit=dev
 
 FROM node:22-bookworm-slim

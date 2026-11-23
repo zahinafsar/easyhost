@@ -147,3 +147,4 @@
 - Home limits section (2026-11-23) rewritten as Free vs Pro comparison table (3-col .limit-row grid with dark .limit-head), heading "Start free. Upgrade when you need more projects.", Start for free + See pricing buttons
 - Home pricing section (#limits, 2026-11-23) redone again as two plan cards (.plans/.plan/.plan-pro dark with lime offset shadow), "Every plan" shared line below; old .limits/.limit-table/.price CSS removed
 - server/Dockerfile marketing stage copies both limits.ts and plans.ts (site.mjs readLimits reads both); missing plans.ts broke prod build (2026-11-23)
+- server/Dockerfile chains heavy build steps (vite, then astro, then tsc) with dummy COPY --from lines (/tmp/after-dashboard, /tmp/after-marketing) so the VPS does not run all three at once; parallel builds starved the VPS and took the server down (2026-11-23)
