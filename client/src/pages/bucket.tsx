@@ -1,19 +1,17 @@
 import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ExternalLink, Eye, EyeOff, File, Folder, KeyRound, Link2, Trash2, Upload } from "lucide-react";
+import { ChevronLeft, ExternalLink, Eye, EyeOff, File, Folder, KeyRound, Link2, Plug, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   Button,
   buttonVariants,
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  Code,
-  Grid,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
   HStack,
   Icon,
   IconButton,
@@ -29,23 +27,15 @@ import {
   TableHeader,
   TableRow,
   Text,
-  UsageMeter,
 } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmButton } from "@/components/confirm-button";
-import { CodeBlock } from "@/components/code-block";
+import { Facts } from "@/components/facts";
 import { SecretField } from "@/components/resources/secret-field";
 import { api, unwrap, upload } from "@/lib/api";
 import { storageQuery, userQuery } from "@/lib/queries";
 import { formatBytes, formatDate } from "@/lib/format";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-
-const usageDescription = (location: string, usage: { usedBytes: number; limitBytes: number } | undefined) => {
-  if (!usage) {
-    return location;
-  }
-  return `${location}, ${formatBytes(usage.usedBytes)} of ${formatBytes(usage.limitBytes)} used`;
-};
 
 export const BucketPage = () => {
   const { id = "" } = useParams();
@@ -123,6 +113,11 @@ export const BucketPage = () => {
     return credential.value;
   };
 
+  let usedLabel = "...";
+  if (usage.data) {
+    usedLabel = `${formatBytes(usage.data.usedBytes)} / ${formatBytes(usage.data.limitBytes)}`;
+  }
+
   let revealLabel = "Show";
   let RevealIcon = Eye;
   if (revealed) {
@@ -134,7 +129,6 @@ export const BucketPage = () => {
     <>
       <PageHeader
         title={bucket.name}
-        description={usageDescription(prefix || "Root", usage.data)}
         action={
           <>
             <Input
@@ -150,6 +144,41 @@ export const BucketPage = () => {
                 }
               }}
             />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="secondary">
+                  <Plug />
+                  Connect
+                </Button>
+              </DialogTrigger>
+              <DialogContent size="lg" aria-describedby={undefined}>
+                <DialogHeader>
+                  <DialogTitle>S3 credentials</DialogTitle>
+                </DialogHeader>
+                <Stack gap={4}>
+                  {credentials.map((credential) => (
+                    <SecretField key={credential.label} label={credential.label} display={displayValue(credential)} onCopy={() => copy(credential.value, "Copied")} />
+                  ))}
+                </Stack>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setRevealed(!revealed)}>
+                    <RevealIcon />
+                    {revealLabel}
+                  </Button>
+                  <ConfirmButton
+                    title="Rotate keys?"
+                    description="The current access key stops working immediately. Apps using it must be updated."
+                    confirmLabel="Rotate"
+                    onConfirm={() => rotateKeys.mutate(undefined)}
+                  >
+                    <Button variant="secondary" disabled={rotateKeys.isPending}>
+                      <KeyRound />
+                      Rotate keys
+                    </Button>
+                  </ConfirmButton>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Button onClick={() => fileInput.current?.click()} loading={uploadFiles.isPending}>
               {!uploadFiles.isPending && <Upload />}
               {uploadFiles.isPending ? "Uploading..." : "Upload"}
@@ -159,19 +188,29 @@ export const BucketPage = () => {
               description="All files in this bucket will be permanently deleted."
               onConfirm={() => removeBucket.mutate(undefined)}
             >
-              <IconButton icon={Trash2} label="Delete bucket" variant="destructive" size="default" tooltip={false} />
+              <Button variant="destructive">
+                <Trash2 />
+                Delete
+              </Button>
             </ConfirmButton>
           </>
         }
       />
-      <Stack gap={6}>
-        {usage.data && (
-          <Card className="py-5">
-            <CardContent className="px-5">
-              <UsageMeter label="Storage used" used={usage.data.usedBytes} limit={usage.data.limitBytes} format={formatBytes} />
-            </CardContent>
-          </Card>
-        )}
+      <Facts
+        className="mb-6"
+        items={[
+          { label: "Used", value: usedLabel },
+          { label: "Region", value: s3.region },
+          { label: "Endpoint", value: <span className="font-mono text-[13px]">{s3.endpoint}</span> },
+          { label: "Public URL", value: <span className="font-mono text-[13px]">{bucket.baseUrl}</span> },
+        ]}
+      />
+      <Stack gap={3} className="min-w-0">
+        <HStack gap={1} className="min-h-6">
+          <Text as="span" size="sm" mono tone="muted">
+            /{prefix}
+          </Text>
+        </HStack>
         <Table framed>
           <TableHeader>
             <TableRow>
@@ -194,7 +233,7 @@ export const BucketPage = () => {
                 </TableCell>
               </TableRow>
             )}
-            {!objects.length && <TableEmpty colSpan={4}>No files here yet.</TableEmpty>}
+            {!objects.length && <TableEmpty colSpan={4}>No files</TableEmpty>}
             {objects.map((object) => {
               const name = object.key.slice(prefix.length);
               if (object.isFolder) {
@@ -249,62 +288,6 @@ export const BucketPage = () => {
             })}
           </TableBody>
         </Table>
-        <Card>
-          <CardHeader>
-            <CardTitle>S3 credentials</CardTitle>
-            <CardDescription>Works with any S3 client (AWS SDK, rclone, s3cmd, Cyberduck). Use path-style addressing.</CardDescription>
-            <CardAction>
-              <HStack gap={2}>
-                <Button variant="ghost" size="sm" onClick={() => setRevealed(!revealed)}>
-                  <RevealIcon />
-                  {revealLabel}
-                </Button>
-                <ConfirmButton
-                  title="Rotate keys?"
-                  description="The current access key stops working immediately. Apps using it must be updated."
-                  confirmLabel="Rotate"
-                  onConfirm={() => rotateKeys.mutate(undefined)}
-                >
-                  <Button variant="secondary" size="sm" disabled={rotateKeys.isPending}>
-                    <KeyRound />
-                    Rotate keys
-                  </Button>
-                </ConfirmButton>
-              </HStack>
-            </CardAction>
-          </CardHeader>
-          <CardContent>
-            <Stack gap={5}>
-              <Grid cols={2} gap={4}>
-                {credentials.map((credential) => (
-                  <SecretField key={credential.label} label={credential.label} display={displayValue(credential)} onCopy={() => copy(credential.value, "Copied")} />
-                ))}
-              </Grid>
-              <Text size="sm" tone="muted">
-                Files are publicly readable at <Code>{bucket.baseUrl}/&lt;key&gt;</Code>.
-              </Text>
-              <CodeBlock
-                code={`import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-
-const s3 = new S3Client({
-  endpoint: process.env.S3_ENDPOINT,
-  region: "${s3.region}",
-  forcePathStyle: true,
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-  },
-});
-
-await s3.send(
-  new PutObjectCommand({ Bucket: "${s3.bucket}", Key: "avatars/me.png", Body: file, ContentType: "image/png" }),
-);
-
-const url = "${bucket.baseUrl}/avatars/me.png";`}
-              />
-            </Stack>
-          </CardContent>
-        </Card>
       </Stack>
     </>
   );

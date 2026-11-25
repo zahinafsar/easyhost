@@ -279,14 +279,13 @@ export const AppShell = () => {
           </Banner>
         )}
         <Box as="main" className="min-w-0 flex-1 rounded-3xl border border-border bg-surface">
-          <Container className="py-6 md:px-8 md:py-10">
+          <Container size="full" className="py-6 md:px-8 md:py-8">
             {projectReady && <Outlet key={activeProject.id} />}
             {!activeProject && (
               <EmptyState
                 size="lg"
                 icon={FolderKanban}
                 title="Create your first project"
-                description="Use the New project button or the project menu in the sidebar to create a workspace."
                 action={
                   <Button onClick={() => setCreateProjectOpen(true)}>
                     <Plus />

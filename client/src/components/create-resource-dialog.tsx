@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,6 @@ import { Text } from "@/components/ui/text";
 
 export const CreateResourceDialog = ({
   title,
-  description,
   triggerLabel,
   placeholder,
   isPending,
@@ -19,7 +18,6 @@ export const CreateResourceDialog = ({
   usage,
 }: {
   title: string;
-  description: string;
   triggerLabel: string;
   placeholder: string;
   isPending: boolean;
@@ -61,7 +59,6 @@ export const CreateResourceDialog = ({
         <Form onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{description} Names use lowercase letters, numbers and dashes.</DialogDescription>
           </DialogHeader>
           <Field label="Name" htmlFor="resource-name">
             <Input

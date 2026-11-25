@@ -29,17 +29,15 @@ export const DatabasesPage = () => {
 
   return (
     <>
-      <PageHeader title="Database" description="A private Postgres database isolated to this project." />
+      <PageHeader title="Database" />
       <Card className="py-0">
         <EmptyState
           className="min-h-72"
           icon={Database}
-          title="Create a new database"
-          description="Provision Postgres with a dedicated user and ready-to-copy connection strings."
+          title="No database"
           action={
             <CreateResourceDialog
               title="Create database"
-              description="A new empty Postgres database with its own user, password, and shadow database."
               triggerLabel="Create database"
               placeholder="main"
               isPending={createDatabase.isPending}

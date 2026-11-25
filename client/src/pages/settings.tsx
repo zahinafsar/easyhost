@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Lock, Trash2 } from "lucide-react";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Form, FormActions, IconBadge, Input, Skeleton, Stack, Text } from "@/components/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle, Field, Form, FormActions, IconBadge, Input, Skeleton, Stack, Text } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { PageHeader } from "@/components/page-header";
 import { api, unwrap } from "@/lib/api";
@@ -51,12 +51,11 @@ export const SettingsPage = () => {
   if (project.role !== "owner") {
     return (
       <>
-        <PageHeader title="Project settings" description={`Manage ${project.name} and its resources.`} />
-        <Card className="max-w-3xl">
-          <CardHeader className="grid-cols-[auto_1fr] gap-x-4">
-            <IconBadge icon={Lock} className="row-span-2" />
+        <PageHeader title="Settings" />
+        <Card>
+          <CardHeader className="grid-cols-[auto_1fr] items-center gap-x-4">
+            <IconBadge icon={Lock} />
             <CardTitle>Owner only</CardTitle>
-            <CardDescription>Only the project owner can rename or delete this project. You can leave it from the Members page.</CardDescription>
           </CardHeader>
         </Card>
       </>
@@ -75,16 +74,15 @@ export const SettingsPage = () => {
 
   return (
     <>
-      <PageHeader title="Project settings" description={`Manage ${project.name} and its resources.`} />
-      <Stack gap={8} className="max-w-3xl">
+      <PageHeader title="Settings" />
+      <Stack gap={6}>
         <Card>
           <CardHeader className="border-b">
             <CardTitle>General</CardTitle>
-            <CardDescription>Update how this project appears in the dashboard. App URLs stay the same when you rename this project.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form onSubmit={() => rename.mutate(undefined)}>
-              <Field label="Project name" htmlFor="project-name">
+              <Field label="Project name" htmlFor="project-name" className="max-w-md">
                 <Input id="project-name" value={name} onChange={(event) => setName(event.target.value)} required />
               </Field>
               <FormActions align="start">
@@ -99,16 +97,10 @@ export const SettingsPage = () => {
         <Card className="border-destructive/40 shadow-none">
           <CardHeader className="border-b border-destructive/25">
             <CardTitle>Danger zone</CardTitle>
-            <CardDescription>Actions here permanently affect this entire project.</CardDescription>
           </CardHeader>
           <CardContent>
             <Stack direction="responsive" gap={4} justify="between" className="md:items-center">
-              <Stack gap={1}>
-                <Text weight="medium">Delete this project</Text>
-                <Text size="sm" tone="muted" className="max-w-xl">
-                  Permanently delete all apps, deployments, domains, storage and files, and database.
-                </Text>
-              </Stack>
+              <Text weight="medium">Delete this project</Text>
               <ConfirmButton
                 title={`Delete ${project.name}?`}
                 description="Every service and all data in this project will be permanently deleted. This cannot be undone."

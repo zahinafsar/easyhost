@@ -5,11 +5,8 @@ import { Coins, Plus, Sparkles } from "lucide-react";
 import {
   Alert,
   Button,
-  Card,
-  CardContent,
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -27,7 +24,6 @@ import {
   TableHeader,
   TableRow,
   Text,
-  UsageMeter,
 } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -104,9 +100,11 @@ export const BuilderPage = () => {
     <>
       <PageHeader
         title="Builder"
-        description="Describe an app and AI builds it, live at its own address."
         action={
           <>
+            <Text as="span" size="sm" tone="muted" tabular>
+              {used} / {limit} apps
+            </Text>
             <Button asChild variant="secondary">
               <Link to="/subscription" variant="plain">
                 <Coins />
@@ -134,30 +132,27 @@ export const BuilderPage = () => {
             Your free AI app is used. Upgrade to Pro for 1,000 tokens every month.
           </Alert>
         )}
-        <Card className="py-5">
-          <CardContent className="px-5">
-            <UsageMeter label="Apps in this project" used={used} limit={limit} />
-          </CardContent>
-        </Card>
         <Table framed>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>URL</TableHead>
+              <TableHead>Domain</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Updated</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {!data.apps.length && <TableEmpty colSpan={4}>No AI apps yet. Create one and describe what it should do.</TableEmpty>}
+            {!data.apps.length && <TableEmpty colSpan={4}>No AI apps</TableEmpty>}
             {data.apps.map((app) => (
-              <TableRow key={app.id}>
+              <TableRow key={app.id} className="relative cursor-pointer">
                 <TableCell>
-                  <Link to={`/builder/${app.id}`}>{app.name}</Link>
+                  <Link to={`/builder/${app.id}`} variant="plain" className="font-medium after:absolute after:inset-0">
+                    {app.name}
+                  </Link>
                 </TableCell>
                 <TableCell>
                   <Text as="span" size="xs" tone="muted" mono>
-                    {app.url}
+                    {app.url.replace(/^https?:\/\//, "")}
                   </Text>
                 </TableCell>
                 <TableCell>
@@ -184,7 +179,6 @@ export const BuilderPage = () => {
           >
             <DialogHeader>
               <DialogTitle>New AI app</DialogTitle>
-              <DialogDescription>The name becomes the app's address, so it must be unique.</DialogDescription>
             </DialogHeader>
             <Field label="App name" htmlFor="ai-app-name" error={nameError} labelAside={nameAside}>
               <Input

@@ -10,10 +10,8 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
-  Code,
   EmptyState,
   Field,
   Form,
@@ -24,25 +22,28 @@ import {
   IconButton,
   Input,
   Link,
-  List,
-  ListItem,
   NativeSelect,
   NativeSelectOption,
   Pre,
   SegmentedControl,
   Skeleton,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Text,
   Textarea,
 } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { ConfirmButton } from "@/components/confirm-button";
-import { CodeBlock } from "@/components/code-block";
+import { Facts } from "@/components/facts";
 import { SelectableList, SelectableListItem } from "@/components/ui/selectable-list";
 import { Box } from "@/components/ui/box";
 import { MonacoEditor } from "@/components/monaco-editor";
@@ -55,7 +56,7 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 const DeploymentLog = ({ appId, deploymentId }: { appId: string; deploymentId: string }) => {
   const { data } = useQuery(appsQuery().deployment(appId, deploymentId));
   return (
-    <Pre tone="terminal" className="max-h-96 min-h-48 overflow-auto">
+    <Pre tone="terminal" className="h-[32rem] overflow-auto">
       {data?.deployment.log || "Waiting for logs..."}
     </Pre>
   );
@@ -126,16 +127,10 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
     toast.success(`Added ${parsed.length} ${label}`);
   };
 
-  let description = "Paste a .env into a key field to add many variables at once.";
-  if (mode === "text") {
-    description = "Paste a full .env file. Comments and blank lines are ignored. Saving replaces all variables with this content.";
-  }
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>Environment variables</CardTitle>
-        <CardDescription>{description}</CardDescription>
         <CardAction>
           <SegmentedControl
             size="sm"
@@ -159,7 +154,7 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
             <Textarea
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder={"DATABASE_URL=postgresql://...\nJWT_SECRET=...\n# Paste your whole .env here"}
+              placeholder="KEY=value"
               className="min-h-72 font-mono text-xs"
               spellCheck={false}
               autoFocus
@@ -168,7 +163,7 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
           {mode === "table" && (
             <Stack gap={2}>
               {!rows.length && (
-                <EmptyState size="sm" bordered title="No variables yet" description="Add one, or paste a .env into a key field." />
+                <EmptyState size="sm" bordered title="No variables" />
               )}
               {rows.map((row, index) => (
                 <HStack key={index} gap={2}>
@@ -202,13 +197,6 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
   );
 };
 
-const BUILD_RULES = [
-  { title: "Listen on $PORT", body: "The app must listen on 0.0.0.0 and $PORT (3000)." },
-  { title: "Environment variables", body: "Available at runtime. During the build, mount them with RUN --mount=type=secret,id=appenv and source /run/secrets/appenv. Never put them in ARG." },
-  { title: "Build context", body: "The root directory of the uploaded source. A Dockerfile in your repo is ignored; only the one saved here is used." },
-  { title: "Limits", body: "Images up to 1 GB. Containers get 256 MB of memory and half a CPU." },
-];
-
 const BuildSettings = ({ appId, initial }: { appId: string; initial: { rootDir: string | null; dockerfile: string | null } }) => {
   const [rootDir, setRootDir] = useState(initial.rootDir ?? "");
   const [dockerfile, setDockerfile] = useState(initial.dockerfile ?? "");
@@ -230,20 +218,24 @@ const BuildSettings = ({ appId, initial }: { appId: string; initial: { rootDir: 
   };
 
   return (
-    <Grid cols="sidebar" gap={6} align="start">
-      <Card>
-        <CardHeader>
-          <CardTitle>Build settings</CardTitle>
-          <CardDescription>Every deploy builds your source with this Dockerfile.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form onSubmit={() => save.mutate(undefined)}>
+    <Card>
+      <CardHeader>
+        <CardTitle>Build</CardTitle>
+        <CardAction>
+          <Button size="sm" loading={save.isPending} onClick={() => save.mutate(undefined)}>
+            Save
+          </Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <Form onSubmit={() => save.mutate(undefined)}>
+          <Grid cols={2} gap={4}>
             <Field label="Root directory" htmlFor="rootDir">
-              <Input id="rootDir" className="font-mono" placeholder="Project root" value={rootDir} onChange={(event) => setRootDir(event.target.value)} spellCheck={false} />
+              <Input id="rootDir" className="font-mono" placeholder="/" value={rootDir} onChange={(event) => setRootDir(event.target.value)} spellCheck={false} />
             </Field>
-            <Field label="Start from a template" htmlFor="template">
+            <Field label="Template" htmlFor="template">
               <NativeSelect id="template" value="" onChange={(event) => applyTemplate(event.target.value)} disabled={!templates.data}>
-                <NativeSelectOption value="">Choose a language</NativeSelectOption>
+                <NativeSelectOption value="">Select</NativeSelectOption>
                 {templates.data?.templates.map((template) => (
                   <NativeSelectOption key={template.id} value={template.id}>
                     {template.label}
@@ -251,53 +243,43 @@ const BuildSettings = ({ appId, initial }: { appId: string; initial: { rootDir: 
                 ))}
               </NativeSelect>
             </Field>
-            <Field label="Dockerfile">
-              <Box className="h-[420px] overflow-hidden rounded-lg border border-input">
-                <MonacoEditor path="Dockerfile" value={dockerfile} readOnly={false} onChange={setDockerfile} onSave={() => save.mutate(undefined)} />
-              </Box>
-            </Field>
-            <FormActions align="start">
-              <Button type="submit" size="sm" loading={save.isPending}>
-                Save
-              </Button>
-            </FormActions>
-          </Form>
-        </CardContent>
-      </Card>
-      <Card variant="inset">
-        <CardHeader>
-          <CardTitle>How builds run</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <List variant="divided">
-            {BUILD_RULES.map((rule) => (
-              <ListItem key={rule.title}>
-                <Stack gap={1}>
-                  <Text size="sm" weight="medium">
-                    {rule.title}
-                  </Text>
-                  <Text size="sm" tone="muted">
-                    {rule.body}
-                  </Text>
-                </Stack>
-              </ListItem>
-            ))}
-          </List>
-        </CardContent>
-      </Card>
-    </Grid>
+          </Grid>
+          <Field label="Dockerfile">
+            <Box className="h-[560px] overflow-hidden rounded-lg border border-input">
+              <MonacoEditor path="Dockerfile" value={dockerfile} readOnly={false} onChange={setDockerfile} onSave={() => save.mutate(undefined)} />
+            </Box>
+          </Field>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 
 type Domain = { id: string; hostname: string; status: string; error: string | null };
 
-const DnsRecord = ({ type, name, value }: { type: string; name: string; value: string }) => {
+const DnsRecords = ({ hostname, dnsTarget }: { hostname: string; dnsTarget: { cname: string; ip: string } }) => {
   return (
-    <Grid cols={3} gap={2}>
-      <Code className="block px-3 py-2 text-xs">Type: {type}</Code>
-      <Code className="block px-3 py-2 text-xs">Name: {name}</Code>
-      <Code className="block px-3 py-2 text-xs">Value: {value}</Code>
-    </Grid>
+    <Table framed>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Type</TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Value</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableRow>
+          <TableCell className="font-mono text-xs">CNAME</TableCell>
+          <TableCell className="font-mono text-xs">{hostname}</TableCell>
+          <TableCell className="font-mono text-xs">{dnsTarget.cname}</TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell className="font-mono text-xs">A</TableCell>
+          <TableCell className="font-mono text-xs">{hostname}</TableCell>
+          <TableCell className="font-mono text-xs">{dnsTarget.ip}</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
   );
 };
 
@@ -336,7 +318,6 @@ const DomainsPanel = ({
     <Card>
       <CardHeader>
         <CardTitle>Custom domains</CardTitle>
-        <CardDescription>Point your own hostname at this app. HTTPS certificates are issued automatically once DNS is verified.</CardDescription>
       </CardHeader>
       <CardContent>
         <Stack gap={4}>
@@ -346,7 +327,7 @@ const DomainsPanel = ({
                 aria-label="Hostname"
                 value={hostname}
                 onChange={(event) => setHostname(event.target.value.toLowerCase())}
-                placeholder="www.example.com"
+                placeholder="Hostname"
                 className="font-mono"
               />
               <Button type="submit" loading={add.isPending} disabled={!hostname.trim()}>
@@ -355,7 +336,7 @@ const DomainsPanel = ({
               </Button>
             </HStack>
           </Form>
-          {!domains.length && <EmptyState size="sm" bordered icon={Globe} title="No custom domains yet." />}
+          {!domains.length && <EmptyState size="sm" bordered icon={Globe} title="No custom domains" />}
           {domains.map((domain) => (
             <Card key={domain.id} variant="inset" className="gap-4 py-4">
               <CardContent className="px-4">
@@ -386,18 +367,7 @@ const DomainsPanel = ({
                     </HStack>
                   </Stack>
                   {domain.error && <Alert variant="danger">{domain.error}</Alert>}
-                  {domain.status !== "ACTIVE" && (
-                    <Stack gap={2}>
-                      <Text size="sm" tone="muted">
-                        Add one of these records at your DNS provider, then click Verify:
-                      </Text>
-                      <DnsRecord type="CNAME" name={domain.hostname} value={dnsTarget.cname} />
-                      <Text size="sm" tone="muted">
-                        For a root domain (example.com) use an A record instead:
-                      </Text>
-                      <DnsRecord type="A" name={domain.hostname} value={dnsTarget.ip} />
-                    </Stack>
-                  )}
+                  {domain.status !== "ACTIVE" && <DnsRecords hostname={domain.hostname} dnsTarget={dnsTarget} />}
                 </Stack>
               </CardContent>
             </Card>
@@ -457,27 +427,33 @@ export const AppDetailPage = () => {
   const activeDeployment = selected ?? deployments[0]?.id;
   const isAi = app.kind === "AI";
   let defaultTab = "deployments";
+  let appType = "Docker";
   if (isAi) {
     defaultTab = "logs";
+    appType = "AI app";
+  }
+  let lastDeploy = "Never";
+  if (deployments[0]) {
+    lastDeploy = formatDate(deployments[0].createdAt);
   }
 
   return (
     <>
       <PageHeader
-        title={app.name}
-        description={
-          <Link href={app.url} variant="muted" className="font-mono text-[13px]">
-            {app.url}
-          </Link>
+        title={
+          <HStack gap={3}>
+            {app.name}
+            <StatusBadge status={app.status} />
+          </HStack>
         }
         action={
           <>
-            <Link href={app.url} variant="plain" inline={false} className={buttonVariants({ variant: "secondary" })}>
+            <Link href={app.url} variant="plain" inline={false} data-slot="button" className={buttonVariants({ variant: "secondary" })}>
               <ExternalLink />
               Visit
             </Link>
             {isAi && (
-              <Link to={`/builder/${app.id}`} variant="plain" inline={false} className={buttonVariants({ variant: "secondary" })}>
+              <Link to={`/builder/${app.id}`} variant="plain" inline={false} data-slot="button" className={buttonVariants({ variant: "secondary" })}>
                 <Sparkles />
                 Open builder
               </Link>
@@ -513,14 +489,25 @@ export const AppDetailPage = () => {
           </>
         }
       />
-      <HStack gap={3} className="-mt-4 mb-6">
-        <StatusBadge status={app.status} />
-        <Text as="span" size="sm" tone="muted">
-          Updated {formatDate(app.updatedAt)}
-        </Text>
-      </HStack>
+      <Facts
+        className="mb-6"
+        items={[
+          {
+            label: "Domain",
+            value: (
+              <Link href={app.url} className="font-mono text-[13px]">
+                {app.url.replace(/^https?:\/\//, "")}
+              </Link>
+            ),
+          },
+          { label: "Type", value: appType },
+          { label: "Last deploy", value: lastDeploy },
+          { label: "Custom domains", value: data.domains.length },
+          { label: "Updated", value: formatDate(app.updatedAt) },
+        ]}
+      />
       <Tabs defaultValue={defaultTab}>
-        <TabsList>
+        <TabsList variant="line" className="mb-2 w-full justify-start">
           {!isAi && <TabsTrigger value="deployments">Deployments</TabsTrigger>}
           <TabsTrigger value="logs" onClick={() => logs.refetch()}>
             Runtime logs
@@ -532,12 +519,7 @@ export const AppDetailPage = () => {
         <TabsContent value="deployments">
           {!deployments.length && (
             <Card className="py-0">
-              <EmptyState
-                icon={Rocket}
-                title="No deployments yet"
-                description={app.dockerfile ? "From your app folder run:" : "Save a Dockerfile in the Build tab, then from your app folder run:"}
-                action={<CodeBlock tone="terminal" className="w-full max-w-xl text-left" code={`npx ezhst deploy --project ${app.projectId} --app ${app.slug}`} />}
-              />
+              <EmptyState icon={Rocket} title="No deployments" />
             </Card>
           )}
           {!!deployments.length && (
@@ -560,17 +542,14 @@ export const AppDetailPage = () => {
         </TabsContent>
         <TabsContent value="logs">
           <Stack gap={3}>
-            <HStack justify="between" gap={3}>
-              <Text size="sm" tone="muted">
-                Output from the running container.
-              </Text>
+            <HStack justify="end" gap={3}>
               <Button variant="secondary" size="sm" onClick={() => logs.refetch()} loading={logs.isFetching}>
                 <RefreshCw />
                 Refresh
               </Button>
             </HStack>
-            <Pre tone="terminal" className="max-h-[32rem] min-h-48 overflow-auto">
-              {logs.data?.logs || "No logs yet."}
+            <Pre tone="terminal" className="h-[36rem] overflow-auto">
+              {logs.data?.logs || "No logs"}
             </Pre>
           </Stack>
         </TabsContent>

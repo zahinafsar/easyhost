@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
@@ -38,7 +38,6 @@ export const CreateProjectDialog = ({
         <Form onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>New project</DialogTitle>
-            <DialogDescription>Create a workspace for up to 2 apps, a database and storage.</DialogDescription>
           </DialogHeader>
           <Field label="Project name" htmlFor="project-name">
             <Input id="project-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="My next project" autoFocus required />

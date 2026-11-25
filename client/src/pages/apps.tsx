@@ -6,10 +6,8 @@ import {
   Badge,
   Button,
   Card,
-  CardContent,
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -28,7 +26,6 @@ import {
   TableHeader,
   TableRow,
   Text,
-  UsageMeter,
 } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -36,6 +33,13 @@ import { api, unwrap } from "@/lib/api";
 import { appsQuery, projectsQuery } from "@/lib/queries";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { formatDate } from "@/lib/format";
+
+const lastDeploy = (deployment: { status: string; createdAt: string } | undefined) => {
+  if (!deployment) {
+    return "Never";
+  }
+  return `${deployment.status.charAt(0)}${deployment.status.slice(1).toLowerCase()}, ${formatDate(deployment.createdAt)}`;
+};
 
 export const AppsPage = () => {
   const { data, isLoading, error } = useQuery(appsQuery().list());
@@ -72,26 +76,24 @@ export const AppsPage = () => {
     <>
       <PageHeader
         title="Apps"
-        description="Deploy any service from a Dockerfile, each with its own build, environment, and domains."
         action={
-          <Button disabled={atLimit} onClick={() => setOpen(true)}>
-            <Plus />
-            Create app
-          </Button>
+          <>
+            <Text as="span" size="sm" tone="muted" tabular>
+              {data.apps.length} / {data.limit} apps
+            </Text>
+            <Button disabled={atLimit} onClick={() => setOpen(true)}>
+              <Plus />
+              Create app
+            </Button>
+          </>
         }
       />
       <Stack gap={6}>
-        <Card className="py-5">
-          <CardContent className="px-5">
-            <UsageMeter label="Apps in this project" used={data.apps.length} limit={data.limit} />
-          </CardContent>
-        </Card>
         {!data.apps.length && (
           <Card className="py-0">
             <EmptyState
               icon={Boxes}
               title="No apps yet"
-              description="Create an app to deploy your first service."
               action={
                 <Button disabled={atLimit} onClick={() => setOpen(true)}>
                   <Plus />
@@ -106,23 +108,26 @@ export const AppsPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>URL</TableHead>
+                <TableHead>Domain</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Last deploy</TableHead>
                 <TableHead className="text-right">Updated</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.apps.map((app) => (
-                <TableRow key={app.id}>
+                <TableRow key={app.id} className="relative cursor-pointer">
                   <TableCell>
                     <HStack gap={2}>
-                      <Link to={`/apps/${app.id}`}>{app.name}</Link>
+                      <Link to={`/apps/${app.id}`} variant="plain" className="font-medium after:absolute after:inset-0">
+                        {app.name}
+                      </Link>
                       {app.kind === "AI" && <Badge variant="secondary">AI</Badge>}
                     </HStack>
                   </TableCell>
                   <TableCell>
                     <Text as="span" size="xs" tone="muted" mono>
-                      {app.url}
+                      {app.url.replace(/^https?:\/\//, "")}
                     </Text>
                   </TableCell>
                   <TableCell>
@@ -130,6 +135,11 @@ export const AppsPage = () => {
                       <StatusBadge status={app.status} />
                       {app.suspended && <Badge variant="destructive">Paused</Badge>}
                     </HStack>
+                  </TableCell>
+                  <TableCell>
+                    <Text as="span" size="sm" tone="muted">
+                      {lastDeploy(app.deployments[0])}
+                    </Text>
                   </TableCell>
                   <TableCell className="text-right">
                     <Text as="span" size="sm" tone="muted">
@@ -147,7 +157,6 @@ export const AppsPage = () => {
           <Form onSubmit={() => create.mutate(undefined)}>
             <DialogHeader>
               <DialogTitle>New app</DialogTitle>
-              <DialogDescription>Create an app in this project. You can deploy its source with the CLI.</DialogDescription>
             </DialogHeader>
             <Field label="App name" htmlFor="app-name">
               <Input id="app-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="My API" minLength={2} maxLength={40} required autoFocus />

@@ -10,7 +10,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   Form,
@@ -27,7 +26,6 @@ import {
   TableHeader,
   TableRow,
   Text,
-  UsageMeter,
 } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmButton } from "@/components/confirm-button";
@@ -104,43 +102,43 @@ export const MembersPage = () => {
     <>
       <PageHeader
         title="Members"
-        description="People who can manage this project's apps, deploys, storage and database."
         action={
-          !isOwner && (
-            <ConfirmButton
-              title="Leave this project?"
-              description="You lose access to everything in it until the owner invites you again."
-              confirmLabel="Leave project"
-              confirmVariant="destructive"
-              onConfirm={() => leave.mutate(undefined)}
-            >
-              <Button variant="secondary" disabled={leave.isPending}>
-                <LogOut />
-                Leave project
-              </Button>
-            </ConfirmButton>
-          )
+          <>
+            <Text as="span" size="sm" tone="muted" tabular>
+              {used} / {data.limit} seats
+            </Text>
+            {!isOwner && (
+              <ConfirmButton
+                title="Leave this project?"
+                description="You lose access to everything in it until the owner invites you again."
+                confirmLabel="Leave project"
+                confirmVariant="destructive"
+                onConfirm={() => leave.mutate(undefined)}
+              >
+                <Button variant="secondary" disabled={leave.isPending}>
+                  <LogOut />
+                  Leave project
+                </Button>
+              </ConfirmButton>
+            )}
+          </>
         }
       />
-      <Stack gap={8}>
+      <Stack gap={6}>
         {isOwner && (
           <Card>
             <CardHeader>
-              <CardTitle>Invite a member</CardTitle>
-              <CardDescription>
-                They get an email with a link that works for 7 days. {used} / {data.limit} members and invites used.
-              </CardDescription>
+              <CardTitle>Invite member</CardTitle>
             </CardHeader>
             <CardContent>
               <Stack gap={4}>
-                <UsageMeter label="Members and invites" used={used} limit={data.limit} className="max-w-sm" />
                 <Form gap="sm" className="sm:flex-row" onSubmit={() => invite.mutate(undefined)}>
                   <Input
                     type="email"
                     aria-label="Email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="teammate@example.com"
+                    placeholder="Email address"
                     required
                   />
                   <Button type="submit" loading={invite.isPending} disabled={!email.trim() || used >= data.limit} className="shrink-0">

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Check, Coins, FolderKanban } from "lucide-react";
+import { Check } from "lucide-react";
 import {
   Alert,
   Badge,
@@ -16,8 +16,6 @@ import {
   Section,
   Skeleton,
   Stack,
-  Stat,
-  StatGroup,
   Table,
   TableBody,
   TableCell,
@@ -28,6 +26,7 @@ import {
   Text,
 } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
+import { Facts } from "@/components/facts";
 import { api, unwrap } from "@/lib/api";
 import { billingQuery } from "@/lib/queries";
 import { formatBytes, formatDate } from "@/lib/format";
@@ -82,11 +81,19 @@ export const SubscriptionPage = () => {
 
   const plans = [data.plans.free, data.plans.pro];
 
+  let billingLabel = "No subscription";
+  if (data.subscription?.status === "ACTIVE" && data.subscription.renewsAt) {
+    billingLabel = `Renews ${formatDate(data.subscription.renewsAt)}`;
+  } else if (data.subscription?.status === "CANCELLED" && data.subscription.endsAt) {
+    billingLabel = `Ends ${formatDate(data.subscription.endsAt)}`;
+  } else if (data.subscription?.status === "PAST_DUE") {
+    billingLabel = "Payment failed";
+  }
+
   return (
     <>
       <PageHeader
         title="Subscription"
-        description="Start free. Upgrade to Pro for more projects and monthly AI tokens."
         action={
           data.subscription && (
             <Button variant="secondary" loading={portal.isPending} onClick={() => portal.mutate(undefined)}>
@@ -96,12 +103,21 @@ export const SubscriptionPage = () => {
         }
       />
 
-      <Stack gap={10}>
+      <Stack gap={8}>
         {data.subscription?.status === "PAST_DUE" && (
           <Alert variant="danger" title="Payment failed">
             Your last payment failed, so your account is on the Free plan and projects beyond {data.plans.free.projects} are paused. Update your payment method in Manage billing.
           </Alert>
         )}
+
+        <Facts
+          items={[
+            { label: "Plan", value: data.plan.name },
+            { label: "Projects", value: `${data.projects.length} / ${data.plan.projects}` },
+            { label: "AI tokens", value: data.tokenBalance.toLocaleString("en-US") },
+            { label: "Billing", value: billingLabel },
+          ]}
+        />
 
         <Grid cols={2} gap={4}>
           {plans.map((plan) => {
@@ -113,6 +129,9 @@ export const SubscriptionPage = () => {
               <Card key={plan.id} className={cn(current && "border-accent-green/60 ring-1 ring-accent-green/30")}>
                 <CardHeader className="gap-3">
                   <HStack justify="between" gap={2}>
+                    <Text as="span" weight="medium">
+                      {plan.name}
+                    </Text>
                     {current && <Badge variant="success">Current plan</Badge>}
                   </HStack>
                   <HStack align="baseline" gap={1}>
@@ -157,11 +176,7 @@ export const SubscriptionPage = () => {
           })}
         </Grid>
 
-        <Section title="Usage" description={`${data.projects.length} / ${data.plan.projects} projects, ${data.tokenBalance.toLocaleString("en-US")} AI tokens`}>
-          <StatGroup cols={2}>
-            <Stat label="Projects" icon={FolderKanban} value={`${data.projects.length} / ${data.plan.projects}`} />
-            <Stat label="AI tokens" icon={Coins} value={data.tokenBalance.toLocaleString("en-US")} />
-          </StatGroup>
+        <Section title="Usage by project">
           <Table framed>
             <TableHeader>
               <TableRow>
@@ -172,7 +187,7 @@ export const SubscriptionPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {!data.projects.length && <TableEmpty colSpan={4}>No projects yet.</TableEmpty>}
+              {!data.projects.length && <TableEmpty colSpan={4}>No projects</TableEmpty>}
               {data.projects.map((project) => (
                 <TableRow key={project.id}>
                   <TableCell>

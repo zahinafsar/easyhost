@@ -29,17 +29,15 @@ export const StoragePage = () => {
 
   return (
     <>
-      <PageHeader title="Storage" description="S3 compatible object storage isolated to this project." />
+      <PageHeader title="Storage" />
       <Card className="py-0">
         <EmptyState
           className="min-h-72"
           icon={HardDrive}
-          title="Create a new storage"
-          description="Store uploads and static files with project-specific S3 credentials."
+          title="No storage"
           action={
             <CreateResourceDialog
               title="Create storage"
-              description="Your project gets one bucket with its own S3 access keys and public file URLs."
               triggerLabel="Create storage"
               placeholder="uploads"
               isPending={createStorage.isPending}

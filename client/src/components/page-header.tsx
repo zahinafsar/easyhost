@@ -17,11 +17,13 @@ export const PageHeader = ({
   className?: string;
 }) => {
   return (
-    <Stack as="header" gap={4} className={cn("mb-8", className)}>
+    <Stack as="header" gap={3} className={cn("mb-6 border-b border-border pb-5", className)}>
       {back}
-      <Stack direction="row" align="end" justify="between" wrap gap={4}>
-        <Stack gap={2} className="max-w-2xl">
-          <Heading level={1}>{title}</Heading>
+      <Stack direction="row" align="center" justify="between" wrap gap={4}>
+        <Stack gap={1} className="min-w-0">
+          <Heading level={1} size="lg">
+            {title}
+          </Heading>
           {description && (
             <Text size="base" tone="muted" wrap="pretty">
               {description}
@@ -29,7 +31,7 @@ export const PageHeader = ({
           )}
         </Stack>
         {action && (
-          <Stack direction="row" align="center" wrap gap={2} className="shrink-0">
+          <Stack direction="row" align="center" wrap gap={2} className="shrink-0 [&_[data-slot=button]]:min-w-32">
             {action}
           </Stack>
         )}

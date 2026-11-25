@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, EyeOff, KeyRound, Play, Table2, Trash2 } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Play, Plug, Table2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Alert,
+  Badge,
   Button,
   Card,
-  CardAction,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Code,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
   EmptyState,
   FormActions,
   Grid,
@@ -37,9 +39,9 @@ import {
   TabsTrigger,
   Text,
   Textarea,
-  UsageMeter,
 } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
+import { Facts } from "@/components/facts";
 import { ConfirmButton } from "@/components/confirm-button";
 import { SecretField } from "@/components/resources/secret-field";
 import { SelectableList, SelectableListItem } from "@/components/ui/selectable-list";
@@ -204,7 +206,7 @@ const TableEditor = ({ databaseId, tables }: { databaseId: string; tables: { nam
   if (!tables.length) {
     return (
       <Card className="py-0">
-        <EmptyState icon={Table2} title="No tables yet" description="Create them with your ORM migrations or the SQL console." />
+        <EmptyState icon={Table2} title="No tables" />
       </Card>
     );
   }
@@ -257,7 +259,7 @@ const TableEditor = ({ databaseId, tables }: { databaseId: string; tables: { nam
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {!data.rows.length && <TableEmpty colSpan={data.columns.length}>This table is empty.</TableEmpty>}
+                {!data.rows.length && <TableEmpty colSpan={data.columns.length}>No rows</TableEmpty>}
                 {data.rows.map((row, index) => {
                   const key = Object.fromEntries(data.primaryKey.map((name) => [name, row[name]]));
                   return (
@@ -293,7 +295,7 @@ const TableEditor = ({ databaseId, tables }: { databaseId: string; tables: { nam
 };
 
 const SqlConsole = ({ databaseId }: { databaseId: string }) => {
-  const [sql, setSql] = useState("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';");
+  const [sql, setSql] = useState("");
 
   const run = useApiMutation({
     mutationFn: () => unwrap(api.databases[":id"].query.$post({ param: { id: databaseId }, json: { sql } })),
@@ -317,11 +319,12 @@ const SqlConsole = ({ databaseId }: { databaseId: string }) => {
                   run.mutate(undefined);
                 }
               }}
-              className="min-h-40 font-mono text-sm"
+              placeholder="SQL"
+              className="min-h-56 font-mono text-sm"
               spellCheck={false}
             />
             <HStack gap={3}>
-              <Button onClick={() => run.mutate(undefined)} loading={run.isPending}>
+              <Button onClick={() => run.mutate(undefined)} loading={run.isPending} disabled={!sql.trim()}>
                 {!run.isPending && <Play />}
                 Run
               </Button>
@@ -408,7 +411,7 @@ export const DatabasePage = () => {
 
   const connections = [
     { label: "Database URL", value: database.connectionString },
-    { label: "Shadow database URL (for migration)", value: database.shadowConnectionString },
+    { label: "Shadow database URL", value: database.shadowConnectionString },
   ];
 
   const copy = async (value: string) => {
@@ -423,6 +426,11 @@ export const DatabasePage = () => {
     return maskPassword(value);
   };
 
+  let databaseStatus = "Active";
+  if (database.blocked) {
+    databaseStatus = "Blocked";
+  }
+
   let revealLabel = "Show";
   let RevealIcon = Eye;
   if (revealed) {
@@ -433,32 +441,32 @@ export const DatabasePage = () => {
   return (
     <>
       <PageHeader
-        title={database.name}
-        description={`Postgres, ${formatBytes(database.sizeBytes)} of ${formatBytes(database.limitBytes)} used`}
-        action={
-          <ConfirmButton
-            title={`Delete ${database.name}?`}
-            description="The database and all its data will be permanently deleted."
-            onConfirm={() => remove.mutate(undefined)}
-          >
-            <Button variant="destructive">
-              <Trash2 />
-              Delete
-            </Button>
-          </ConfirmButton>
+        title={
+          <HStack gap={3}>
+            {database.name}
+            {database.blocked && <Badge variant="destructive">Blocked</Badge>}
+          </HStack>
         }
-      />
-      <Stack gap={6}>
-        <Grid cols="sidebar" gap={6} align="start">
-          <Card>
-            <CardHeader>
-              <CardTitle>Connection</CardTitle>
-              <CardDescription>
-                Using psql or a GUI client like TablePlus? Change the sslmode parameter to <Code>sslmode=require</Code>.
-              </CardDescription>
-              <CardAction>
-                <HStack gap={2}>
-                  <Button variant="ghost" size="sm" onClick={() => setRevealed(!revealed)}>
+        action={
+          <>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="secondary">
+                  <Plug />
+                  Connect
+                </Button>
+              </DialogTrigger>
+              <DialogContent size="xl" aria-describedby={undefined}>
+                <DialogHeader>
+                  <DialogTitle>Connection</DialogTitle>
+                </DialogHeader>
+                <Stack gap={4}>
+                  {connections.map((connection) => (
+                    <SecretField key={connection.label} label={connection.label} display={display(connection.value)} onCopy={() => copy(connection.value)} />
+                  ))}
+                </Stack>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setRevealed(!revealed)}>
                     <RevealIcon />
                     {revealLabel}
                   </Button>
@@ -468,38 +476,42 @@ export const DatabasePage = () => {
                     confirmLabel="Reset"
                     onConfirm={() => resetPassword.mutate(undefined)}
                   >
-                    <Button variant="secondary" size="sm" disabled={resetPassword.isPending}>
+                    <Button variant="secondary" disabled={resetPassword.isPending}>
                       <KeyRound />
                       Reset password
                     </Button>
                   </ConfirmButton>
-                </HStack>
-              </CardAction>
-            </CardHeader>
-            <CardContent>
-              <Stack gap={4}>
-                {connections.map((connection) => (
-                  <SecretField key={connection.label} label={connection.label} display={display(connection.value)} onCopy={() => copy(connection.value)} />
-                ))}
-              </Stack>
-            </CardContent>
-          </Card>
-          <Card variant="inset">
-            <CardHeader>
-              <CardTitle>Usage</CardTitle>
-              <CardDescription>Postgres size counted against this project's limit.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UsageMeter label="Database size" used={database.sizeBytes} limit={database.limitBytes} format={formatBytes} />
-            </CardContent>
-          </Card>
-        </Grid>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <ConfirmButton
+              title={`Delete ${database.name}?`}
+              description="The database and all its data will be permanently deleted."
+              onConfirm={() => remove.mutate(undefined)}
+            >
+              <Button variant="destructive">
+                <Trash2 />
+                Delete
+              </Button>
+            </ConfirmButton>
+          </>
+        }
+      />
+      <Stack gap={6}>
+        <Facts
+          items={[
+            { label: "Engine", value: "PostgreSQL" },
+            { label: "Size", value: `${formatBytes(database.sizeBytes)} / ${formatBytes(database.limitBytes)}` },
+            { label: "Tables", value: tables.length },
+            { label: "Status", value: databaseStatus },
+          ]}
+        />
 
         {database.blocked && <BlockedTables databaseId={database.id} tables={tables} />}
 
         {!database.blocked && (
           <Tabs defaultValue="tables">
-            <TabsList>
+            <TabsList variant="line" className="mb-2 w-full justify-start">
               <TabsTrigger value="tables">Table editor</TabsTrigger>
               <TabsTrigger value="sql">SQL console</TabsTrigger>
             </TabsList>
