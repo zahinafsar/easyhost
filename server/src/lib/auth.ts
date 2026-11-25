@@ -7,6 +7,7 @@ import { env } from "./env.js";
 
 const JWT_SECRET = new TextEncoder().encode(env.jwtSecret);
 const AUTH_COOKIE = "auth-token";
+const ACTIVITY_INTERVAL_MS = 10 * 60 * 1000;
 
 export interface JWTPayload extends JoseJWTPayload {
   userId: string;
@@ -83,6 +84,7 @@ export const getCurrentUser = async (c: Context) => {
       verified: true,
       blocked: true,
       createdAt: true,
+      lastActiveAt: true,
     },
   });
 
@@ -90,7 +92,13 @@ export const getCurrentUser = async (c: Context) => {
     return null;
   }
 
-  const { blocked, ...currentUser } = user;
+  if (!payload.impersonatorId && (!user.lastActiveAt || Date.now() - user.lastActiveAt.getTime() > ACTIVITY_INTERVAL_MS)) {
+    prisma.user
+      .update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
+      .catch((error) => console.error("Failed to record user activity", error));
+  }
+
+  const { blocked, lastActiveAt, ...currentUser } = user;
   return { ...currentUser, impersonatorId: payload.impersonatorId ?? null };
 };
 

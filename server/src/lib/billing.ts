@@ -1,4 +1,4 @@
-import type { App, Subscription } from "@prisma/client";
+import type { App, BillingEventType, Subscription, SubscriptionStatus } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { env } from "./env.js";
 import { containerName, startContainer, stopContainer } from "./docker.js";
@@ -240,6 +240,32 @@ const topUpTokens = async (userId: string) => {
   await prisma.user.updateMany({ where: { id: userId, tokenBalance: { lt: PRO.monthlyTokens } }, data: { tokenBalance: PRO.monthlyTokens } });
 };
 
+const recordBillingEvent = async (data: { userId: string; providerSubscriptionId: string; type: BillingEventType; paymentId?: string; amountCents?: number }) => {
+  try {
+    await prisma.billingEvent.create({
+      data: { userId: data.userId, providerSubscriptionId: data.providerSubscriptionId, type: data.type, paymentId: data.paymentId ?? null, amountCents: data.amountCents ?? 0 },
+    });
+  } catch (error) {
+    console.error("[billing] failed to record billing event", error);
+  }
+};
+
+const statusChangeEvent = (from: SubscriptionStatus, to: SubscriptionStatus): BillingEventType | null => {
+  if (from === to) {
+    return null;
+  }
+  if (to === "CANCELLED") {
+    return "CANCELLED";
+  }
+  if (to === "EXPIRED") {
+    return "EXPIRED";
+  }
+  if (to === "PAST_DUE") {
+    return "PAYMENT_FAILED";
+  }
+  return "REACTIVATED";
+};
+
 export const handlePaymentEvent = async (event: PaymentEvent) => {
   if (event.type === "ignored") {
     return;
@@ -266,6 +292,7 @@ export const handlePaymentEvent = async (event: PaymentEvent) => {
       lastPaymentId: null,
     };
     await prisma.subscription.upsert({ where: { userId: user.id }, create: { userId: user.id, ...data }, update: data });
+    await recordBillingEvent({ userId: user.id, providerSubscriptionId: data.providerSubscriptionId, type: "CREATED", amountCents: PRO.price * 100 });
     await topUpTokens(user.id);
     await enforceUser(user.id, { quotas: true });
     return;
@@ -277,6 +304,10 @@ export const handlePaymentEvent = async (event: PaymentEvent) => {
       return;
     }
     await prisma.subscription.update({ where: { id: existing.id }, data: subscriptionData(event.subscription) });
+    const change = statusChangeEvent(existing.status, event.subscription.status);
+    if (change) {
+      await recordBillingEvent({ userId: existing.userId, providerSubscriptionId: existing.providerSubscriptionId, type: change });
+    }
     await enforceUser(existing.userId, { quotas: true });
     return;
   }
@@ -293,6 +324,13 @@ export const handlePaymentEvent = async (event: PaymentEvent) => {
     if (!count) {
       return;
     }
+    await recordBillingEvent({
+      userId: existing.userId,
+      providerSubscriptionId: existing.providerSubscriptionId,
+      type: "RENEWED",
+      paymentId: event.paymentId,
+      amountCents: PRO.price * 100,
+    });
     await topUpTokens(existing.userId);
     const fresh = await payments.fetchSubscription(existing.providerSubscriptionId);
     if (fresh) {
@@ -307,6 +345,9 @@ export const handlePaymentEvent = async (event: PaymentEvent) => {
     return;
   }
   await prisma.subscription.update({ where: { id: existing.id }, data: { status: "PAST_DUE" } });
+  if (existing.status !== "PAST_DUE") {
+    await recordBillingEvent({ userId: existing.userId, providerSubscriptionId: existing.providerSubscriptionId, type: "PAYMENT_FAILED" });
+  }
   await enforceUser(existing.userId, { quotas: true });
 };
 

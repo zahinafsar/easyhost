@@ -7,7 +7,7 @@ let draining = false;
 
 const claimNext = async () => {
   const rows = await prisma.$queryRaw<{ id: string }[]>`
-    UPDATE deployments SET status = 'BUILDING'
+    UPDATE deployments SET status = 'BUILDING', "startedAt" = NOW()
     WHERE id = (
       SELECT id FROM deployments
       WHERE status = 'QUEUED'

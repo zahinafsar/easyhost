@@ -76,6 +76,7 @@ model User {
   verifyAttempts    Int       @default(0)
   resetToken        String?
   resetExpires      DateTime?
+  lastActiveAt      DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -88,6 +89,7 @@ model User {
   sentInvites    ProjectInvite[]
   subscription   Subscription?
   tokenUsages    TokenUsage[]
+  billingEvents  BillingEvent[]
 
   @@map("users")
 }
@@ -159,46 +161,47 @@ model Database {
 
 model App {
   parentProjectId String?
-  parentProject   App?            @relation("ProjectApps", fields: [parentProjectId], references: [id], onDelete: Cascade)
-  projectApps     App[]           @relation("ProjectApps")
+  parentProject   App?              @relation("ProjectApps", fields: [parentProjectId], references: [id], onDelete: Cascade)
+  projectApps     App[]             @relation("ProjectApps")
   appName         String?
-  appEnabled      Boolean         @default(true)
-  suspended       Boolean         @default(false)
-  deleting        Boolean         @default(false)
-  id              String          @id @default(cuid())
+  appEnabled      Boolean           @default(true)
+  suspended       Boolean           @default(false)
+  deleting        Boolean           @default(false)
+  id              String            @id @default(cuid())
   userId          String
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   name            String
-  slug            String          @unique
-  env             Json            @default("{}")
+  slug            String            @unique
+  env             Json              @default("{}")
   nodeVersion     String?
   rootDir         String?
   installCommand  String?
   buildCommand    String?
   startCommand    String?
-  status          AppStatus       @default(IDLE)
+  status          AppStatus         @default(IDLE)
   containerId     String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   deployments     Deployment[]
   domains         AppDomain[]
   bucket          Bucket?
   database        Database?
   members         ProjectMember[]
   invites         ProjectInvite[]
-  kind            AppKind         @default(NODE)
-  aiStatus        AiStatus        @default(IDLE)
+  kind            AppKind           @default(NODE)
+  aiStatus        AiStatus          @default(IDLE)
   aiProgress      String?
   aiError         String?
   aiAuthSecret    String?
-  aiSteps         Json            @default("[]")
+  aiSteps         Json              @default("[]")
   aiDatabaseId    String?
-  aiDatabase      Database?       @relation("AiAppDatabase", fields: [aiDatabaseId], references: [id], onDelete: SetNull)
+  aiDatabase      Database?         @relation("AiAppDatabase", fields: [aiDatabaseId], references: [id], onDelete: SetNull)
   aiBucketId      String?
   aiTheme         String?
-  aiBucket        Bucket?         @relation("AiAppBucket", fields: [aiBucketId], references: [id], onDelete: SetNull)
+  aiBucket        Bucket?           @relation("AiAppBucket", fields: [aiBucketId], references: [id], onDelete: SetNull)
   aiMessages      AiMessage[]
   tokenUsages     TokenUsage[]
+  metricSamples   AppMetricSample[]
 
   @@index([parentProjectId])
   @@map("apps")
@@ -221,17 +224,18 @@ model AppDomain {
 }
 
 model Deployment {
-  id          String           @id @default(cuid())
-  appId       String
-  app         App              @relation(fields: [appId], references: [id], onDelete: Cascade)
-  status      DeploymentStatus @default(QUEUED)
-  step        DeploymentStep   @default(QUEUED)
-  artifactKey String
+  id           String           @id @default(cuid())
+  appId        String
+  app          App              @relation(fields: [appId], references: [id], onDelete: Cascade)
+  status       DeploymentStatus @default(QUEUED)
+  step         DeploymentStep   @default(QUEUED)
+  artifactKey  String
   imageTag     String?
   cloudBuildId String?
-  log         String           @default("")
-  createdAt   DateTime         @default(now())
-  finishedAt  DateTime?
+  log          String           @default("")
+  createdAt    DateTime         @default(now())
+  startedAt    DateTime?
+  finishedAt   DateTime?
 
   @@index([appId, createdAt])
   @@map("deployments")
@@ -286,4 +290,78 @@ model TokenUsage {
 
   @@index([userId, createdAt])
   @@map("token_usages")
+}
+
+enum BillingEventType {
+  CREATED
+  RENEWED
+  PAYMENT_FAILED
+  CANCELLED
+  EXPIRED
+  REACTIVATED
+}
+
+model BillingEvent {
+  id                     String           @id @default(cuid())
+  userId                 String?
+  user                   User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  providerSubscriptionId String
+  type                   BillingEventType
+  paymentId              String?          @unique
+  amountCents            Int              @default(0)
+  createdAt              DateTime         @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("billing_events")
+}
+
+model MetricSample {
+  id                String   @id @default(cuid())
+  cpuPercent        Float
+  load1             Float
+  memUsed           BigInt
+  memTotal          BigInt
+  diskUsed          BigInt
+  diskTotal         BigInt
+  containersRunning Int
+  appsRunning       Int
+  buildsQueued      Int
+  buildsRunning     Int
+  dbBytes           BigInt
+  storageBytes      BigInt
+  createdAt         DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("metric_samples")
+}
+
+model AppMetricSample {
+  id          String   @id @default(cuid())
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  memoryBytes BigInt
+  cpuPercent  Float
+  createdAt   DateTime @default(now())
+
+  @@index([appId, createdAt])
+  @@index([createdAt])
+  @@map("app_metric_samples")
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  adminId     String
+  adminEmail  String
+  action      String
+  targetType  String
+  targetId    String?
+  targetLabel String?
+  meta        Json     @default("{}")
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([targetId])
+  @@index([action])
+  @@map("admin_audit_logs")
 }

@@ -12,9 +12,11 @@ import { aiAppRoutes } from "./routes/ai-apps.js";
 import { resetStuckGenerations } from "./lib/ai-agent.js";
 import { appRoutes } from "./routes/apps.js";
 import { adminRoutes } from "./routes/admin.js";
+import { adminAnalyticsRoutes } from "./routes/admin-analytics.js";
 import { tokenRoutes } from "./routes/tokens.js";
 import { billingRoutes, paymentWebhookRoutes } from "./routes/billing.js";
 import { startBillingWorker } from "./lib/billing.js";
+import { startMetricsWorker } from "./lib/metrics.js";
 import { env } from "./lib/env.js";
 import { startBuildQueue } from "./lib/build-queue.js";
 import { startRegistryGc } from "./lib/registry.js";
@@ -41,7 +43,8 @@ const routes = app
   .route("/tokens", tokenRoutes)
   .route("/billing", billingRoutes)
   .route("/webhooks/lemonsqueezy", paymentWebhookRoutes)
-  .route("/admin", adminRoutes);
+  .route("/admin", adminRoutes)
+  .route("/admin", adminAnalyticsRoutes);
 
 export type AppType = typeof routes;
 
@@ -111,4 +114,5 @@ serve({ fetch: server.fetch, port }, (info) => {
   startBuildQueue().catch((error) => console.error("Build queue failed to start", error));
   startRegistryGc();
   startBillingWorker();
+  startMetricsWorker();
 });

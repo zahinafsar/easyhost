@@ -1,28 +1,38 @@
 import { Hono } from "hono";
 import { statfs } from "node:fs/promises";
 import os from "node:os";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, Subscription } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { createToken, setAuthCookie } from "../lib/auth.js";
 import { docker, containerName, stopContainer } from "../lib/docker.js";
-import { minio } from "../lib/minio.js";
+import { bucketSize, minio } from "../lib/minio.js";
 import { databaseSizes, userdbStats } from "../lib/userdb.js";
 import { deleteProject, deleteUserAccount } from "../lib/delete-project.js";
 import { cleanJunk, scanJunk } from "../lib/cleanup.js";
-import { appHost } from "../lib/domains.js";
+import { appHost, appUrl } from "../lib/domains.js";
 import { sendAccountDeletedEmail, sendProjectDeletedEmail } from "../lib/email.js";
 import { LIMITS } from "../lib/limits.js";
 import { FREE, PRO } from "../lib/plans.js";
 import { isSubscriptionActive } from "../lib/billing.js";
 import { emailDomain } from "../lib/email-domains.js";
+import { containerUsage } from "../lib/metrics.js";
+import { AUDIT_ACTIONS, audit } from "../lib/audit.js";
 import { validate } from "../lib/validator.js";
-import { adminAnalyticsQuerySchema, adminUsersQuerySchema } from "../lib/validations.js";
+import { adminAuditQuerySchema, adminProjectsQuerySchema, adminUsersQuerySchema } from "../lib/validations.js";
 import { requireAdmin } from "../middleware/require-admin.js";
 import type { UserEnv } from "../lib/types.js";
 
-const USERS_PER_PAGE = 25;
-const USAGE_PROJECTS = 200;
+const PAGE_SIZE = 25;
+const AUDIT_PAGE_SIZE = 50;
 const IMPERSONATION_TTL = "2h";
+const LIVE_SAMPLE_MS = 15 * 60 * 1000;
+const HISTORY_MS = 7 * 24 * 60 * 60 * 1000;
+
+const pages = (total: number, size: number) => Math.max(1, Math.ceil(total / size));
+
+const activeSubscriptionWhere = (): Prisma.SubscriptionWhereInput => ({
+  OR: [{ status: "ACTIVE" }, { status: "CANCELLED", endsAt: { gt: new Date() } }],
+});
 
 const findManageableUser = async (adminId: string, id: string) => {
   const target = await prisma.user.findUnique({ where: { id } });
@@ -71,33 +81,167 @@ const check = async (name: string, run: () => Promise<string>): Promise<Check> =
 
 const dayAgo = () => new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-type ContainerStats = {
-  memory_stats: { usage?: number };
-  cpu_stats: { cpu_usage: { total_usage: number }; system_cpu_usage?: number; online_cpus?: number };
-  precpu_stats: { cpu_usage: { total_usage: number }; system_cpu_usage?: number };
+const planOf = (subscription: Pick<Subscription, "status" | "endsAt"> | null) => {
+  if (isSubscriptionActive(subscription)) {
+    return PRO;
+  }
+  return FREE;
 };
 
-const containerUsage = async (name: string) => {
-  try {
-    const stats = (await docker.getContainer(name).stats({ stream: false })) as ContainerStats;
-    const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
-    const systemDelta = (stats.cpu_stats.system_cpu_usage ?? 0) - (stats.precpu_stats.system_cpu_usage ?? 0);
-    let cpuPercent = 0;
-    if (systemDelta > 0 && cpuDelta > 0) {
-      cpuPercent = (cpuDelta / systemDelta) * (stats.cpu_stats.online_cpus ?? 1) * 100;
+const usersWhere = (search: string, plan: string, state: string) => {
+  const conditions: Prisma.UserWhereInput[] = [];
+  if (search) {
+    conditions.push({ OR: [{ email: { contains: search, mode: "insensitive" } }, { name: { contains: search, mode: "insensitive" } }] });
+  }
+  if (plan === "pro") {
+    conditions.push({ subscription: { is: activeSubscriptionWhere() } });
+  }
+  if (plan === "free") {
+    conditions.push({ NOT: { subscription: { is: activeSubscriptionWhere() } } });
+  }
+  if (state === "verified") {
+    conditions.push({ verified: true });
+  }
+  if (state === "unverified") {
+    conditions.push({ verified: false });
+  }
+  if (state === "blocked") {
+    conditions.push({ blocked: true });
+  }
+  if (state === "admin") {
+    conditions.push({ role: "ADMIN" });
+  }
+  return { AND: conditions } satisfies Prisma.UserWhereInput;
+};
+
+const usersOrder = (sort: string): Prisma.UserOrderByWithRelationInput => {
+  if (sort === "oldest") {
+    return { createdAt: "asc" };
+  }
+  if (sort === "active") {
+    return { lastActiveAt: { sort: "desc", nulls: "last" } };
+  }
+  if (sort === "projects") {
+    return { apps: { _count: "desc" } };
+  }
+  return { createdAt: "desc" };
+};
+
+const projectsWhere = (search: string, state: string) => {
+  const conditions: Prisma.AppWhereInput[] = [{ parentProjectId: null }];
+  if (search) {
+    conditions.push({
+      OR: [
+        { name: { contains: search, mode: "insensitive" } },
+        { slug: { contains: search, mode: "insensitive" } },
+        { user: { email: { contains: search, mode: "insensitive" } } },
+        { projectApps: { some: { slug: { contains: search, mode: "insensitive" } } } },
+      ],
+    });
+  }
+  const running: Prisma.AppWhereInput = { OR: [{ appEnabled: true, status: "RUNNING" }, { projectApps: { some: { status: "RUNNING" } } }] };
+  if (state === "running") {
+    conditions.push(running);
+  }
+  if (state === "stopped") {
+    conditions.push({ NOT: running });
+  }
+  if (state === "suspended") {
+    conditions.push({ OR: [{ suspended: true }, { projectApps: { some: { suspended: true } } }] });
+  }
+  return { AND: conditions } satisfies Prisma.AppWhereInput;
+};
+
+const projectsOrder = (sort: string): Prisma.AppOrderByWithRelationInput => {
+  if (sort === "oldest") {
+    return { createdAt: "asc" };
+  }
+  if (sort === "updated") {
+    return { updatedAt: "desc" };
+  }
+  if (sort === "name") {
+    return { name: "asc" };
+  }
+  return { createdAt: "desc" };
+};
+
+const latestUsage = async (appIds: string[]) => {
+  const samples = await prisma.appMetricSample.findMany({
+    where: { appId: { in: appIds }, createdAt: { gte: new Date(Date.now() - LIVE_SAMPLE_MS) } },
+    orderBy: { createdAt: "desc" },
+    select: { appId: true, memoryBytes: true, cpuPercent: true },
+  });
+  const latest = new Map<string, { memoryBytes: number; cpuPercent: number }>();
+  for (const sample of samples) {
+    if (!latest.has(sample.appId)) {
+      latest.set(sample.appId, { memoryBytes: Number(sample.memoryBytes), cpuPercent: sample.cpuPercent });
     }
-    return { memoryBytes: stats.memory_stats.usage ?? 0, cpuPercent: Math.round(cpuPercent * 10) / 10 };
+  }
+  return latest;
+};
+
+type ProjectRow = {
+  id: string;
+  appEnabled: boolean;
+  status: string;
+  suspended: boolean;
+  projectApps: { id: string; status: string; suspended: boolean }[];
+};
+
+const projectApps = <T extends ProjectRow>(project: T) => {
+  const apps: { id: string; status: string; suspended: boolean }[] = [...project.projectApps];
+  if (project.appEnabled) {
+    apps.unshift({ id: project.id, status: project.status, suspended: project.suspended });
+  }
+  return apps;
+};
+
+const projectDatabaseBytes = async (database: { dbName: string } | null) => {
+  if (!database) {
+    return null;
+  }
+  try {
+    const sizes = await databaseSizes([database.dbName]);
+    return sizes.get(database.dbName) ?? 0;
   } catch {
     return null;
   }
 };
 
-type AnalyticsRow = {
-  day: string;
-  signups: number;
-  projects: number;
-  deployments: number;
-  failedDeployments: number;
+const projectStorageBytes = async (bucket: { minioName: string } | null) => {
+  if (!bucket) {
+    return null;
+  }
+  try {
+    return await bucketSize(bucket.minioName);
+  } catch {
+    return null;
+  }
+};
+
+const projectHistory = async (appIds: string[]) => {
+  if (!appIds.length) {
+    return [];
+  }
+  const since = new Date(Date.now() - HISTORY_MS);
+  return prisma.$queryRaw<{ t: Date; memoryBytes: number; cpuPercent: number }[]>`
+    SELECT bucket AS t, sum(memory)::float8 AS "memoryBytes", sum(cpu)::float8 AS "cpuPercent"
+    FROM (
+      SELECT date_trunc('hour', "createdAt") AS bucket, "appId", avg("memoryBytes") AS memory, avg("cpuPercent") AS cpu
+      FROM app_metric_samples
+      WHERE "appId" = ANY(${appIds}) AND "createdAt" >= ${since}
+      GROUP BY 1, 2
+    ) per_app
+    GROUP BY bucket
+    ORDER BY bucket
+  `;
+};
+
+const withBytes = <T extends object>(resource: T | null, bytes: number | null) => {
+  if (!resource) {
+    return null;
+  }
+  return { ...resource, bytes };
 };
 
 export const adminRoutes = new Hono<UserEnv>()
@@ -119,6 +263,17 @@ export const adminRoutes = new Hono<UserEnv>()
       check("Docker", async () => {
         const info = await docker.info();
         return `${info.ContainersRunning} of ${info.Containers} containers running`;
+      }),
+      check("Metrics worker", async () => {
+        const latest = await prisma.metricSample.findFirst({ orderBy: { createdAt: "desc" }, select: { createdAt: true } });
+        if (!latest) {
+          throw new Error("No samples recorded yet");
+        }
+        const minutes = Math.round((Date.now() - latest.createdAt.getTime()) / 60000);
+        if (minutes > 15) {
+          throw new Error(`Last sample ${minutes} minutes ago`);
+        }
+        return `Last sample ${minutes} minutes ago`;
       }),
     ]);
 
@@ -152,126 +307,16 @@ export const adminRoutes = new Hono<UserEnv>()
       apps: apps.map((row) => ({ status: row.status, count: row._count._all })),
     });
   })
-  .get("/analytics", validate("query", adminAnalyticsQuerySchema), async (c) => {
-    const { days } = c.req.valid("query");
-
-    const [series, users, verifiedUsers, projects, runningApps, databases, buckets, domains] = await Promise.all([
-      prisma.$queryRaw<AnalyticsRow[]>`
-        SELECT
-          to_char(d.day, 'YYYY-MM-DD') AS day,
-          (SELECT count(*)::int FROM users u WHERE u."createdAt" >= d.day AND u."createdAt" < d.day + interval '1 day') AS signups,
-          (SELECT count(*)::int FROM apps a WHERE a."parentProjectId" IS NULL AND a."createdAt" >= d.day AND a."createdAt" < d.day + interval '1 day') AS projects,
-          (SELECT count(*)::int FROM deployments p WHERE p."createdAt" >= d.day AND p."createdAt" < d.day + interval '1 day') AS deployments,
-          (SELECT count(*)::int FROM deployments p WHERE p.status = 'FAILED' AND p."createdAt" >= d.day AND p."createdAt" < d.day + interval '1 day') AS "failedDeployments"
-        FROM generate_series(
-          date_trunc('day', now() AT TIME ZONE 'utc') - (${days}::int - 1) * interval '1 day',
-          date_trunc('day', now() AT TIME ZONE 'utc'),
-          interval '1 day'
-        ) AS d(day)
-        ORDER BY d.day
-      `,
-      prisma.user.count(),
-      prisma.user.count({ where: { verified: true } }),
-      prisma.app.count({ where: { parentProjectId: null } }),
-      prisma.app.count({ where: { appEnabled: true, status: "RUNNING" } }),
-      prisma.database.count(),
-      prisma.bucket.count(),
-      prisma.appDomain.count({ where: { status: "ACTIVE" } }),
-    ]);
-
-    return c.json({
-      days,
-      series,
-      totals: { users, verifiedUsers, projects, runningApps, databases, buckets, domains },
-    });
-  })
-  .get("/usage", async (c) => {
-    const projects = await prisma.app.findMany({
-        where: { parentProjectId: null },
-        take: USAGE_PROJECTS,
-        orderBy: { updatedAt: "desc" },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          status: true,
-          appEnabled: true,
-          projectApps: { select: { slug: true, status: true, _count: { select: { deployments: true, domains: true } } } },
-          user: { select: { id: true, email: true } },
-          database: { select: { dbName: true } },
-          bucket: { select: { id: true } },
-          _count: { select: { deployments: true, domains: true } },
-        },
-      });
-
-    const dbNames = projects.flatMap((project) => {
-      if (project.database) {
-        return [project.database.dbName];
-      }
-      return [];
-    });
-
-    const [sizes, containers] = await Promise.all([
-      databaseSizes(dbNames).catch(() => new Map<string, number>()),
-      Promise.all(
-        projects.map(async (project) => {
-          const apps = [...(project.appEnabled ? [project] : []), ...project.projectApps];
-          const stats = await Promise.all(apps.filter((app) => app.status === "RUNNING").map((app) => containerUsage(containerName(app.slug))));
-          const running = stats.filter((stat) => stat !== null);
-          if (!running.length) {
-            return null;
-          }
-          return { memoryBytes: running.reduce((sum, stat) => sum + stat.memoryBytes, 0), cpuPercent: running.reduce((sum, stat) => sum + stat.cpuPercent, 0) };
-        }),
-      ),
-    ]);
-
-    const rows = projects.map((project, index) => {
-      let databaseBytes: number | null = null;
-      if (project.database) {
-        databaseBytes = sizes.get(project.database.dbName) ?? 0;
-      }
-      return {
-        id: project.id,
-        name: project.name,
-        slug: project.slug,
-        status: [...(project.appEnabled ? [project] : []), ...project.projectApps].some((app) => app.status === "RUNNING") ? "RUNNING" : "IDLE",
-        owner: project.user,
-        container: containers[index],
-        databaseBytes,
-        hasBucket: !!project.bucket,
-        deployments: project._count.deployments + project.projectApps.reduce((sum, app) => sum + app._count.deployments, 0),
-        domains: project._count.domains + project.projectApps.reduce((sum, app) => sum + app._count.domains, 0),
-      };
-    });
-
-    return c.json({
-      projects: rows,
-      limits: { memoryBytes: 512 * 1024 * 1024 * FREE.apps },
-      totals: {
-        memoryBytes: rows.reduce((sum, row) => sum + (row.container?.memoryBytes ?? 0), 0),
-        databaseBytes: rows.reduce((sum, row) => sum + (row.databaseBytes ?? 0), 0),
-      },
-    });
-  })
   .get("/users", validate("query", adminUsersQuerySchema), async (c) => {
-    const { page, search } = c.req.valid("query");
-    let where: Prisma.UserWhereInput = {};
-    if (search) {
-      where = {
-        OR: [
-          { email: { contains: search, mode: "insensitive" } },
-          { name: { contains: search, mode: "insensitive" } },
-        ],
-      };
-    }
+    const { page, search, plan, state, sort } = c.req.valid("query");
+    const where = usersWhere(search, plan, state);
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * USERS_PER_PAGE,
-        take: USERS_PER_PAGE,
+        orderBy: [usersOrder(sort), { id: "asc" }],
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
         select: {
           id: true,
           name: true,
@@ -280,6 +325,8 @@ export const adminRoutes = new Hono<UserEnv>()
           verified: true,
           blocked: true,
           createdAt: true,
+          lastActiveAt: true,
+          tokenBalance: true,
           apps: { select: { id: true, status: true, parentProjectId: true, appEnabled: true } },
           subscription: { select: { status: true, endsAt: true } },
         },
@@ -289,21 +336,290 @@ export const adminRoutes = new Hono<UserEnv>()
 
     return c.json({
       users: users.map(({ apps, subscription, ...user }) => {
-        let plan = FREE;
-        if (isSubscriptionActive(subscription)) {
-          plan = PRO;
-        }
+        const userPlan = planOf(subscription);
         return {
           ...user,
-          plan: plan.name,
-          projectLimit: plan.projects,
+          plan: userPlan.name,
+          projectLimit: userPlan.projects,
           projects: apps.filter((app) => app.parentProjectId === null).length,
           runningApps: apps.filter((app) => app.appEnabled && app.status === "RUNNING").length,
         };
       }),
       total,
       page,
-      pages: Math.max(1, Math.ceil(total / USERS_PER_PAGE)),
+      pages: pages(total, PAGE_SIZE),
+    });
+  })
+  .get("/users/:id", async (c) => {
+    const id = c.req.param("id");
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        verified: true,
+        blocked: true,
+        createdAt: true,
+        updatedAt: true,
+        lastActiveAt: true,
+        tokenBalance: true,
+        freeAiAppUsed: true,
+        freeAiBuildUsed: true,
+        subscription: { select: { status: true, provider: true, renewsAt: true, endsAt: true, createdAt: true, portalUrl: true } },
+        apps: {
+          where: { parentProjectId: null },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            status: true,
+            suspended: true,
+            appEnabled: true,
+            createdAt: true,
+            projectApps: { select: { id: true, status: true, suspended: true } },
+            database: { select: { id: true } },
+            bucket: { select: { id: true } },
+            _count: { select: { members: true } },
+          },
+        },
+        projectMembers: { select: { createdAt: true, project: { select: { id: true, name: true, slug: true, user: { select: { email: true } } } } } },
+      },
+    });
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+
+    const appIds = (await prisma.app.findMany({ where: { userId: id }, select: { id: true } })).map((app) => app.id);
+
+    const [tokenTotals, recentUsage, billingEvents, deployments, deploymentStats, auditEntries] = await Promise.all([
+      prisma.tokenUsage.aggregate({ where: { userId: id }, _sum: { tokens: true }, _count: { _all: true } }),
+      prisma.tokenUsage.findMany({ where: { userId: id }, orderBy: { createdAt: "desc" }, take: 20, select: { id: true, appName: true, appId: true, tokens: true, free: true, createdAt: true } }),
+      prisma.billingEvent.findMany({ where: { userId: id }, orderBy: { createdAt: "desc" }, take: 20, select: { id: true, type: true, amountCents: true, createdAt: true } }),
+      prisma.deployment.findMany({
+        where: { appId: { in: appIds } },
+        orderBy: { createdAt: "desc" },
+        take: 15,
+        select: { id: true, status: true, step: true, createdAt: true, startedAt: true, finishedAt: true, app: { select: { slug: true } } },
+      }),
+      prisma.deployment.groupBy({ by: ["status"], where: { appId: { in: appIds } }, _count: { _all: true } }),
+      prisma.adminAuditLog.findMany({ where: { targetId: id }, orderBy: { createdAt: "desc" }, take: 20 }),
+    ]);
+
+    const { subscription, apps, projectMembers, ...profile } = user;
+    const userPlan = planOf(subscription);
+
+    return c.json({
+      user: { ...profile, plan: userPlan.name, projectLimit: userPlan.projects },
+      subscription,
+      projects: apps.map((project) => {
+        const list = projectApps(project);
+        return {
+          id: project.id,
+          name: project.name,
+          slug: project.slug,
+          createdAt: project.createdAt,
+          apps: list.length,
+          runningApps: list.filter((app) => app.status === "RUNNING").length,
+          suspended: list.some((app) => app.suspended),
+          hasDatabase: !!project.database,
+          hasBucket: !!project.bucket,
+          members: project._count.members,
+        };
+      }),
+      memberships: projectMembers.map((membership) => ({
+        id: membership.project.id,
+        name: membership.project.name,
+        slug: membership.project.slug,
+        ownerEmail: membership.project.user.email,
+        joinedAt: membership.createdAt,
+      })),
+      tokens: { total: tokenTotals._sum.tokens ?? 0, runs: tokenTotals._count._all, recent: recentUsage },
+      billingEvents: billingEvents.map((event) => ({ id: event.id, type: event.type, amount: event.amountCents / 100, createdAt: event.createdAt })),
+      deployments: deployments.map(({ app, ...deployment }) => ({ ...deployment, slug: app.slug })),
+      deploymentStats: deploymentStats.map((row) => ({ status: row.status, count: row._count._all })),
+      audit: auditEntries,
+    });
+  })
+  .get("/projects", validate("query", adminProjectsQuerySchema), async (c) => {
+    const { page, search, state, sort } = c.req.valid("query");
+    const where = projectsWhere(search, state);
+
+    const [projects, total] = await Promise.all([
+      prisma.app.findMany({
+        where,
+        orderBy: [projectsOrder(sort), { id: "asc" }],
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          status: true,
+          suspended: true,
+          appEnabled: true,
+          createdAt: true,
+          updatedAt: true,
+          projectApps: { select: { id: true, status: true, suspended: true, _count: { select: { deployments: true, domains: true } } } },
+          user: { select: { id: true, email: true } },
+          database: { select: { dbName: true, blocked: true } },
+          bucket: { select: { id: true } },
+          _count: { select: { deployments: true, domains: true, members: true } },
+        },
+      }),
+      prisma.app.count({ where }),
+    ]);
+
+    const appIds = projects.flatMap((project) => projectApps(project).map((app) => app.id));
+    const dbNames = projects.flatMap((project) => {
+      if (project.database) {
+        return [project.database.dbName];
+      }
+      return [];
+    });
+    const [usage, sizes] = await Promise.all([latestUsage(appIds), databaseSizes(dbNames).catch(() => new Map<string, number>())]);
+
+    return c.json({
+      projects: projects.map((project) => {
+        const list = projectApps(project);
+        const samples = list.flatMap((app) => {
+          const sample = usage.get(app.id);
+          if (sample) {
+            return [sample];
+          }
+          return [];
+        });
+        let databaseBytes: number | null = null;
+        if (project.database) {
+          databaseBytes = sizes.get(project.database.dbName) ?? 0;
+        }
+        let memoryBytes: number | null = null;
+        let cpuPercent: number | null = null;
+        if (samples.length) {
+          memoryBytes = samples.reduce((sum, sample) => sum + sample.memoryBytes, 0);
+          cpuPercent = Math.round(samples.reduce((sum, sample) => sum + sample.cpuPercent, 0) * 10) / 10;
+        }
+        return {
+          id: project.id,
+          name: project.name,
+          slug: project.slug,
+          createdAt: project.createdAt,
+          updatedAt: project.updatedAt,
+          owner: project.user,
+          apps: list.length,
+          runningApps: list.filter((app) => app.status === "RUNNING").length,
+          suspended: list.some((app) => app.suspended),
+          databaseBytes,
+          databaseBlocked: project.database?.blocked ?? false,
+          hasBucket: !!project.bucket,
+          members: project._count.members,
+          deployments: project._count.deployments + project.projectApps.reduce((sum, app) => sum + app._count.deployments, 0),
+          domains: project._count.domains + project.projectApps.reduce((sum, app) => sum + app._count.domains, 0),
+          memoryBytes,
+          cpuPercent,
+        };
+      }),
+      total,
+      page,
+      pages: pages(total, PAGE_SIZE),
+    });
+  })
+  .get("/projects/:id", async (c) => {
+    const project = await prisma.app.findUnique({
+      where: { id: c.req.param("id"), parentProjectId: null },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        kind: true,
+        status: true,
+        suspended: true,
+        appEnabled: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { id: true, email: true, name: true } },
+        database: { select: { name: true, dbName: true, blocked: true, createdAt: true } },
+        bucket: { select: { name: true, minioName: true, createdAt: true } },
+        members: { select: { createdAt: true, user: { select: { id: true, email: true, name: true } } } },
+        projectApps: { select: { id: true } },
+      },
+    });
+    if (!project) {
+      return c.json({ error: "Project not found" }, 404);
+    }
+
+    const appIds = project.projectApps.map((app) => app.id);
+    if (project.appEnabled) {
+      appIds.unshift(project.id);
+    }
+
+    const apps = await prisma.app.findMany({
+      where: { id: { in: appIds } },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        name: true,
+        appName: true,
+        slug: true,
+        kind: true,
+        status: true,
+        suspended: true,
+        aiStatus: true,
+        nodeVersion: true,
+        createdAt: true,
+        domains: { select: { id: true, hostname: true, status: true, error: true } },
+        deployments: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          select: { id: true, status: true, step: true, createdAt: true, startedAt: true, finishedAt: true },
+        },
+      },
+    });
+
+    const [live, databaseBytes, storageBytes, history] = await Promise.all([
+      Promise.all(
+        apps.map(async (app) => {
+          if (app.status !== "RUNNING") {
+            return null;
+          }
+          return containerUsage(containerName(app.slug));
+        }),
+      ),
+      projectDatabaseBytes(project.database),
+      projectStorageBytes(project.bucket),
+      projectHistory(appIds),
+    ]);
+
+    return c.json({
+      project: {
+        id: project.id,
+        name: project.name,
+        slug: project.slug,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        owner: project.user,
+        members: project.members.map((member) => ({ ...member.user, joinedAt: member.createdAt })),
+        database: withBytes(project.database, databaseBytes),
+        bucket: withBytes(project.bucket, storageBytes),
+      },
+      apps: apps.map((app, index) => ({
+        id: app.id,
+        name: app.appName ?? app.name,
+        slug: app.slug,
+        url: appUrl(app.slug),
+        kind: app.kind,
+        status: app.status,
+        suspended: app.suspended,
+        aiStatus: app.aiStatus,
+        nodeVersion: app.nodeVersion,
+        createdAt: app.createdAt,
+        domains: app.domains,
+        deployments: app.deployments,
+        usage: live[index],
+      })),
+      history,
     });
   })
   .delete("/projects/:id", async (c) => {
@@ -320,7 +636,6 @@ export const adminRoutes = new Hono<UserEnv>()
     if (!result.ok) {
       return c.json({ error: result.error }, 409);
     }
-    console.log(`Admin ${admin.email} (${admin.id}) deleted project ${project.slug} (${project.id}) owned by ${project.user.email}`);
 
     let emailSent = true;
     try {
@@ -329,6 +644,7 @@ export const adminRoutes = new Hono<UserEnv>()
       console.error("Failed to send project deleted email", error);
       emailSent = false;
     }
+    await audit(admin, "project.delete", { type: "project", id: project.id, label: project.slug }, { ownerEmail: project.user.email, emailSent });
 
     return c.json({ message: "Project deleted", emailSent });
   })
@@ -343,7 +659,7 @@ export const adminRoutes = new Hono<UserEnv>()
     if (!result.ok) {
       return c.json({ error: result.error }, 409);
     }
-    console.log(`Admin ${admin.email} (${admin.id}) deleted user ${found.target.email} (${found.target.id}) and all of their projects`);
+    await audit(admin, "user.delete", { type: "user", id: found.target.id, label: found.target.email }, { emailSent: result.emailSent });
 
     return c.json({ message: "User deleted", emailSent: result.emailSent });
   })
@@ -358,9 +674,10 @@ export const adminRoutes = new Hono<UserEnv>()
     await prisma.blockedDomain.upsert({ where: { domain }, create: { domain }, update: {} });
     const result = await closeAccount(found.target);
     if (!result.ok) {
+      await audit(admin, "user.block_domain", { type: "user", id: found.target.id, label: found.target.email }, { domain, deleted: false });
       return c.json({ error: `${domain} is blocked, but the account could not be deleted: ${result.error}` }, 409);
     }
-    console.log(`Admin ${admin.email} (${admin.id}) blocked the email domain ${domain} and deleted user ${found.target.email} (${found.target.id})`);
+    await audit(admin, "user.block_domain", { type: "user", id: found.target.id, label: found.target.email }, { domain, deleted: true, emailSent: result.emailSent });
 
     return c.json({ message: "Domain blocked and user deleted", emailSent: result.emailSent });
   })
@@ -388,7 +705,7 @@ export const adminRoutes = new Hono<UserEnv>()
         failed += 1;
       }
     }
-    console.log(`Admin ${admin.email} (${admin.id}) blocked user ${found.target.email} (${found.target.id}), ${stopped} apps stopped`);
+    await audit(admin, "user.block", { type: "user", id: found.target.id, label: found.target.email }, { stopped, failed });
 
     return c.json({ message: "User blocked", stopped, failed });
   })
@@ -400,19 +717,9 @@ export const adminRoutes = new Hono<UserEnv>()
     }
 
     await prisma.user.update({ where: { id: found.target.id }, data: { blocked: false } });
-    console.log(`Admin ${admin.email} (${admin.id}) unblocked user ${found.target.email} (${found.target.id})`);
+    await audit(admin, "user.unblock", { type: "user", id: found.target.id, label: found.target.email });
 
     return c.json({ message: "User unblocked" });
-  })
-  .get("/cleanup", async (c) => {
-    const scan = await scanJunk();
-    return c.json({ groups: scan.groups, totalBytes: scan.groups.reduce((total, group) => total + group.bytes, 0) });
-  })
-  .post("/cleanup", async (c) => {
-    const admin = c.get("user");
-    const result = await cleanJunk();
-    console.log(`Admin ${admin.email} (${admin.id}) ran the junk cleaner, about ${result.freedBytes} bytes freed`);
-    return c.json(result);
   })
   .post("/users/:id/impersonate", async (c) => {
     const admin = c.get("user");
@@ -429,7 +736,51 @@ export const adminRoutes = new Hono<UserEnv>()
 
     const token = await createToken({ userId: target.id, email: target.email, impersonatorId: admin.id }, IMPERSONATION_TTL);
     setAuthCookie(c, token);
-    console.log(`Admin ${admin.email} (${admin.id}) started impersonating ${target.email} (${target.id})`);
+    await audit(admin, "user.impersonate", { type: "user", id: target.id, label: target.email });
 
     return c.json({ user: { id: target.id, email: target.email, name: target.name } });
+  })
+  .get("/blocked-domains", async (c) => {
+    const domains = await prisma.blockedDomain.findMany({ orderBy: { createdAt: "desc" } });
+    return c.json({ domains });
+  })
+  .delete("/blocked-domains/:domain", async (c) => {
+    const admin = c.get("user");
+    const domain = c.req.param("domain").toLowerCase();
+    const { count } = await prisma.blockedDomain.deleteMany({ where: { domain } });
+    if (!count) {
+      return c.json({ error: "Domain is not blocked" }, 404);
+    }
+    await audit(admin, "domain.unblock", { type: "domain", id: domain, label: domain });
+    return c.json({ message: "Domain unblocked" });
+  })
+  .get("/audit", validate("query", adminAuditQuerySchema), async (c) => {
+    const { page, search, action } = c.req.valid("query");
+    const conditions: Prisma.AdminAuditLogWhereInput[] = [];
+    if (action) {
+      conditions.push({ action });
+    }
+    if (search) {
+      conditions.push({
+        OR: [{ adminEmail: { contains: search, mode: "insensitive" } }, { targetLabel: { contains: search, mode: "insensitive" } }],
+      });
+    }
+    const where = { AND: conditions } satisfies Prisma.AdminAuditLogWhereInput;
+
+    const [entries, total] = await Promise.all([
+      prisma.adminAuditLog.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * AUDIT_PAGE_SIZE, take: AUDIT_PAGE_SIZE }),
+      prisma.adminAuditLog.count({ where }),
+    ]);
+
+    return c.json({ entries, actions: AUDIT_ACTIONS, total, page, pages: pages(total, AUDIT_PAGE_SIZE) });
+  })
+  .get("/cleanup", async (c) => {
+    const scan = await scanJunk();
+    return c.json({ groups: scan.groups, totalBytes: scan.groups.reduce((total, group) => total + group.bytes, 0) });
+  })
+  .post("/cleanup", async (c) => {
+    const admin = c.get("user");
+    const result = await cleanJunk();
+    await audit(admin, "cleanup.run", { type: "system" }, { freedBytes: result.freedBytes });
+    return c.json(result);
   });

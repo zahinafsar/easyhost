@@ -16,7 +16,19 @@ import { MembersPage } from "@/pages/members";
 import { BuilderPage } from "@/pages/builder";
 import { BuilderAppPage } from "@/pages/builder-app";
 import { InvitePage } from "@/pages/invite";
-import { AdminPage } from "@/pages/admin";
+import { AdminLayout } from "@/components/admin-layout";
+import { AdminOverviewPage } from "@/pages/admin-overview";
+import { AdminGrowthPage } from "@/pages/admin-growth";
+import { AdminRevenuePage } from "@/pages/admin-revenue";
+import { AdminBuildsPage } from "@/pages/admin-builds";
+import { AdminAiPage } from "@/pages/admin-ai";
+import { AdminResourcesPage } from "@/pages/admin-resources";
+import { AdminUsersPage } from "@/pages/admin-users";
+import { AdminUserPage } from "@/pages/admin-user";
+import { AdminProjectsPage } from "@/pages/admin-projects";
+import { AdminProjectPage } from "@/pages/admin-project";
+import { AdminAuditPage } from "@/pages/admin-audit";
+import { AdminCleanupPage } from "@/pages/admin-cleanup";
 import { SubscriptionPage } from "@/pages/subscription";
 
 export const router = createBrowserRouter([
@@ -29,7 +41,25 @@ export const router = createBrowserRouter([
       { path: "/reset-password", element: <ResetPasswordPage /> },
     ],
   },
-  { path: "/admin", element: <AdminPage /> },
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <Navigate to="/admin/overview" replace /> },
+      { path: "overview", element: <AdminOverviewPage /> },
+      { path: "growth", element: <AdminGrowthPage /> },
+      { path: "revenue", element: <AdminRevenuePage /> },
+      { path: "builds", element: <AdminBuildsPage /> },
+      { path: "ai", element: <AdminAiPage /> },
+      { path: "resources", element: <AdminResourcesPage /> },
+      { path: "users", element: <AdminUsersPage /> },
+      { path: "users/:id", element: <AdminUserPage /> },
+      { path: "projects", element: <AdminProjectsPage /> },
+      { path: "projects/:id", element: <AdminProjectPage /> },
+      { path: "audit", element: <AdminAuditPage /> },
+      { path: "cleanup", element: <AdminCleanupPage /> },
+    ],
+  },
   {
     element: <AppShell />,
     children: [
