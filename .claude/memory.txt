@@ -173,3 +173,4 @@
 - Dashboard sidebar (app-shell.tsx): single nav list with no section labels; project switcher sits at the bottom above the user card and its menu opens upward.
 - Nested controls use concentric radii: inner radius = outer radius minus padding (segmented control and tabs: outer rounded-lg 8px with p-1, items rounded-sm 4px).
 - No eyebrow labels (small uppercase kicker text with a green diamond): the Eyebrow component and the eyebrow props on PageHeader, Section and AdminHeader were removed. Do not reintroduce.
+- Marketing CSS lives in marketing/src/styles/global.css, imported by Base.astro so Astro emits a hashed /_astro/*.css. Never serve it from public/ again: Cloudflare caches non-HTML for a day, so an unhashed stylesheet goes stale after a deploy.
