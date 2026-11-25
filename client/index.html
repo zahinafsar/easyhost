@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -9,6 +9,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <meta name="robots" content="noindex" />
     <title>Reverhost</title>
+    <script>
+      (function () {
+        var theme = "dark";
+        try {
+          if (localStorage.getItem("reverhost-theme") === "light") {
+            theme = "light";
+          }
+        } catch (error) {
+          theme = "dark";
+        }
+        var root = document.documentElement;
+        if (theme === "dark") {
+          root.classList.add("dark");
+        } else {
+          root.classList.remove("dark");
+        }
+        root.style.colorScheme = theme;
+      })();
+    </script>
     <script type="text/javascript">
       if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
         (function (c, l, a, r, i, t, y) {

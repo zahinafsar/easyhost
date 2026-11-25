@@ -1,0 +1,35 @@
+---
+interface Props {
+  as?: string;
+  cols?: 1 | 2 | 3 | 4 | 5 | 6;
+  tablet?: 1 | 2 | 3 | 4;
+  mobile?: 1 | 2 | 3;
+  min?: string;
+  gap?: "none" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
+  align?: "start" | "center" | "end" | "stretch";
+  id?: string;
+  class?: string;
+  style?: string;
+  [key: string]: unknown;
+}
+
+const { as: Tag = "div", cols = 3, tablet, mobile = 1, min, gap = "md", align = "stretch", id, class: className, style, ...rest } = Astro.props;
+
+let tabletCols = tablet;
+if (tabletCols === undefined) {
+  tabletCols = Math.min(cols, 2) as 1 | 2;
+}
+const styles = [style, `--cols:${cols}`, `--cols-tablet:${tabletCols}`, `--cols-mobile:${mobile}`];
+if (min) {
+  styles.push(`--min:${min}`);
+}
+---
+
+<Tag
+  id={id}
+  class:list={["grid", min && "grid-auto", `gap-${gap}`, `align-${align}`, className]}
+  style={styles.filter(Boolean).join(";")}
+  {...rest}
+>
+  <slot />
+</Tag>

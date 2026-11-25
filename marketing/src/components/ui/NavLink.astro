@@ -1,0 +1,16 @@
+---
+interface Props {
+  href: string;
+  keep?: boolean;
+  current?: boolean;
+  class?: string;
+}
+
+const { href, keep = false, current = false, class: className } = Astro.props;
+let ariaCurrent: "page" | undefined;
+if (current) {
+  ariaCurrent = "page";
+}
+---
+
+<a href={href} class:list={["nav-link", keep && "keep", className]} aria-current={ariaCurrent}><slot /></a>

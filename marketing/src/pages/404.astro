@@ -1,6 +1,16 @@
 ---
 import Base from "../layouts/Base.astro";
 import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import NavLink from "../components/ui/NavLink.astro";
+import Section from "../components/ui/Section.astro";
+import Frame from "../components/ui/Frame.astro";
+import Stack from "../components/ui/Stack.astro";
+import Heading from "../components/ui/Heading.astro";
+import Accent from "../components/ui/Accent.astro";
+import Text from "../components/ui/Text.astro";
+import Button from "../components/ui/Button.astro";
+import Box from "../components/ui/Box.astro";
 ---
 
 <Base>
@@ -8,20 +18,24 @@ import Nav from "../components/Nav.astro";
     <title>Page not found | Reverhost</title>
     <meta name="robots" content="noindex" />
   </Fragment>
-    <Nav login={false}>
-          <a href="/">Home</a>
-          <a href="/docs" class="keep">Docs</a>
-    </Nav>
-    <main class="section">
-      <div class="container">
-        <p class="eyebrow">404</p>
-        <h1>This page does not exist.</h1>
-        <p class="lead">The link may be old or mistyped. These are the pages people usually want.</p>
-        <div class="hero-actions">
-          <a href="/" class="btn btn-primary btn-lg">Home</a>
-          <a href="/docs" class="btn btn-outline btn-lg">Docs</a>
-          <a href="/free-nextjs-hosting" class="btn btn-outline btn-lg">Free Next.js hosting</a>
-        </div>
-      </div>
-    </main>
+  <Nav login={false}>
+    <NavLink href="/">Home</NavLink>
+    <NavLink href="/docs" keep>Docs</NavLink>
+  </Nav>
+  <Box as="main">
+    <Section size="full" space="none">
+      <Frame minHeight="560px">
+        <Stack gap="lg" align="center">
+          <Heading level={1} size="display" align="center">This page does <Accent>not exist</Accent>.</Heading>
+          <Text size="lg" tone="muted" align="center" maxWidth="34rem">The link may be old or mistyped. These are the pages people usually want.</Text>
+          <Stack direction="row" gap="sm" justify="center" wrap>
+            <Button href="/" size="lg">Home</Button>
+            <Button href="/docs" variant="secondary" size="lg">Docs</Button>
+            <Button href="/free-nextjs-hosting" variant="secondary" size="lg">Free Next.js hosting</Button>
+          </Stack>
+        </Stack>
+      </Frame>
+    </Section>
+  </Box>
+  <Footer />
 </Base>

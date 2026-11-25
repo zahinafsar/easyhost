@@ -1,0 +1,33 @@
+---
+interface Props {
+  image?: string;
+  overlay?: string;
+  minHeight?: string;
+  align?: "center" | "left";
+  padding?: "md" | "lg";
+  tone?: "sky" | "plain" | "muted" | "tint";
+  id?: string;
+  class?: string;
+}
+
+const { image, overlay, minHeight, align = "center", padding = "lg", tone = "sky", id, class: className } = Astro.props;
+let style: string | undefined;
+if (minHeight) {
+  style = `min-height:${minHeight}`;
+}
+const hasMedia = Astro.slots.has("media");
+---
+
+<div id={id} class:list={["frame", `frame-${tone}`, `frame-${align}`, `frame-pad-${padding}`, hasMedia && "frame-has-media", className]} style={style}>
+  {image && <img class="frame-bg" src={image} alt="" loading="eager" decoding="async" fetchpriority="high" />}
+  <div class="frame-veil" aria-hidden="true" />
+  {overlay && <img class="frame-overlay" src={overlay} alt="" loading="lazy" decoding="async" />}
+  <div class="frame-content">
+    <slot />
+  </div>
+  {hasMedia && (
+    <div class="frame-media">
+      <slot name="media" />
+    </div>
+  )}
+</div>

@@ -1,0 +1,45 @@
+---
+interface Props {
+  level?: 1 | 2 | 3 | 4 | 5 | 6;
+  size?: "display" | "xl" | "lg" | "md" | "sm" | "xs";
+  tone?: "default" | "inverse" | "muted";
+  weight?: "medium" | "semibold";
+  align?: "left" | "center" | "right";
+  maxWidth?: string;
+  html?: string;
+  reveal?: 0 | 1 | 2 | 3;
+  id?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { level = 2, size, tone = "default", weight, align, maxWidth, html, reveal, id, class: className, ...rest } = Astro.props;
+
+const defaults = { 1: "display", 2: "xl", 3: "md", 4: "sm", 5: "xs", 6: "xs" } as const;
+let resolved = size;
+if (!resolved) {
+  resolved = defaults[level];
+}
+const Tag = `h${level}`;
+let style: string | undefined;
+if (maxWidth) {
+  style = `max-width:${maxWidth}`;
+}
+let revealClass: string | undefined;
+if (reveal !== undefined) {
+  revealClass = `reveal reveal-${reveal}`;
+}
+const classes = [
+  "heading",
+  `heading-${resolved}`,
+  `tone-text-${tone}`,
+  weight && `weight-${weight}`,
+  align && `text-${align}`,
+  align === "center" && maxWidth && "is-centered",
+  revealClass,
+  className,
+];
+---
+
+{html !== undefined && <Tag id={id} class:list={classes} style={style} set:html={html} {...rest} />}
+{html === undefined && <Tag id={id} class:list={classes} style={style} {...rest}><slot /></Tag>}

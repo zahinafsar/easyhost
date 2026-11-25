@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Ban, Ellipsis, MailX, Trash2, UserRound, UserRoundCheck } from "lucide-react";
+import { Ban, Ellipsis, MailX, Search, Trash2, UserRound, UserRoundCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,18 +17,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+import { Avatar } from "@/components/ui/avatar";
+import { Form } from "@/components/ui/form";
+import { IconButton } from "@/components/ui/icon-button";
+import { InputGroup } from "@/components/ui/input";
+import { Link } from "@/components/ui/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Stack } from "@/components/ui/stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Text } from "@/components/ui/text";
 import { ConfirmButton } from "@/components/confirm-button";
 import { api, unwrap } from "@/lib/api";
 import { adminQuery, type AdminUserFilters } from "@/lib/queries/admin";
 import { clearSelectedProject } from "@/lib/project";
 import { formatDate } from "@/lib/format";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { AdminHeader, EmptyRow, IMPERSONATE_NOTICE, Paginator, formatNumber, formatRelative } from "@/components/admin-layout";
+import { AdminHeader, EmptyRow, IMPERSONATE_NOTICE, Paginator, TableCard, formatNumber, formatRelative } from "@/components/admin-layout";
 
 type UserActionKind = "impersonate" | "delete" | "blockEmail" | "block" | "unblock";
 
@@ -142,12 +147,10 @@ export const UserActions = ({ user, onDeleted, variant = "icon" }: { user: Actio
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {variant === "icon" ? (
-            <Button size="icon-sm" variant="outline" aria-label="User actions" disabled={action.isPending || impersonate.isPending}>
-              <Ellipsis className="size-4" />
-            </Button>
+            <IconButton icon={Ellipsis} label="User actions" variant="secondary" tooltip={false} disabled={action.isPending || impersonate.isPending} />
           ) : (
-            <Button variant="outline" disabled={action.isPending || impersonate.isPending}>
-              <Ellipsis className="size-4" />
+            <Button variant="secondary" loading={action.isPending || impersonate.isPending}>
+              <Ellipsis />
               Actions
             </Button>
           )}
@@ -248,20 +251,20 @@ const UsersTable = () => {
   const { data } = useQuery(adminQuery().users(filters));
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <form
-          className="flex min-w-64 flex-1 gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
+    <Stack gap={4}>
+      <Stack direction="row" align="center" wrap gap={2}>
+        <Form
+          gap="sm"
+          className="min-w-64 flex-1 flex-row"
+          onSubmit={() => {
             update({ search: draft.trim() });
           }}
         >
-          <Input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Search by name or email" />
-          <Button type="submit" variant="outline">
+          <InputGroup icon={Search} className="flex-1" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Search by name or email" />
+          <Button type="submit" variant="secondary">
             Search
           </Button>
-        </form>
+        </Form>
         <Select value={filters.plan} onValueChange={(value) => update({ plan: value as AdminUserFilters["plan"] })}>
           <SelectTrigger className="w-32">
             <SelectValue />
@@ -295,63 +298,73 @@ const UsersTable = () => {
             <SelectItem value="projects">Most projects</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      {!data && <Skeleton className="h-96 w-full" />}
+      </Stack>
+      {!data && <Skeleton className="h-96 w-full rounded-xl" />}
       {data && (
-        <Card>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>State</TableHead>
-                  <TableHead className="text-right">Projects</TableHead>
-                  <TableHead className="text-right">Running</TableHead>
-                  <TableHead className="text-right">Tokens</TableHead>
-                  <TableHead>Last active</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead />
+        <TableCard footer={<Paginator page={data.page} pages={data.pages} total={data.total} label="users" onPage={(page) => update({ page })} />}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>State</TableHead>
+                <TableHead className="text-right">Projects</TableHead>
+                <TableHead className="text-right">Running</TableHead>
+                <TableHead className="text-right">Tokens</TableHead>
+                <TableHead>Last active</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.users.length === 0 && <EmptyRow colSpan={8}>No users match these filters</EmptyRow>}
+              {data.users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <Stack direction="row" align="center" gap={3}>
+                      <Avatar name={user.name} size="sm" />
+                      <Stack gap={0}>
+                        <Link to={`/admin/users/${user.id}`}>{user.name}</Link>
+                        <Text size="xs" tone="muted">
+                          {user.email}
+                        </Text>
+                      </Stack>
+                    </Stack>
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction="row" wrap gap={1}>
+                      {user.role === "ADMIN" && <Badge>Admin</Badge>}
+                      {user.blocked && <Badge variant="destructive">Blocked</Badge>}
+                      {user.plan === "Pro" && <Badge variant="success">Pro</Badge>}
+                      <Badge variant="outline">{user.verified ? "Verified" : "Unverified"}</Badge>
+                    </Stack>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {user.projects} / {user.projectLimit}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{user.runningApps}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatNumber(user.tokenBalance)}</TableCell>
+                  <TableCell>
+                    <Text as="span" size="sm" tone="muted">
+                      {formatRelative(user.lastActiveAt)}
+                    </Text>
+                  </TableCell>
+                  <TableCell>
+                    <Text as="span" size="sm" tone="muted">
+                      {formatDate(user.createdAt)}
+                    </Text>
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction="row" justify="end">
+                      <UserActions user={user} />
+                    </Stack>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.users.length === 0 && <EmptyRow colSpan={8}>No users match these filters</EmptyRow>}
-                {data.users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <Link to={`/admin/users/${user.id}`} className="font-medium hover:underline">
-                        {user.name}
-                      </Link>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.role === "ADMIN" && <Badge>Admin</Badge>}
-                        {user.blocked && <Badge variant="destructive">Blocked</Badge>}
-                        {user.plan === "Pro" && <Badge variant="secondary">Pro</Badge>}
-                        <Badge variant="outline">{user.verified ? "Verified" : "Unverified"}</Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {user.projects} / {user.projectLimit}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{user.runningApps}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatNumber(user.tokenBalance)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{formatRelative(user.lastActiveAt)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</TableCell>
-                    <TableCell>
-                      <div className="flex justify-end">
-                        <UserActions user={user} />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <Paginator page={data.page} pages={data.pages} total={data.total} label="users" onPage={(page) => update({ page })} />
-          </CardContent>
-        </Card>
+              ))}
+            </TableBody>
+          </Table>
+        </TableCard>
       )}
-    </div>
+    </Stack>
   );
 };
 
@@ -363,55 +376,58 @@ const BlockedDomains = () => {
     success: "Domain unblocked",
   });
   if (!data) {
-    return <Skeleton className="h-64 w-full" />;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
   return (
-    <Card>
-      <CardHeader>
-        <CardDescription>Nobody can register with an address on these domains.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Domain</TableHead>
-              <TableHead>Blocked</TableHead>
-              <TableHead />
+    <TableCard title="Blocked domains" description="Nobody can register with an address on these domains.">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Domain</TableHead>
+            <TableHead>Blocked</TableHead>
+            <TableHead />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.domains.length === 0 && <EmptyRow colSpan={3}>No blocked domains</EmptyRow>}
+          {data.domains.map((row) => (
+            <TableRow key={row.domain}>
+              <TableCell>
+                <Text as="span" size="sm" mono>
+                  {row.domain}
+                </Text>
+              </TableCell>
+              <TableCell>
+                <Text as="span" size="sm" tone="muted">
+                  {formatDate(row.createdAt)}
+                </Text>
+              </TableCell>
+              <TableCell className="text-right">
+                <ConfirmButton
+                  title={`Unblock ${row.domain}?`}
+                  description={`People can register with @${row.domain} addresses again.`}
+                  confirmLabel="Unblock"
+                  onConfirm={() => unblock.mutate(row.domain)}
+                >
+                  <Button size="sm" variant="secondary" disabled={unblock.isPending}>
+                    Unblock
+                  </Button>
+                </ConfirmButton>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.domains.length === 0 && <EmptyRow colSpan={3}>No blocked domains</EmptyRow>}
-            {data.domains.map((row) => (
-              <TableRow key={row.domain}>
-                <TableCell className="font-mono text-sm">{row.domain}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</TableCell>
-                <TableCell className="text-right">
-                  <ConfirmButton
-                    title={`Unblock ${row.domain}?`}
-                    description={`People can register with @${row.domain} addresses again.`}
-                    confirmLabel="Unblock"
-                    onConfirm={() => unblock.mutate(row.domain)}
-                  >
-                    <Button size="sm" variant="outline" disabled={unblock.isPending}>
-                      Unblock
-                    </Button>
-                  </ConfirmButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+          ))}
+        </TableBody>
+      </Table>
+    </TableCard>
   );
 };
 
 export const AdminUsersPage = () => {
   return (
-    <div className="space-y-6">
+    <Stack gap={6}>
       <AdminHeader title="Users" description="Search, filter and manage accounts." />
       <Tabs defaultValue="users" className="gap-4">
-        <TabsList>
+        <TabsList className="self-start">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="domains">Blocked domains</TabsTrigger>
         </TabsList>
@@ -422,6 +438,6 @@ export const AdminUsersPage = () => {
           <BlockedDomains />
         </TabsContent>
       </Tabs>
-    </div>
+    </Stack>
   );
 };

@@ -1,0 +1,58 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  priority?: boolean;
+  radius?: "none" | "sm" | "md" | "lg" | "xl";
+  fit?: "cover" | "contain";
+  aspect?: string;
+  fill?: boolean;
+  position?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  src,
+  alt,
+  width,
+  height,
+  priority = false,
+  radius = "none",
+  fit = "cover",
+  aspect,
+  fill = false,
+  position,
+  class: className,
+  ...rest
+} = Astro.props;
+
+let loading: "lazy" | "eager" = "lazy";
+let fetchpriority: "high" | undefined;
+if (priority) {
+  loading = "eager";
+  fetchpriority = "high";
+}
+const styles: string[] = [];
+if (aspect) {
+  styles.push(`aspect-ratio:${aspect}`);
+}
+if (position) {
+  styles.push(`object-position:${position}`);
+}
+---
+
+<img
+  src={src}
+  alt={alt}
+  width={width}
+  height={height}
+  loading={loading}
+  decoding="async"
+  fetchpriority={fetchpriority}
+  class:list={["image", `image-${fit}`, radius !== "none" && `radius-${radius}`, fill && "image-fill", className]}
+  style={styles.join(";") || undefined}
+  {...rest}
+/>

@@ -1,0 +1,28 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  head?: boolean;
+  status?: "yes" | "no" | "partial";
+  align?: "left" | "center" | "right";
+  mono?: boolean;
+  html?: string;
+  class?: string;
+}
+
+const { head = false, status, align, mono = false, html, class: className } = Astro.props;
+let Tag = "td";
+let scope: string | undefined;
+if (head) {
+  Tag = "th";
+  scope = "row";
+}
+const icons = { yes: "check", no: "x", partial: "minus" };
+const classes = ["table-cell", align && `text-${align}`, mono && "is-mono", status && `cell-${status}`, className];
+---
+
+<Tag scope={scope} class:list={classes}>
+  {status && <span class="cell-status"><Icon name={icons[status]} size={13} stroke={2.25} /></span>}
+  {html !== undefined && <span class="cell-content" set:html={html} />}
+  {html === undefined && <span class="cell-content"><slot /></span>}
+</Tag>

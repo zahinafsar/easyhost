@@ -1,0 +1,12 @@
+---
+interface Props {
+  html?: string;
+  size?: "md" | "lg";
+  class?: string;
+}
+
+const { html, size = "md", class: className } = Astro.props;
+---
+
+{html !== undefined && <div class:list={["prose", `prose-${size}`, className]} set:html={html} />}
+{html === undefined && <div class:list={["prose", `prose-${size}`, className]}><slot /></div>}

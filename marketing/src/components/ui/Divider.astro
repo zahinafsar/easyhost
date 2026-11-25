@@ -1,0 +1,11 @@
+---
+interface Props {
+  tone?: "default" | "inverse";
+  space?: "none" | "sm" | "md" | "lg";
+  class?: string;
+}
+
+const { tone = "default", space = "md", class: className } = Astro.props;
+---
+
+<hr class:list={["divider", `divider-${tone}`, `divider-space-${space}`, className]} />

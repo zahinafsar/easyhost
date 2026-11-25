@@ -1,0 +1,29 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  items: { name: string; path: string }[];
+  class?: string;
+}
+
+const { items, class: className } = Astro.props;
+const last = items.length - 1;
+---
+
+<nav class:list={["crumbs-nav", className]} aria-label="Breadcrumb">
+  <ol class="crumbs">
+    {
+      items.map((item, position) => {
+        if (position === last) {
+          return <li aria-current="page">{item.name}</li>;
+        }
+        return (
+          <li>
+            <a href={item.path}>{item.name}</a>
+            <Icon name="chevron-right" size={12} class="crumbs-sep" />
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>

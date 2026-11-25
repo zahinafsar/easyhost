@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Lock, Trash2 } from "lucide-react";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Form, FormActions, IconBadge, Input, Skeleton, Stack, Text } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { PageHeader } from "@/components/page-header";
 import { api, unwrap } from "@/lib/api";
@@ -47,7 +43,7 @@ export const SettingsPage = () => {
   });
 
   if (isLoading || !project) {
-    return <Skeleton className="h-64 w-full" />;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
 
   const unchanged = name.trim() === project.name;
@@ -57,7 +53,8 @@ export const SettingsPage = () => {
       <>
         <PageHeader title="Project settings" description={`Manage ${project.name} and its resources.`} />
         <Card className="max-w-3xl">
-          <CardHeader>
+          <CardHeader className="grid-cols-[auto_1fr] gap-x-4">
+            <IconBadge icon={Lock} className="row-span-2" />
             <CardTitle>Owner only</CardTitle>
             <CardDescription>Only the project owner can rename or delete this project. You can leave it from the Members page.</CardDescription>
           </CardHeader>
@@ -66,62 +63,68 @@ export const SettingsPage = () => {
     );
   }
 
+  let saveLabel = "Save changes";
+  if (rename.isPending) {
+    saveLabel = "Saving...";
+  }
+
+  let deleteLabel = "Delete project";
+  if (remove.isPending) {
+    deleteLabel = "Deleting...";
+  }
+
   return (
     <>
       <PageHeader title="Project settings" description={`Manage ${project.name} and its resources.`} />
-      <div className="max-w-3xl space-y-8">
+      <Stack gap={8} className="max-w-3xl">
         <Card>
           <CardHeader className="border-b">
             <CardTitle>General</CardTitle>
-            <CardDescription>Update how this project appears in the dashboard.</CardDescription>
+            <CardDescription>Update how this project appears in the dashboard. App URLs stay the same when you rename this project.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form
-              className="space-y-5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                rename.mutate(undefined);
-              }}
-            >
-              <div className="space-y-2">
-                <Label htmlFor="project-name">Project name</Label>
+            <Form onSubmit={() => rename.mutate(undefined)}>
+              <Field label="Project name" htmlFor="project-name">
                 <Input id="project-name" value={name} onChange={(event) => setName(event.target.value)} required />
-                <p className="text-xs text-muted-foreground">App URLs stay the same when you rename this project.</p>
-              </div>
-              <Button type="submit" disabled={rename.isPending || !name.trim() || unchanged}>
-                {rename.isPending ? "Saving..." : "Save changes"}
-              </Button>
-            </form>
+              </Field>
+              <FormActions align="start">
+                <Button type="submit" loading={rename.isPending} disabled={!name.trim() || unchanged}>
+                  {saveLabel}
+                </Button>
+              </FormActions>
+            </Form>
           </CardContent>
         </Card>
 
-        <Card className="border-destructive/50 shadow-none">
-          <CardHeader className="border-b border-destructive/30">
+        <Card className="border-destructive/40 shadow-none">
+          <CardHeader className="border-b border-destructive/25">
             <CardTitle>Danger zone</CardTitle>
             <CardDescription>Actions here permanently affect this entire project.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <p className="font-medium">Delete this project</p>
-              <p className="max-w-xl text-sm text-muted-foreground">
-                Permanently delete all apps, deployments, domains, storage and files, and database.
-              </p>
-            </div>
-            <ConfirmButton
-              title={`Delete ${project.name}?`}
-              description="Every service and all data in this project will be permanently deleted. This cannot be undone."
-              confirmLabel="Delete project"
-              confirmVariant="destructive"
-              onConfirm={() => remove.mutate(undefined)}
-            >
-              <Button variant="destructive" disabled={remove.isPending}>
-                <Trash2 className="size-4" />
-                {remove.isPending ? "Deleting..." : "Delete project"}
-              </Button>
-            </ConfirmButton>
+          <CardContent>
+            <Stack direction="responsive" gap={4} justify="between" className="md:items-center">
+              <Stack gap={1}>
+                <Text weight="medium">Delete this project</Text>
+                <Text size="sm" tone="muted" className="max-w-xl">
+                  Permanently delete all apps, deployments, domains, storage and files, and database.
+                </Text>
+              </Stack>
+              <ConfirmButton
+                title={`Delete ${project.name}?`}
+                description="Every service and all data in this project will be permanently deleted. This cannot be undone."
+                confirmLabel="Delete project"
+                confirmVariant="destructive"
+                onConfirm={() => remove.mutate(undefined)}
+              >
+                <Button variant="destructive" disabled={remove.isPending} className="shrink-0">
+                  <Trash2 />
+                  {deleteLabel}
+                </Button>
+              </ConfirmButton>
+            </Stack>
           </CardContent>
         </Card>
-      </div>
+      </Stack>
     </>
   );
 };

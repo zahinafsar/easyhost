@@ -156,3 +156,20 @@
 - Marketing copy, SKILL.md, CLI PRODUCTION_API_URL (api.reverhost.com), start.mjs and env templates updated; app URL examples kept on easyhost.fun
 - Brand renamed to "Reverhost" (2026-11-25) in all user-facing text (marketing, dashboard, emails, CLI messages, SKILL.md, AI template/agent prompt, EMAIL_FROM). Internal names stay easyhost: containers (easyhost-api, eh-app-*), docker network, DB/MinIO names, `ezhst` CLI, ~/.easyhost and .easyhost.json, skill folder name, theme id, registry realm
 - Admin panel v2 (2026-11-25): sidebar + nested routes under /admin (overview, growth, revenue, builds, ai, resources, users, users/:id, projects, projects/:id, audit, cleanup). New tables MetricSample, AppMetricSample, BillingEvent, AdminAuditLog; new columns User.lastActiveAt, Deployment.startedAt (migrations admin_panel, user_last_active). History charts start empty (no backfill). Revenue uses fixed PRO.price per CREATED/RENEWED event. Traffic analytics deliberately skipped. Open ideas: grant tokens, stop/restart app, CSV export
+
+## Dashboard redesign (2026-11-25)
+- Client rewritten on a component library in client/src/components/ui (barrel index.ts): layout (Box, Stack, Grid, Frame, Section), typography (Text, Heading, Eyebrow, Accent), forms (Form, Field, Input...), data display (Stat, UsageMeter, Table framed, EmptyState, Alert, SelectableList, CellValue...). Pages and feature components must use only library components, no raw HTML tags; raw elements live only in components/ui
+- Visual language follows a calm SaaS reference: rounded frames (28px), pill buttons, Geist, green accent (accent-green), tokens only (surface, surface-2, success-soft, etc. in index.css), no hardcoded colors
+- Theme: dark default, light optional. ThemeProvider/useTheme in providers/theme-provider.tsx, localStorage key reverhost-theme, inline script in client/index.html applies it before paint
+- Shell: AppShell and AdminLayout both use floating rounded sidebar + pill top bar + Sheet on mobile; AdminHeader wraps PageHeader. AuthLayout exports AuthScreen (used by VerifyEmailScreen)
+- No helper text under inputs: hints moved into card/dialog descriptions
+
+## Marketing redesign (2026-11-25)
+- Marketing rewritten on an Astro component library in marketing/src/components/ui (PascalCase .astro: Section, Frame, Heading, Accent, Eyebrow, Button, Card, FeatureCard, FaqGrid, Accordion, MockWindow, Table, CodeBlock, Prose, StartCta, NavLink, Icon with lucide paths in icons.mjs, ...). Pages use only library components; generated markdown pages render inside Prose (the one place raw tags are allowed). public/styles.css rewritten from scratch, light only
+- Look: floating rounded nav, framed sky/grass hero, green accent word in headlines, bento feature cards, numbered "who it is for" list, two column FAQ accordions, dark rounded footer with giant Reverhost wordmark and the footer tagline
+- Photos from Pexels in marketing/public/images (credits.json), credited in the footer bottom row. No fake testimonials, ratings or customer logos
+
+- Dashboard style: flat. No shadows (shadow tokens removed from client/src/index.css), no backdrop blur or translucent/frosted surfaces, no page glow, no hover lift. Small radii: scale xs 2, sm 4, md 6, lg/xl 8, 2xl 10, 3xl/4xl 12. Buttons, tabs, nav links, badges, header bars use rounded-md (nested items rounded-sm); rounded-full only for true circles (avatars, dots, switch, radio, progress).
+- Dashboard sidebar (app-shell.tsx): single nav list with no section labels; project switcher sits at the bottom above the user card and its menu opens upward.
+- Nested controls use concentric radii: inner radius = outer radius minus padding (segmented control and tabs: outer rounded-lg 8px with p-1, items rounded-sm 4px).
+- No eyebrow labels (small uppercase kicker text with a green diamond): the Eyebrow component and the eyebrow props on PageHeader, Section and AdminHeader were removed. Do not reintroduce.

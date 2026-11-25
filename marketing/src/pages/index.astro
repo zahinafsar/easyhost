@@ -2,6 +2,159 @@
 import Base from "../layouts/Base.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
+import NavLink from "../components/ui/NavLink.astro";
+import Box from "../components/ui/Box.astro";
+import Section from "../components/ui/Section.astro";
+import Stack from "../components/ui/Stack.astro";
+import Grid from "../components/ui/Grid.astro";
+import Frame from "../components/ui/Frame.astro";
+import Heading from "../components/ui/Heading.astro";
+import Accent from "../components/ui/Accent.astro";
+import Text from "../components/ui/Text.astro";
+import SectionHead from "../components/ui/SectionHead.astro";
+import Link from "../components/ui/Link.astro";
+import InlineCode from "../components/ui/InlineCode.astro";
+import Button from "../components/ui/Button.astro";
+import Badge from "../components/ui/Badge.astro";
+import Card from "../components/ui/Card.astro";
+import FeatureCard from "../components/ui/FeatureCard.astro";
+import MockWindow from "../components/ui/MockWindow.astro";
+import AgentSession from "../components/ui/AgentSession.astro";
+import Terminal from "../components/ui/Terminal.astro";
+import CopyLine from "../components/ui/CopyLine.astro";
+import Flow from "../components/ui/Flow.astro";
+import LogoStrip from "../components/ui/LogoStrip.astro";
+import LogoTile from "../components/ui/LogoTile.astro";
+import Image from "../components/ui/Image.astro";
+import NumberedList from "../components/ui/NumberedList.astro";
+import NumberedItem from "../components/ui/NumberedItem.astro";
+import PlanCard from "../components/ui/PlanCard.astro";
+import FaqGrid from "../components/ui/FaqGrid.astro";
+import AccordionItem from "../components/ui/AccordionItem.astro";
+import IconTile from "../components/ui/IconTile.astro";
+
+const register = "https://app.reverhost.com/register";
+
+const faqs = [
+  {
+    q: "Is Reverhost really free?",
+    a: 'Yes, for hosting. Reverhost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed <a href="#limits">limits</a>: 3 projects, and per project 2 apps, a 128 MB Postgres database and a 256 MB storage bucket. The AI Builder gives each account its first AI app and first build free. Pro ($10 a month) adds 10 projects and 1,000 AI tokens a month (see <a href="/pricing">pricing</a>).',
+  },
+  {
+    q: "What can I host on Reverhost?",
+    a: "Any framework that builds and runs as a Node.js service, including Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. SvelteKit and Astro need their Node adapters. HTTP apps must listen on <code>0.0.0.0</code> and the assigned <code>PORT</code>.",
+  },
+  {
+    q: "Do free apps go to sleep?",
+    a: "No. Each app runs in its own always-on container with 512 MB of RAM and 1 CPU. It is not stopped when idle, so there is no cold start on the first request.",
+  },
+  {
+    q: "Which AI coding agents can deploy to Reverhost?",
+    a: 'Any agent that can run shell commands. Run <code>npx ezhst skill install</code>, pick Claude Code, Codex or Cursor, then Global or Local. For any other agent, ask it to read the installed <code>SKILL.md</code> or <a href="/skill.md">https://reverhost.com/skill.md</a> before deploying. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> has the steps for each.',
+  },
+  {
+    q: "Do I need to connect GitHub or change my project?",
+    a: "No. <code>ezhst deploy</code> packages the project folder and uploads it. There is no Git integration, no config file to write and no adapter to install.",
+  },
+  {
+    q: "Can I use my own domain?",
+    a: 'Yes. Every project gets <code>https://&lt;name&gt;.easyhost.fun</code>, and you can add <a href="/docs#domains">custom domains</a> with <code>ezhst domains add</code>. HTTPS certificates are issued automatically once DNS is verified.',
+  },
+  {
+    q: "How is Reverhost different from Vercel?",
+    a: 'Vercel runs Next.js on serverless functions behind a global CDN. Reverhost runs each app as one always-on container in a single region and includes Postgres and S3 storage in the same free account, all scriptable by a coding agent through one CLI. Reverhost has no preview deployments, Git integration or edge network. Read the full <a href="/vercel-alternative">comparison</a>.',
+  },
+  {
+    q: "Can I build an app without writing code?",
+    a: 'Yes. Open the <a href="/products/ai-builder">AI Builder</a> in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres and storage at its own address. Your first AI app and its first build are free; after that, AI requests use AI tokens, which come with Pro.',
+  },
+  {
+    q: "Is the database a real Postgres?",
+    a: 'Yes. Each project can have one Postgres 16 database with its own role, reachable over TLS with a standard connection string, plus a shadow database for <code>prisma migrate dev</code>. More on the <a href="/free-postgres-hosting">free Postgres hosting</a> page.',
+  },
+];
+
+const plainText = (html: string) => {
+  return html.replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+};
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://reverhost.com/#organization",
+      name: "Reverhost",
+      url: "https://reverhost.com/",
+      logo: "https://reverhost.com/icon-512.png",
+      email: "hello@reverhost.com",
+      sameAs: ["https://www.npmjs.com/package/ezhst"],
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://reverhost.com/#website",
+      name: "Reverhost",
+      url: "https://reverhost.com/",
+      publisher: { "@id": "https://reverhost.com/#organization" },
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://reverhost.com/#software",
+      name: "Reverhost",
+      url: "https://reverhost.com/",
+      description: "Free hosting for Node.js apps with managed Postgres, S3 compatible storage and custom domains, operated through the ezhst CLI by AI coding agents.",
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Web, macOS, Linux, Windows",
+      offers: { "@type": "Offer", price: 0, priceCurrency: "USD" },
+      publisher: { "@id": "https://reverhost.com/#organization" },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faqs.map((item) => {
+        return {
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: plainText(item.a) },
+        };
+      }),
+    },
+  ],
+});
+
+const sessionSteps = [
+  { kind: "prompt" as const, text: "deploy this to Reverhost" },
+  { kind: "say" as const, text: "I'll deploy it with the Reverhost CLI. Checking the login first." },
+  { kind: "tool" as const, text: "ezhst whoami --json", output: ["Logged in as ada@example.com"] },
+  { kind: "tool" as const, text: "ezhst projects create my-app --json", output: ["Created project my-app"] },
+  { kind: "tool" as const, text: "ezhst db create main --json", output: ["Postgres database main is ready"] },
+  { kind: "tool" as const, text: "ezhst env set DATABASE_URL=postgres://...", output: ["Saved DATABASE_URL"] },
+  { kind: "tool" as const, text: "ezhst deploy --json", output: ["Uploaded, built, started"], running: "Deploying" },
+  { kind: "done" as const, text: "Deployed. Your app is live at <strong>https://my-app.easyhost.fun</strong>" },
+];
+
+const agents = [
+  { name: "Claude Code" },
+  { name: "Codex" },
+  { name: "Cursor" },
+  { name: "Postgres 16" },
+  { name: "S3 compatible storage" },
+  { name: "Automatic HTTPS" },
+];
+
+const frameworks = [
+  { name: "Next.js", src: "/frameworks/nextjs.svg", href: "https://nextjs.org/", meta: "Auto-detected" },
+  { name: "Nuxt", src: "/frameworks/nuxt.svg", href: "https://nuxt.com/", meta: "Auto-detected" },
+  { name: "Express", src: "/frameworks/express.svg", href: "https://expressjs.com/", meta: "Start script" },
+  { name: "NestJS", src: "/frameworks/nestjs.svg", href: "https://nestjs.com/", meta: "Start script" },
+  { name: "Fastify", src: "/frameworks/fastify.svg", href: "https://fastify.dev/", meta: "Start script" },
+  { name: "Hono", src: "/frameworks/hono.svg", href: "https://hono.dev/", meta: "Node server" },
+  { name: "Koa", src: "/frameworks/koa.svg", href: "https://koajs.com/", meta: "Start script" },
+  { name: "AdonisJS", src: "/frameworks/adonisjs.svg", href: "https://adonisjs.com/", meta: "Start script" },
+  { name: "Remix", src: "/frameworks/remix.svg", href: "https://remix.run/", meta: "Start script" },
+  { name: "SvelteKit", src: "/frameworks/sveltekit.svg", href: "https://svelte.dev/docs/kit", meta: "Node adapter" },
+  { name: "Astro", src: "/frameworks/astro.svg", href: "https://astro.build/", meta: "Node adapter" },
+  { name: "Strapi", src: "/frameworks/strapi.svg", href: "https://strapi.io/", meta: "Start script" },
+];
 ---
 
 <Base>
@@ -24,469 +177,276 @@ import Footer from "../components/Footer.astro";
     <meta name="twitter:title" content="Reverhost: Free Node.js Hosting Your AI Agent Can Deploy To" />
     <meta name="twitter:description" content="Deploy Next.js, Nuxt, Express, NestJS and other Node.js frameworks with Postgres and S3 storage included." />
     <meta name="twitter:image" content="https://reverhost.com/og.png" />
-    <script is:inline type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Organization",
-            "@id": "https://reverhost.com/#organization",
-            "name": "Reverhost",
-            "url": "https://reverhost.com/",
-            "logo": "https://reverhost.com/icon-512.png",
-            "email": "hello@reverhost.com",
-            "sameAs": ["https://www.npmjs.com/package/ezhst"]
-          },
-          {
-            "@type": "WebSite",
-            "@id": "https://reverhost.com/#website",
-            "name": "Reverhost",
-            "url": "https://reverhost.com/",
-            "publisher": { "@id": "https://reverhost.com/#organization" }
-          },
-          {
-            "@type": "SoftwareApplication",
-            "@id": "https://reverhost.com/#software",
-            "name": "Reverhost",
-            "url": "https://reverhost.com/",
-            "description": "Free hosting for Node.js apps with managed Postgres, S3 compatible storage and custom domains, operated through the ezhst CLI by AI coding agents.",
-            "applicationCategory": "DeveloperApplication",
-            "operatingSystem": "Web, macOS, Linux, Windows",
-            "offers": { "@type": "Offer", "price": 0, "priceCurrency": "USD" },
-            "publisher": { "@id": "https://reverhost.com/#organization" }
-          },
-          {
-            "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "Is Reverhost really free?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes, for hosting. Reverhost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed limits: 3 projects, and per project 2 apps, a 128 MB Postgres database and a 256 MB storage bucket. The AI Builder gives each account its first AI app and first build free. Pro ($10 a month) adds 10 projects and 1,000 AI tokens a month (see pricing)." }
-              },
-              {
-                "@type": "Question",
-                "name": "What can I host on Reverhost?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Any framework that builds and runs as a Node.js service, including Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. SvelteKit and Astro need their Node adapters. HTTP apps must listen on 0.0.0.0 and the assigned PORT." }
-              },
-              {
-                "@type": "Question",
-                "name": "Do free apps go to sleep?",
-                "acceptedAnswer": { "@type": "Answer", "text": "No. Each app runs in its own always-on container with 512 MB of RAM and 1 CPU. It is not stopped when idle, so there is no cold start on the first request." }
-              },
-              {
-                "@type": "Question",
-                "name": "Can I build an app without writing code?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the AI Builder in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres and storage at its own address. Your first AI app and its first build are free; after that, AI requests use AI tokens, which come with Pro." }
-              },
-              {
-                "@type": "Question",
-                "name": "Which AI coding agents can deploy to Reverhost?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Any agent that can run shell commands. Run npx ezhst skill install, pick Claude Code, Codex or Cursor, then Global or Local. For any other agent, ask it to read the installed SKILL.md or https://reverhost.com/skill.md before deploying." }
-              },
-              {
-                "@type": "Question",
-                "name": "Do I need to connect GitHub or change my project?",
-                "acceptedAnswer": { "@type": "Answer", "text": "No. ezhst deploy packages the project folder and uploads it. There is no Git integration, no config file to write and no adapter to install." }
-              },
-              {
-                "@type": "Question",
-                "name": "Can I use my own domain?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every project gets https://<name>.easyhost.fun, and you can add custom domains with ezhst domains add. HTTPS certificates are issued automatically once DNS is verified." }
-              },
-              {
-                "@type": "Question",
-                "name": "How is Reverhost different from Vercel?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Vercel runs Next.js on serverless functions behind a global CDN. Reverhost runs each app as one always-on container in a single region and includes Postgres and S3 storage in the same free account, all scriptable by a coding agent through one CLI. Reverhost has no preview deployments, Git integration or edge network." }
-              }
-            ]
-          }
-        ]
-      }
-    </script>
+    <script is:inline type="application/ld+json" set:html={jsonLd} />
   </Fragment>
-    <Nav>
-          <a href="#agents">For agents</a>
-          <a href="#frameworks">Frameworks</a>
-          <a href="#limits">Limits</a>
-          <a href="#faq">FAQ</a>
-          <a href="/docs" class="keep">Docs</a>
-    </Nav>
 
-    <main>
-      <section class="hero">
-        <div class="container hero-inner">
-          <div>
-            <p class="eyebrow reveal">Agent-first hosting. Free.</p>
-            <h1 class="reveal reveal-1">Free Node.js hosting your AI agent can <mark>deploy&nbsp;to</mark>.</h1>
-            <p class="lead reveal reveal-2">
-              Tell your agent to ship it. It will. Reverhost is the first agent-first free hosting platform: Claude Code, Cursor, Codex and friends can create the account, deploy your Node.js app and wire up Postgres, S3 storage and domains through one CLI.
-            </p>
-            <div class="hero-actions reveal reveal-3">
-              <a href="#agents" class="btn btn-primary btn-lg">Install the skill</a>
-              <a href="/docs" class="btn btn-outline btn-lg">Read the docs</a>
-            </div>
-            <p class="hero-note reveal reveal-3">Prefer clicking? <a href="https://app.reverhost.com/register">Sign up for the dashboard</a>.</p>
-          </div>
+  <Nav>
+    <NavLink href="#agents">For agents</NavLink>
+    <NavLink href="#frameworks">Frameworks</NavLink>
+    <NavLink href="#limits">Limits</NavLink>
+    <NavLink href="#faq">FAQ</NavLink>
+    <NavLink href="/docs" keep>Docs</NavLink>
+  </Nav>
 
-          <div class="terminal reveal reveal-2">
-            <div class="terminal-bar"><span></span><span></span><span></span><em>agent session</em></div>
-            <pre><span class="you">you</span>  deploy this to Reverhost
+  <Box as="main">
+    <Section size="full" space="none">
+      <Frame tone="tint">
+        <Stack gap="lg" align="center" maxWidth="860px">
+          <Badge tone="outline" size="md" icon="sparkles">Agent-first hosting. Free.</Badge>
+          <Heading level={1} align="center">Free Node.js hosting your AI agent can <Accent>deploy&nbsp;to</Accent>.</Heading>
+          <Text size="lg" tone="muted" align="center" maxWidth="640px" balance>
+            Tell your agent to ship it. It will. Reverhost is the first agent-first free hosting platform: Claude Code, Cursor, Codex and friends can create the account, deploy your Node.js app and wire up Postgres, S3 storage and domains through one CLI.
+          </Text>
+          <Stack direction="row" gap="sm" justify="center" wrap>
+            <Button href="#agents" size="lg">Install the skill</Button>
+            <Button href="/docs" variant="secondary" size="lg">Read the docs</Button>
+          </Stack>
+          <Text size="sm" tone="muted" align="center">
+            Prefer clicking? <Link href={register} underline="always">Sign up for the dashboard</Link>.
+          </Text>
+        </Stack>
 
-<span class="muted">agent</span> <span class="cmd">$ ezhst whoami --json</span>
-      Logged in as ada@example.com
-      <span class="cmd">$ ezhst projects create my-app --json</span>
-      <span class="cmd">$ ezhst link --project my-app</span>
-      <span class="cmd">$ ezhst db create main --json</span>
-      <span class="cmd">$ ezhst db info --json</span>
-      <span class="cmd">$ ezhst env set DATABASE_URL=postgres://...</span>
-      <span class="cmd">$ ezhst deploy --json</span>
-      <span class="ok">done</span>  Uploaded, built, started
+        <AgentSession slot="media" title="claude ~/my-app" agent="Claude Code" cwd="~/my-app" steps={sessionSteps} />
+      </Frame>
+    </Section>
 
-      Live at <b>https://my-app.easyhost.fun</b></pre>
-          </div>
-        </div>
-      </section>
+    <Section space="sm">
+      <LogoStrip label="Built for the agents you already use" items={agents} />
+    </Section>
 
-      <section id="frameworks" class="section frameworks-section">
-        <div class="container">
-          <div class="frameworks-heading">
-            <div>
-              <p class="eyebrow">Bring your framework</p>
-              <h2>If it runs on Node.js, it runs here.</h2>
-            </div>
-            <div>
-              <p class="lead">Reverhost installs from your lockfile, runs the build script when you have one, and starts a production server on <code>$PORT</code>. No platform-specific runtime.</p>
-              <div class="runtime-flow" aria-label="Reverhost deployment flow">
-                <span>package.json</span><i>→</i><span>install</span><i>→</i><span>build</span><i>→</i><span>start</span>
-              </div>
-            </div>
-          </div>
+    <Section id="agents">
+      <Grid cols={2} tablet={1} gap="2xl" align="center">
+        <Box radius="xl" clip relative padding="lg" tone="muted" border>
+          <Box relative>
+            <MockWindow title="Install the skill" tone="frosted">
+              <Stack gap="lg">
+                <Stack gap="xs">
+                  <Text size="xs" tone="muted" uppercase weight="medium">In your project</Text>
+                  <CopyLine command="npx ezhst skill install" />
+                </Stack>
+                <Stack gap="xs">
+                  <Text size="xs" tone="muted" uppercase weight="medium">Then tell your agent</Text>
+                  <CopyLine command="Deploy this to Reverhost" prompt=">" copyLabel="Copy prompt" />
+                </Stack>
+                <Stack direction="row" gap="xs" wrap>
+                  <Badge tone="white" icon="bot">Claude Code</Badge>
+                  <Badge tone="white" icon="bot">Codex</Badge>
+                  <Badge tone="white" icon="bot">Cursor</Badge>
+                  <Badge tone="green" icon="check">Global or Local</Badge>
+                </Stack>
+              </Stack>
+            </MockWindow>
+          </Box>
+        </Box>
+        <Stack gap="md">
+          <Heading level={2}>Give your agent the <Accent>manual</Accent>.</Heading>
+          <Text size="md" tone="muted">
+            The Reverhost skill teaches your agent every <InlineCode>ezhst</InlineCode> command, when to use <InlineCode>--json</InlineCode>, and how to recover from a failed build. Install it once, then just ask.
+          </Text>
+          <Text size="sm" tone="muted">
+            Pick Claude Code, Codex or Cursor, then Global for all projects or Local for this project. Add <InlineCode>--agent</InlineCode> and <InlineCode>--global</InlineCode> or <InlineCode>--local</InlineCode> to skip the prompts. If your agent does not discover the skill, ask it to read <Link href="/skill.md">/skill.md</Link>.
+          </Text>
+        </Stack>
+      </Grid>
+    </Section>
 
-          <div class="framework-grid" role="list" aria-label="Supported Node.js frameworks">
-            <a class="framework-card" href="https://nextjs.org/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/nextjs.svg" alt="" width="30" height="30" /></span>
-              <span><strong>Next.js</strong><small>Auto-detected</small></span>
-            </a>
-            <a class="framework-card" href="https://nuxt.com/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/nuxt.svg" alt="" width="30" height="30" /></span>
-              <span><strong>Nuxt</strong><small>Auto-detected</small></span>
-            </a>
-            <a class="framework-card" href="https://expressjs.com/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/express.svg" alt="" width="30" height="30" /></span>
-              <span><strong>Express</strong><small>Start script</small></span>
-            </a>
-            <a class="framework-card" href="https://nestjs.com/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/nestjs.svg" alt="" width="30" height="30" /></span>
-              <span><strong>NestJS</strong><small>Start script</small></span>
-            </a>
-            <a class="framework-card" href="https://fastify.dev/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/fastify.svg" alt="" width="30" height="30" /></span>
-              <span><strong>Fastify</strong><small>Start script</small></span>
-            </a>
-            <a class="framework-card" href="https://hono.dev/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/hono.svg" alt="" width="30" height="30" /></span>
-              <span><strong>Hono</strong><small>Node server</small></span>
-            </a>
-            <a class="framework-card" href="https://koajs.com/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/koa.svg" alt="" width="30" height="30" /></span>
-              <span><strong>Koa</strong><small>Start script</small></span>
-            </a>
-            <a class="framework-card" href="https://adonisjs.com/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/adonisjs.svg" alt="" width="30" height="30" /></span>
-              <span><strong>AdonisJS</strong><small>Start script</small></span>
-            </a>
-            <a class="framework-card" href="https://remix.run/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/remix.svg" alt="" width="30" height="30" /></span>
-              <span><strong>Remix</strong><small>Start script</small></span>
-            </a>
-            <a class="framework-card" href="https://svelte.dev/docs/kit" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/sveltekit.svg" alt="" width="30" height="30" /></span>
-              <span><strong>SvelteKit</strong><small>Node adapter</small></span>
-            </a>
-            <a class="framework-card" href="https://astro.build/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/astro.svg" alt="" width="30" height="30" /></span>
-              <span><strong>Astro</strong><small>Node adapter</small></span>
-            </a>
-            <a class="framework-card" href="https://strapi.io/" target="_blank" rel="noreferrer" role="listitem">
-              <span class="framework-logo"><img src="/frameworks/strapi.svg" alt="" width="30" height="30" /></span>
-              <span><strong>Strapi</strong><small>Start script</small></span>
-            </a>
-          </div>
-          <p class="framework-note">Using something else? Add a production <code>start</code> script that listens on <code>0.0.0.0:$PORT</code>. Frameworks that generate provider-specific output need their Node adapter.</p>
-        </div>
-      </section>
+    <Section id="frameworks">
+      <Grid cols={2} tablet={1} gap="2xl" align="center">
+        <Stack gap="md">
+          <Heading level={2}>If it runs on Node.js, it runs <Accent>here</Accent>.</Heading>
+          <Text size="md" tone="muted">
+            Reverhost installs from your lockfile, runs the build script when you have one, and starts a production server on <InlineCode>$PORT</InlineCode>. No platform-specific runtime.
+          </Text>
+          <Flow steps={["package.json", "install", "build", "start"]} label="Reverhost deployment flow" />
+          <Text size="sm" tone="muted">
+            Using something else? Add a production <InlineCode>start</InlineCode> script that listens on <InlineCode>0.0.0.0:$PORT</InlineCode>. Frameworks that generate provider-specific output need their Node adapter.
+          </Text>
+          <Stack direction="row" gap="sm" wrap>
+            <Button href="/docs">Read the docs</Button>
+          </Stack>
+        </Stack>
+        <Box radius="xl" padding="md" tone="muted" border>
+          <Grid cols={3} tablet={3} mobile={2} gap="xs">
+            {frameworks.map((framework) => (
+              <LogoTile name={framework.name} src={framework.src} href={framework.href} meta={framework.meta} />
+            ))}
+          </Grid>
+        </Box>
+      </Grid>
+    </Section>
 
-      <section id="agents" class="section">
-        <div class="container skill">
-          <div>
-            <p class="eyebrow">Step one</p>
-            <h2>Give your agent the manual.</h2>
-            <p class="lead">
-              The Reverhost skill teaches your agent every <code>ezhst</code> command, when to use <code>--json</code>, and how to recover from a failed build. Install it once, then just ask.
-            </p>
-          </div>
-          <div class="skill-steps">
-            <div class="skill-step">
-              <div class="skill-step-label">In your project</div>
-              <div class="copy-line">
-                <span><span class="prompt">$</span>npx ezhst skill install</span>
-                <button class="copy" type="button" data-copy="npx ezhst skill install" aria-label="Copy command">
-                  <svg class="icon icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                  <svg class="icon icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-                </button>
-              </div>
-            </div>
-            <div class="skill-step">
-              <div class="skill-step-label">Then tell your agent</div>
-              <div class="copy-line">
-                <span><span class="prompt">&gt;</span>Deploy this to Reverhost</span>
-                <button class="copy" type="button" data-copy="Deploy this to Reverhost" aria-label="Copy prompt">
-                  <svg class="icon icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                  <svg class="icon icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-                </button>
-              </div>
-            </div>
-            <p class="skill-foot">
-              Pick Claude Code, Codex or Cursor, then Global for all projects or Local for this project. Add <code>--agent</code> and <code>--global</code> or <code>--local</code> to skip the prompts. If your agent does not discover the skill, ask it to read <a href="/skill.md">/skill.md</a>.
-            </p>
-          </div>
-        </div>
-      </section>
+    <Section id="capabilities" tone="muted">
+      <Stack gap="2xl">
+        <SectionHead>
+          <Fragment slot="title">The whole platform, one authenticated <Accent>CLI</Accent>.</Fragment>
+          <Fragment slot="text">Every command takes <InlineCode>--json</InlineCode> and never prompts without a terminal, so agents get clean output and clear errors.</Fragment>
+        </SectionHead>
+        <Grid cols={3} gap="md">
+          <FeatureCard title="Deploy Node.js" text="Package the folder, upload, build and go live on its own subdomain." span={2}>
+            <Box slot="visual" maxWidth="520px" style="width:100%">
+              <Terminal
+                title="ezhst deploy"
+                tone="light"
+                lines={[
+                  { prompt: "$", text: "ezhst deploy", tone: "cmd" },
+                  { prompt: "", text: "Uploading source", tone: "muted" },
+                  { prompt: "", text: "Building image", tone: "muted" },
+                  { prompt: "", text: "done  Uploaded, built, started", tone: "ok" },
+                ]}
+              />
+            </Box>
+            <InlineCode>ezhst deploy</InlineCode>
+          </FeatureCard>
+          <FeatureCard title="Create an account" text="Register, verify with the 6-digit code from your inbox and log in, all without a browser." icon="user-plus">
+            <InlineCode>ezhst register --name --email --password</InlineCode>
+          </FeatureCard>
+          <FeatureCard title="Environment variables" text="Set, unset or import a whole .env file. Applied on the next deploy." icon="braces">
+            <InlineCode>ezhst env set KEY=VALUE</InlineCode>
+          </FeatureCard>
+          <FeatureCard title="Build settings" text="Auto-detected by default. Override Node version, root dir or commands." icon="settings">
+            <InlineCode>ezhst build set --node 22</InlineCode>
+          </FeatureCard>
+          <FeatureCard title="Logs and build logs" text="Read runtime logs and the full build log, so the agent can fix what broke." icon="terminal">
+            <InlineCode>ezhst deployments log</InlineCode>
+          </FeatureCard>
+          <FeatureCard title="S3 storage" text="An S3 compatible bucket with public file URLs and its own keys." icon="hard-drive">
+            <InlineCode>ezhst storage create uploads</InlineCode>
+          </FeatureCard>
+          <FeatureCard title="Custom domains" text="Add a hostname, get the DNS record to set, verify and get HTTPS." span={2}>
+            <Stack slot="visual" gap="xs" maxWidth="420px" style="width:100%">
+              <Card padding="sm">
+                <Stack direction="row" justify="between" align="center" gap="sm">
+                  <Stack direction="row" gap="xs" align="center">
+                    <IconTile icon="globe" size="sm" tone="muted" />
+                    <Text size="sm" weight="medium" mono>shop.example.com</Text>
+                  </Stack>
+                  <Badge tone="green" icon="lock">HTTPS</Badge>
+                </Stack>
+              </Card>
+              <Card padding="sm">
+                <Stack direction="row" justify="between" align="center" gap="sm">
+                  <Stack direction="row" gap="xs" align="center">
+                    <IconTile icon="link" size="sm" tone="muted" />
+                    <Text size="sm" weight="medium" mono>my-app.easyhost.fun</Text>
+                  </Stack>
+                  <Badge tone="green" icon="check">Verified</Badge>
+                </Stack>
+              </Card>
+            </Stack>
+            <InlineCode>ezhst domains add shop.example.com</InlineCode>
+          </FeatureCard>
+          <FeatureCard title="Postgres" text="A managed database with a connection string and a shadow DB for Prisma." icon="database">
+            <InlineCode>ezhst db query "select 1"</InlineCode>
+          </FeatureCard>
+          <FeatureCard title="Team members" text="Invite people to a project by email. Members manage everything in it." icon="users" span={2}>
+            <InlineCode>ezhst members invite you@team.com</InlineCode>
+          </FeatureCard>
+        </Grid>
+      </Stack>
+    </Section>
 
-      <section id="capabilities" class="section section-muted">
-        <div class="container">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">What your agent can do</p>
-              <h2>The whole platform, one authenticated CLI.</h2>
-            </div>
-            <p class="lead">Every command takes <code>--json</code> and never prompts without a terminal, so agents get clean output and clear errors.</p>
-          </div>
+    <Section id="how">
+      <Stack gap="2xl">
+        <SectionHead layout="split">
+          <Fragment slot="title">From a folder to a live URL in one <Accent>sentence</Accent>.</Fragment>
+          <Fragment slot="text">Install the skill once. After that, deploying is a single request to your agent.</Fragment>
+          <Fragment slot="actions">
+            <Button href="#agents">Install the skill</Button>
+          </Fragment>
+        </SectionHead>
+        <Grid cols={2} tablet={1} gap="2xl" align="center">
+          <Image src="/images/developer-portrait.jpg" alt="A developer working at a laptop" radius="xl" aspect="4/5" />
+          <Stack gap="xl">
+            <NumberedList>
+              <NumberedItem title="Install the skill">
+                <Text size="sm" tone="muted">Run <InlineCode>npx ezhst skill install</InlineCode>, pick your agent, then Global or Local.</Text>
+              </NumberedItem>
+              <NumberedItem title="Ask your agent">
+                <Text size="sm" tone="muted">"Deploy this to Reverhost." It signs you up if needed, creates a project and sets the env vars your app uses.</Text>
+              </NumberedItem>
+              <NumberedItem title="It goes live">
+                <Text size="sm" tone="muted">We install, build and start your app. If a build fails, the agent reads the log, fixes it and redeploys.</Text>
+              </NumberedItem>
+            </NumberedList>
+            <Card variant="frosted" padding="md">
+              <Stack gap="md">
+                <Text size="sm" tone="muted">
+                  <Text as="strong" tone="default" weight="medium">Humans get a dashboard too.</Text> Manage projects, deployments, storage and databases from the browser, or describe an app to the <Link href="/products/ai-builder">AI Builder</Link> and watch it build the frontend and backend live.
+                </Text>
+                <Stack direction="row">
+                  <Button href={register} variant="secondary">Open the dashboard</Button>
+                </Stack>
+              </Stack>
+            </Card>
+          </Stack>
+        </Grid>
+      </Stack>
+    </Section>
 
-          <div class="caps">
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></span>
-              <div>
-                <h3>Create an account</h3>
-                <p>Register, verify with the 6-digit code from your inbox and log in, all without a browser.</p>
-                <code>ezhst register --name --email --password</code>
-              </div>
-            </article>
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg></span>
-              <div>
-                <h3>Deploy Node.js</h3>
-                <p>Package the folder, upload, build and go live on its own subdomain.</p>
-                <code>ezhst deploy</code>
-              </div>
-            </article>
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg></span>
-              <div>
-                <h3>Environment variables</h3>
-                <p>Set, unset or import a whole .env file. Applied on the next deploy.</p>
-                <code>ezhst env set KEY=VALUE</code>
-              </div>
-            </article>
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg></span>
-              <div>
-                <h3>Build settings</h3>
-                <p>Auto-detected by default. Override Node version, root dir or commands.</p>
-                <code>ezhst build set --node 22</code>
-              </div>
-            </article>
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg></span>
-              <div>
-                <h3>Logs and build logs</h3>
-                <p>Read runtime logs and the full build log, so the agent can fix what broke.</p>
-                <code>ezhst deployments log</code>
-              </div>
-            </article>
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></span>
-              <div>
-                <h3>Custom domains</h3>
-                <p>Add a hostname, get the DNS record to set, verify and get HTTPS.</p>
-                <code>ezhst domains add shop.example.com</code>
-              </div>
-            </article>
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg></span>
-              <div>
-                <h3>S3 storage</h3>
-                <p>An S3 compatible bucket with public file URLs and its own keys.</p>
-                <code>ezhst storage create uploads</code>
-              </div>
-            </article>
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span>
-              <div>
-                <h3>Postgres</h3>
-                <p>A managed database with a connection string and a shadow DB for Prisma.</p>
-                <code>ezhst db query "select 1"</code>
-              </div>
-            </article>
-            <article class="cap">
-              <span class="cap-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-              <div>
-                <h3>Team members</h3>
-                <p>Invite people to a project by email. Members manage everything in it.</p>
-                <code>ezhst members invite you@team.com</code>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
+    <Section id="limits" tone="frame">
+      <Stack gap="2xl">
+        <SectionHead layout="split">
+          <Fragment slot="title">Start free. <Accent>Upgrade</Accent> when you grow.</Fragment>
+          <Fragment slot="text">No credit card to start. Every project gets its own apps, Postgres database and storage bucket.</Fragment>
+        </SectionHead>
+        <Grid cols={2} gap="md">
+          <PlanCard
+            name="Free"
+            price="$0"
+            period="/ month"
+            description="For side projects and trying things out."
+            features={["3 projects", "2 apps per project", "128 MB Postgres per project", "256 MB storage per project", "10 team members per project", "First AI app and build free"]}
+            cta={{ label: "Start for free", href: register }}
+          />
+          <PlanCard
+            name="Pro"
+            price="$10"
+            period="/ month"
+            tag="More projects"
+            highlight
+            description="For shipping more apps and building with AI."
+            features={["10 projects", "2 apps per project", "128 MB Postgres per project", "256 MB storage per project", "10 team members per project", "1,000 AI Builder tokens every month"]}
+            cta={{ label: "Get Pro", href: register }}
+          />
+        </Grid>
+        <Card variant="muted" padding="md">
+          <Stack gap="xs">
+            <Text size="sm" tone="muted">
+              <Text as="strong" tone="default" weight="medium">Every plan</Text>: 512 MB RAM and 1 CPU per app, one build per app at a time, HTTPS and custom domains.
+            </Text>
+            <Text size="sm" tone="muted">
+              Runs Next.js, Express, Fastify and other Node.js apps. See <Link href="/free-nextjs-hosting">free Next.js hosting</Link>, the <Link href="/vercel-alternative">Vercel alternative</Link> or <Link href="/pricing">full pricing</Link>.
+            </Text>
+          </Stack>
+        </Card>
+      </Stack>
+    </Section>
 
-      <section id="how" class="section">
-        <div class="container">
-          <p class="eyebrow">How it works</p>
-          <h2>From a folder to a live URL in one sentence.</h2>
-          <ol class="steps">
-            <li>
-              <span class="step-number">01</span>
-              <h3>Install the skill</h3>
-              <p>Run <code>npx ezhst skill install</code>, pick your agent, then Global or Local.</p>
-            </li>
-            <li>
-              <span class="step-number">02</span>
-              <h3>Ask your agent</h3>
-              <p>"Deploy this to Reverhost." It signs you up if needed, creates a project and sets the env vars your app uses.</p>
-            </li>
-            <li>
-              <span class="step-number">03</span>
-              <h3>It goes live</h3>
-              <p>We install, build and start your app. If a build fails, the agent reads the log, fixes it and redeploys.</p>
-            </li>
-          </ol>
-          <div class="human">
-            <p><strong>Humans get a dashboard too.</strong> Manage projects, deployments, storage and databases from the browser, or describe an app to the <a href="/products/ai-builder">AI Builder</a> and watch it build the frontend and backend live.</p>
-            <a href="https://app.reverhost.com/register" class="btn btn-outline">Open the dashboard</a>
-          </div>
-        </div>
-      </section>
+    <Section id="faq">
+      <Stack gap="2xl">
+        <SectionHead>
+          <Fragment slot="title">Questions people ask before they <Accent>deploy</Accent>.</Fragment>
+        </SectionHead>
+        <FaqGrid>
+          {faqs.map((item, position) => (
+            <AccordionItem question={item.q} answerHtml={item.a} />
+          ))}
+          <Card variant="frosted" padding="sm">
+            <Stack direction="row" justify="between" align="center" gap="sm" wrap>
+              <Text size="md" weight="medium">Still have questions? We are happy to help.</Text>
+              <Button size="sm" href="mailto:hello@reverhost.com">Email us</Button>
+            </Stack>
+          </Card>
+        </FaqGrid>
+      </Stack>
+    </Section>
+  </Box>
 
-      <section id="limits" class="section section-muted">
-        <div class="container">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Pricing</p>
-              <h2>Start free. Upgrade when you grow.</h2>
-            </div>
-            <p class="lead">No credit card to start. Every project gets its own apps, Postgres database and storage bucket.</p>
-          </div>
-          <div class="plans">
-            <div class="plan">
-              <div class="plan-top">
-                <h3>Free</h3>
-                <p class="plan-price">$0<span>/ month</span></p>
-                <p class="plan-desc">For side projects and trying things out.</p>
-              </div>
-              <ul class="plan-list">
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>3 projects</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>2 apps per project</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>128 MB Postgres per project</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>256 MB storage per project</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>10 team members per project</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>First AI app and build free</span></li>
-              </ul>
-              <a href="https://app.reverhost.com/register" class="btn btn-outline btn-lg plan-cta">Start for free</a>
-            </div>
-            <div class="plan plan-pro">
-              <div class="plan-top">
-                <h3>Pro <span class="plan-tag">More projects</span></h3>
-                <p class="plan-price">$10<span>/ month</span></p>
-                <p class="plan-desc">For shipping more apps and building with AI.</p>
-              </div>
-              <ul class="plan-list">
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>10 projects</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>2 apps per project</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>128 MB Postgres per project</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>256 MB storage per project</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>10 team members per project</span></li>
-                <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>1,000 AI Builder tokens every month</span></li>
-              </ul>
-              <a href="https://app.reverhost.com/register" class="btn btn-primary btn-lg plan-cta">Get Pro</a>
-            </div>
-          </div>
-          <div class="plan-shared">
-            <p><span>Every plan</span>512 MB RAM and 1 CPU per app, one build per app at a time, HTTPS and custom domains.</p>
-            <p>Runs Next.js, Express, Fastify and other Node.js apps. See <a href="/free-nextjs-hosting">free Next.js hosting</a>, the <a href="/vercel-alternative">Vercel alternative</a> or <a href="/pricing">full pricing</a>.</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="faq" class="section">
-        <div class="container">
-          <p class="eyebrow">FAQ</p>
-          <h2>Questions people ask before they deploy.</h2>
-          <div class="faq">
-            <div>
-              <h3>Is Reverhost really free?</h3>
-              <p>Yes, for hosting. Reverhost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed <a href="#limits">limits</a>: 3 projects, and per project 2 apps, a 128 MB Postgres database and a 256 MB storage bucket. The AI Builder gives each account its first AI app and first build free. Pro ($10 a month) adds 10 projects and 1,000 AI tokens a month (see <a href="/pricing">pricing</a>).</p>
-            </div>
-            <div>
-              <h3>What can I host on Reverhost?</h3>
-              <p>Any framework that builds and runs as a Node.js service, including Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. SvelteKit and Astro need their Node adapters. HTTP apps must listen on <code>0.0.0.0</code> and the assigned <code>PORT</code>.</p>
-            </div>
-            <div>
-              <h3>Do free apps go to sleep?</h3>
-              <p>No. Each app runs in its own always-on container with 512 MB of RAM and 1 CPU. It is not stopped when idle, so there is no cold start on the first request.</p>
-            </div>
-            <div>
-              <h3>Which AI coding agents can deploy to Reverhost?</h3>
-              <p>Any agent that can run shell commands. Run <code>npx ezhst skill install</code> , pick Claude Code, Codex or Cursor, then Global or Local. For any other agent, ask it to read the installed <code>SKILL.md</code> or <a href="/skill.md">skill.md</a> before deploying. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> has the steps for each.</p>
-            </div>
-            <div>
-              <h3>Do I need to connect GitHub or change my project?</h3>
-              <p>No. <code>ezhst deploy</code> packages the project folder and uploads it. There is no Git integration, no config file to write and no adapter to install.</p>
-            </div>
-            <div>
-              <h3>Can I use my own domain?</h3>
-              <p>Yes. Every project gets <code>https://&lt;name&gt;.easyhost.fun</code>, and you can add <a href="/docs#domains">custom domains</a> with <code>ezhst domains add</code>. HTTPS certificates are issued automatically once DNS is verified.</p>
-            </div>
-            <div>
-              <h3>How is Reverhost different from Vercel?</h3>
-              <p>Vercel runs Next.js on serverless functions behind a global CDN. Reverhost runs each app as one always-on container in a single region and includes Postgres and S3 storage in the same free account, all scriptable by a coding agent through one CLI. Reverhost has no preview deployments, Git integration or edge network. Read the full <a href="/vercel-alternative">comparison</a>.</p>
-            </div>
-            <div>
-              <h3>Can I build an app without writing code?</h3>
-              <p>Yes. Open the <a href="/products/ai-builder">AI Builder</a> in the dashboard, name your app and describe it. The AI asks a few questions, shows a plan, lets you pick a theme and builds a real Node.js app with Postgres and storage at its own address. Your first AI app and its first build are free; after that, AI requests use AI tokens, which come with Pro.</p>
-            </div>
-            <div>
-              <h3>Is the database a real Postgres?</h3>
-              <p>Yes. Each project can have one Postgres 16 database with its own role, reachable over TLS with a standard connection string, plus a shadow database for <code>prisma migrate dev</code>. More on the <a href="/free-postgres-hosting">free Postgres hosting</a> page.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="cta">
-        <div class="container cta-inner">
-          <div>
-            <h2>Your agent already wrote the app. Let it ship it.</h2>
-            <p>One command to install the skill. One sentence to deploy.</p>
-          </div>
-          <div class="cta-actions">
-            <a href="/docs#quick-start" class="btn btn-light btn-lg">Get started</a>
-            <a href="/docs" class="btn btn-outline btn-lg">Docs</a>
-          </div>
-        </div>
-      </section>
-    </main>
-    <Footer />
-    <script is:inline>
-      document.querySelectorAll("[data-copy]").forEach((button) => {
-        button.addEventListener("click", () => {
-          navigator.clipboard.writeText(button.dataset.copy).then(() => {
-            button.classList.add("copied");
-            setTimeout(() => {
-              button.classList.remove("copied");
-            }, 1500);
-          });
-        });
-      });
-    </script>
+  <Footer
+    text="One command to install the skill. One sentence to deploy."
+    primary={{ label: "Get started", href: "/docs#quick-start" }}
+    secondary={{ label: "Docs", href: "/docs" }}
+  >
+    <Fragment slot="title">Your agent already wrote the app. Let it <Accent>ship it</Accent>.</Fragment>
+  </Footer>
 </Base>

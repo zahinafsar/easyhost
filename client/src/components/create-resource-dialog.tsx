@@ -2,8 +2,11 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Field } from "@/components/ui/field";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
+import { Text } from "@/components/ui/text";
 
 export const CreateResourceDialog = ({
   title,
@@ -27,38 +30,40 @@ export const CreateResourceDialog = ({
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const submit = async () => {
     await onSubmit(name.trim());
     setName("");
     setOpen(false);
   };
 
   const atLimit = !!usage && usage.count >= usage.limit;
+  let limitTitle: string | undefined;
+  if (atLimit) {
+    limitTitle = `Limit of ${usage?.limit} reached`;
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <div className="flex items-center gap-3">
+      <Stack direction="row" align="center" gap={3}>
         {usage && (
-          <span className="text-sm text-muted-foreground">
+          <Text as="span" size="sm" tone="muted" mono tabular>
             {usage.count} / {usage.limit}
-          </span>
+          </Text>
         )}
         <DialogTrigger asChild>
-          <Button disabled={atLimit} title={atLimit ? `Limit of ${usage?.limit} reached` : undefined}>
-            <Plus className="size-4" />
+          <Button disabled={atLimit} title={limitTitle}>
+            <Plus />
             {triggerLabel}
           </Button>
         </DialogTrigger>
-      </div>
+      </Stack>
       <DialogContent>
-        <form onSubmit={submit} className="space-y-4">
+        <Form onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{description}</DialogDescription>
+            <DialogDescription>{description} Names use lowercase letters, numbers and dashes.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="resource-name">Name</Label>
+          <Field label="Name" htmlFor="resource-name">
             <Input
               id="resource-name"
               value={name}
@@ -67,15 +72,14 @@ export const CreateResourceDialog = ({
               autoFocus
               required
             />
-            <p className="text-xs text-muted-foreground">Lowercase letters, numbers and dashes.</p>
-          </div>
+          </Field>
           {children}
           <DialogFooter>
-            <Button type="submit" disabled={isPending || !name.trim()}>
+            <Button type="submit" loading={isPending} disabled={!name.trim()}>
               {isPending ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
-        </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

@@ -1,8 +1,7 @@
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LogOut, UserPlus, UserX } from "lucide-react";
+import { Alert, Button, Card, CardContent, CardDescription, CardFooter, CardHeader, Heading, IconBadge, Skeleton, Text } from "@/components/ui";
 import { api, unwrap } from "@/lib/api";
 import { membersQuery } from "@/lib/queries";
 import { selectProject } from "@/lib/project";
@@ -23,14 +22,17 @@ export const InvitePage = () => {
   });
 
   if (isLoading) {
-    return <Skeleton className="mx-auto h-48 w-full max-w-md" />;
+    return <Skeleton className="mx-auto mt-10 h-64 w-full max-w-md rounded-xl" />;
   }
 
   if (error || !data) {
     return (
-      <Card className="mx-auto max-w-md">
-        <CardHeader>
-          <CardTitle>Invite not found</CardTitle>
+      <Card className="mx-auto mt-10 w-full max-w-md">
+        <CardHeader className="gap-3">
+          <IconBadge icon={UserX} tone="danger" size="lg" />
+          <Heading level={1} size="lg">
+            Invite not found
+          </Heading>
           <CardDescription>{error?.message ?? "This invite is invalid or was revoked."}</CardDescription>
         </CardHeader>
       </Card>
@@ -40,35 +42,50 @@ export const InvitePage = () => {
   const { invite } = data;
   const wrongAccount = user?.email.toLowerCase() !== invite.email;
 
+  let acceptLabel = "Accept invite";
+  if (accept.isPending) {
+    acceptLabel = "Joining...";
+  }
+
   return (
-    <Card className="mx-auto max-w-md">
-      <CardHeader>
-        <CardTitle>Join {invite.projectName}</CardTitle>
+    <Card className="mx-auto mt-10 w-full max-w-md">
+      <CardHeader className="gap-3">
+        <IconBadge icon={UserPlus} tone="success" size="lg" />
+        <Heading level={1} size="lg">
+          Join {invite.projectName}
+        </Heading>
         <CardDescription>
           {invite.invitedBy} invited {invite.email} to this project on Reverhost.
         </CardDescription>
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
-        {invite.expired && <p className="text-destructive">This invite has expired. Ask the project owner to send a new one.</p>}
+      <CardContent>
+        {invite.expired && <Alert variant="danger">This invite has expired. Ask the project owner to send a new one.</Alert>}
         {!invite.expired && wrongAccount && (
-          <p>
+          <Alert variant="warning">
             You are logged in as {user?.email}. Log out and sign in or sign up with {invite.email} to accept.
-          </p>
+          </Alert>
         )}
-        {!invite.expired && !wrongAccount && <p>You will be able to manage its apps, deploys, storage and database.</p>}
-      </CardContent>
-      <CardFooter className="gap-2">
         {!invite.expired && !wrongAccount && (
-          <Button onClick={() => accept.mutate(undefined)} disabled={accept.isPending}>
-            {accept.isPending ? "Joining..." : "Accept invite"}
-          </Button>
+          <Text size="sm" tone="muted">
+            You will be able to manage its apps, deploys, storage and database.
+          </Text>
         )}
-        {!invite.expired && wrongAccount && (
-          <Button variant="outline" onClick={() => logout()}>
-            Log out
-          </Button>
-        )}
-      </CardFooter>
+      </CardContent>
+      {!invite.expired && (
+        <CardFooter className="gap-2">
+          {!wrongAccount && (
+            <Button block loading={accept.isPending} onClick={() => accept.mutate(undefined)}>
+              {acceptLabel}
+            </Button>
+          )}
+          {wrongAccount && (
+            <Button variant="outline" block onClick={() => logout()}>
+              <LogOut />
+              Log out
+            </Button>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 };

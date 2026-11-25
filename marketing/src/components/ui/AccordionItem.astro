@@ -1,0 +1,28 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  question?: string;
+  questionHtml?: string;
+  answerHtml?: string;
+  open?: boolean;
+  name?: string;
+  level?: 3 | 4;
+  class?: string;
+}
+
+const { question, questionHtml, answerHtml, open = false, name, level = 3, class: className } = Astro.props;
+const Title = `h${level}`;
+---
+
+<details class:list={["accordion-item", className]} open={open} name={name}>
+  <summary class="accordion-summary">
+    {questionHtml !== undefined && <Title class="accordion-question" set:html={questionHtml} />}
+    {questionHtml === undefined && <Title class="accordion-question">{question}</Title>}
+    <span class="accordion-chevron" aria-hidden="true"><Icon name="chevron-down" size={14} stroke={2} /></span>
+  </summary>
+  <div class="accordion-answer">
+    {answerHtml !== undefined && <p set:html={answerHtml} />}
+    <slot />
+  </div>
+</details>

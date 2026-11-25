@@ -1,0 +1,28 @@
+---
+import Card from "./Card.astro";
+import IconTile from "./IconTile.astro";
+
+interface Props {
+  title: string;
+  text?: string;
+  icon?: string;
+  iconTone?: "white" | "dark" | "green" | "orange" | "muted";
+  href?: string;
+  variant?: "feature" | "frosted" | "plain" | "outline";
+  level?: 2 | 3 | 4;
+  span?: 2 | 3 | "full";
+  class?: string;
+}
+
+const { title, text, icon, iconTone = "white", href, variant = "feature", level = 3, span, class: className } = Astro.props;
+const Title = `h${level}`;
+const hasVisual = Astro.slots.has("visual");
+---
+
+<Card variant={variant} href={href} span={span} visual={hasVisual} class={["feature-card", className].filter(Boolean).join(" ")}>
+  {hasVisual && <slot name="visual" slot="visual" />}
+  {!hasVisual && icon && <IconTile icon={icon} tone={iconTone} />}
+  <Title class="feature-card-title">{title}</Title>
+  {text && <p class="feature-card-text">{text}</p>}
+  <slot />
+</Card>

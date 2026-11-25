@@ -1,0 +1,49 @@
+---
+interface Props {
+  variant?: "plain" | "frosted" | "feature" | "outline" | "muted" | "dark";
+  padding?: "none" | "sm" | "md" | "lg";
+  href?: string;
+  external?: boolean;
+  as?: string;
+  span?: 2 | 3 | "full";
+  visual?: boolean;
+  id?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { variant = "plain", padding = "md", href, external = false, as, span, visual = true, id, class: className, ...rest } = Astro.props;
+
+let Tag = as;
+if (!Tag) {
+  Tag = "div";
+  if (href) {
+    Tag = "a";
+  }
+}
+let target: string | undefined;
+let rel: string | undefined;
+if (external) {
+  target = "_blank";
+  rel = "noopener noreferrer";
+}
+const hasVisual = visual && Astro.slots.has("visual");
+---
+
+<Tag
+  id={id}
+  href={href}
+  target={target}
+  rel={rel}
+  class:list={["card", `card-${variant}`, `card-pad-${padding}`, href && "card-link", span && `span-${span}`, hasVisual && "card-has-visual", className]}
+  {...rest}
+>
+  {hasVisual && (
+    <div class="card-visual">
+      <slot name="visual" />
+    </div>
+  )}
+  <div class="card-body">
+    <slot />
+  </div>
+</Tag>

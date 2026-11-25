@@ -1,8 +1,7 @@
 import { Navigate, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { HardDrive } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, EmptyState, Skeleton } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { CreateResourceDialog } from "@/components/create-resource-dialog";
 import { api, unwrap } from "@/lib/api";
@@ -21,7 +20,7 @@ export const StoragePage = () => {
   });
 
   if (isLoading) {
-    return <Skeleton className="h-64 w-full" />;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
 
   if (data?.buckets[0]) {
@@ -31,24 +30,23 @@ export const StoragePage = () => {
   return (
     <>
       <PageHeader title="Storage" description="S3 compatible object storage isolated to this project." />
-      <Card>
-        <CardContent className="flex min-h-72 flex-col items-center justify-center gap-4 text-center">
-          <div className="flex size-12 items-center justify-center border bg-muted/40">
-            <HardDrive className="size-5 text-muted-foreground" />
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium">Create a new storage</p>
-            <p className="max-w-md text-sm text-muted-foreground">Store uploads and static files with project-specific S3 credentials.</p>
-          </div>
-          <CreateResourceDialog
-            title="Create storage"
-            description="Your project gets one bucket with its own S3 access keys and public file URLs."
-            triggerLabel="Create storage"
-            placeholder="uploads"
-            isPending={createStorage.isPending}
-            onSubmit={(name) => createStorage.mutateAsync(name)}
-          />
-        </CardContent>
+      <Card className="py-0">
+        <EmptyState
+          className="min-h-72"
+          icon={HardDrive}
+          title="Create a new storage"
+          description="Store uploads and static files with project-specific S3 credentials."
+          action={
+            <CreateResourceDialog
+              title="Create storage"
+              description="Your project gets one bucket with its own S3 access keys and public file URLs."
+              triggerLabel="Create storage"
+              placeholder="uploads"
+              isPending={createStorage.isPending}
+              onSubmit={(name) => createStorage.mutateAsync(name)}
+            />
+          }
+        />
       </Card>
     </>
   );

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import Editor, { loader, type OnMount } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
+import { useTheme } from "@/providers/theme-provider";
+import { Box } from "@/components/ui/box";
 import EditorWorker from "monaco-editor/editor/editor.worker?worker";
 import JsonWorker from "monaco-editor/language/json/json.worker?worker";
 import CssWorker from "monaco-editor/language/css/css.worker?worker";
@@ -66,6 +68,11 @@ export const MonacoEditor = ({
   onSave: () => void;
 }) => {
   const saveRef = useRef(onSave);
+  const { theme } = useTheme();
+  let editorTheme = "vs-dark";
+  if (theme === "light") {
+    editorTheme = "light";
+  }
 
   useEffect(() => {
     saveRef.current = onSave;
@@ -82,10 +89,10 @@ export const MonacoEditor = ({
       path={path}
       language={languageFor(path)}
       value={value}
-      theme="vs-dark"
+      theme={editorTheme}
       onMount={handleMount}
       onChange={(next) => onChange(next ?? "")}
-      loading={<div className="h-full w-full bg-[#1e1e1e]" />}
+      loading={<Box className="h-full w-full bg-[#fffffe] dark:bg-[#1e1e1e]" />}
       options={{
         readOnly,
         fontSize: 13,

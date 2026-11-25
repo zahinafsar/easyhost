@@ -1,3 +1,13 @@
+---
+import CopyCode from "../components/CopyCode.astro";
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -12,6 +22,9 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <slot />
+    <div class:list={["sheet", className]}>
+      <slot />
+    </div>
+    <CopyCode />
   </body>
 </html>

@@ -1,0 +1,18 @@
+---
+interface Props {
+  layout?: "row" | "stack";
+  divided?: boolean;
+  start?: number;
+  class?: string;
+}
+
+const { layout = "row", divided = true, start, class: className } = Astro.props;
+let style: string | undefined;
+if (start !== undefined) {
+  style = `counter-reset:numbered ${start - 1}`;
+}
+---
+
+<ol class:list={["numbered", `numbered-${layout}`, divided && "numbered-divided", className]} style={style}>
+  <slot />
+</ol>

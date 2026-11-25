@@ -1,0 +1,10 @@
+---
+interface Props {
+  tone?: "green" | "orange" | "muted";
+  class?: string;
+}
+
+const { tone = "green", class: className } = Astro.props;
+---
+
+<span class:list={["accent", `accent-${tone}`, className]}><slot /></span>

@@ -1,0 +1,73 @@
+---
+interface Props {
+  as?: string;
+  padding?: "none" | "xs" | "sm" | "md" | "lg" | "xl";
+  radius?: "none" | "sm" | "md" | "lg" | "xl" | "full";
+  tone?: "none" | "white" | "frosted" | "muted" | "dark" | "green" | "orange";
+  border?: boolean;
+  shadow?: boolean;
+  span?: 2 | 3 | 4 | "full";
+  rowSpan?: 2 | 3;
+  align?: "left" | "center" | "right";
+  maxWidth?: string;
+  relative?: boolean;
+  clip?: boolean;
+  reveal?: 0 | 1 | 2 | 3;
+  id?: string;
+  class?: string;
+  style?: string;
+  [key: string]: unknown;
+}
+
+const {
+  as: Tag = "div",
+  padding = "none",
+  radius = "none",
+  tone = "none",
+  border = false,
+  shadow = false,
+  span,
+  rowSpan,
+  align,
+  maxWidth,
+  relative = false,
+  clip = false,
+  reveal,
+  id,
+  class: className,
+  style,
+  ...rest
+} = Astro.props;
+
+const styles = [style];
+if (maxWidth) {
+  styles.push(`max-width:${maxWidth}`);
+}
+let revealClass: string | undefined;
+if (reveal !== undefined) {
+  revealClass = `reveal reveal-${reveal}`;
+}
+---
+
+<Tag
+  id={id}
+  class:list={[
+    "box",
+    padding !== "none" && `pad-${padding}`,
+    radius !== "none" && `radius-${radius}`,
+    tone !== "none" && `tone-${tone}`,
+    border && "has-border",
+    shadow && "has-shadow",
+    span && `span-${span}`,
+    rowSpan && `row-span-${rowSpan}`,
+    align && `text-${align}`,
+    relative && "is-relative",
+    clip && "is-clipped",
+    revealClass,
+    className,
+  ]}
+  style={styles.filter(Boolean).join(";") || undefined}
+  {...rest}
+>
+  <slot />
+</Tag>

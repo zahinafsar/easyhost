@@ -1,0 +1,28 @@
+---
+import MockWindow from "./MockWindow.astro";
+
+interface Line {
+  prompt?: string;
+  text?: string;
+  tone?: "cmd" | "out" | "ok" | "muted" | "user" | "strong" | "accent";
+}
+
+interface Props {
+  title?: string;
+  lines: Line[];
+  tone?: "dark" | "light";
+  class?: string;
+}
+
+const { title = "terminal", lines, tone = "dark", class: className } = Astro.props;
+const newline = String.fromCharCode(10);
+---
+
+<MockWindow title={title} tone={tone} padding="none" class={["terminal", className].filter(Boolean).join(" ")}>
+  <pre class="terminal-pre">{
+    lines.map((line) => (
+      <span class:list={["terminal-line", `terminal-${line.tone ?? "out"}`]}>{line.prompt && <span class="terminal-prompt">{line.prompt}</span>}<span class="terminal-text">{line.text ?? ""}</span>{newline}</span>
+    ))
+  }</pre>
+  <slot />
+</MockWindow>

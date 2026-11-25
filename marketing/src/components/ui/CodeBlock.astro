@@ -1,0 +1,17 @@
+---
+interface Props {
+  code: string;
+  label?: string;
+  tone?: "light" | "dark";
+  wrap?: boolean;
+  copy?: boolean;
+  class?: string;
+}
+
+const { code, label, tone = "light", wrap = false, copy = true, class: className } = Astro.props;
+---
+
+<div class:list={["code", tone === "dark" && "code-dark", wrap && "code-wrap", !copy && "code-nocopy", className]}>
+  {label && <div class="code-label">{label}</div>}
+  <pre>{code}</pre>
+</div>

@@ -1,0 +1,18 @@
+---
+interface Props {
+  href?: string;
+  beta?: boolean;
+  docs?: boolean;
+  tone?: "dark" | "light";
+  class?: string;
+}
+
+const { href = "/", beta = false, docs = false, tone = "dark", class: className } = Astro.props;
+---
+
+<a href={href} class:list={["logo", `logo-${tone}`, className]}>
+  <img src="/logo.svg" alt="" width="18" height="24" />
+  <span class="logo-word">Reverhost</span>
+  {beta && <span class="beta">Beta</span>}
+  {docs && <small class="logo-docs">docs</small>}
+</a>

@@ -1,0 +1,13 @@
+---
+interface Props {
+  command: string;
+  class?: string;
+}
+
+const { command, class: className } = Astro.props;
+---
+
+<div class:list={["cmd-row", className]}>
+  <code>{command}</code>
+  <span class="cmd-row-text"><slot /></span>
+</div>

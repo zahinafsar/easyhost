@@ -1,0 +1,24 @@
+---
+interface Props {
+  id?: string;
+  tone?: "plain" | "frame" | "muted" | "dark";
+  space?: "none" | "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl" | "full";
+  as?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { id, tone = "plain", space = "md", size = "lg", as: Tag = "section", class: className, ...rest } = Astro.props;
+---
+
+<Tag id={id} class:list={["section", `section-${tone}`, `section-space-${space}`, className]} {...rest}>
+  <div class:list={["container", `container-${size}`]}>
+    {tone === "plain" && <slot />}
+    {tone !== "plain" && (
+      <div class="section-panel">
+        <slot />
+      </div>
+    )}
+  </div>
+</Tag>

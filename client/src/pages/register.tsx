@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, Checkbox, Field, Form, Heading, Input, Link, Text } from "@/components/ui";
 import { api, unwrap } from "@/lib/api";
 import { env } from "@/lib/env";
 import { userQuery } from "@/lib/queries";
@@ -35,59 +32,56 @@ export const RegisterPage = () => {
     loginHref = `/login?redirect=${encodeURIComponent(redirect)}`;
   }
 
+  let submitLabel = "Sign up";
+  if (register.isPending) {
+    submitLabel = "Creating account...";
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create your account</CardTitle>
+    <Card variant="frosted">
+      <CardHeader className="gap-2">
+        <Heading level={1}>Create your account</Heading>
         <CardDescription>Host apps, store files and run databases.</CardDescription>
       </CardHeader>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          register.mutate(undefined);
-        }}
-      >
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+      <CardContent>
+        <Form onSubmit={() => register.mutate(undefined)}>
+          <Field label="Name" htmlFor="name">
             <Input id="name" value={form.name} onChange={update("name")} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+          </Field>
+          <Field label="Email" htmlFor="email">
             <Input id="email" type="email" value={form.email} onChange={update("email")} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+          </Field>
+          <Field label="Password" htmlFor="password">
             <Input id="password" type="password" value={form.password} onChange={update("password")} minLength={6} required />
-          </div>
-          <div className="flex items-start gap-2">
-            <input id="terms" type="checkbox" className="mt-0.5 size-4 accent-primary" required />
-            <Label htmlFor="terms" className="text-sm font-normal leading-snug text-muted-foreground">
-              <span>
+          </Field>
+          <Field
+            orientation="horizontal"
+            htmlFor="terms"
+            label={
+              <Text as="span" size="sm" tone="muted">
                 I agree to the{" "}
-                <a href={`${env.marketingUrl}/terms`} target="_blank" rel="noreferrer" className="text-foreground hover:underline">
+                <Link href={`${env.marketingUrl}/terms`} external>
                   Terms and Conditions
-                </a>{" "}
+                </Link>{" "}
                 and{" "}
-                <a href={`${env.marketingUrl}/privacy`} target="_blank" rel="noreferrer" className="text-foreground hover:underline">
+                <Link href={`${env.marketingUrl}/privacy`} external>
                   Privacy Policy
-                </a>
-              </span>
-            </Label>
-          </div>
-        </CardContent>
-        <CardFooter className="mt-6 flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={register.isPending}>
-            {register.isPending ? "Creating account..." : "Sign up"}
+                </Link>
+              </Text>
+            }
+          >
+            <Checkbox id="terms" required className="mt-0.5" />
+          </Field>
+          <Button type="submit" block loading={register.isPending} className="mt-1">
+            {submitLabel}
           </Button>
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link to={loginHref} className="text-foreground hover:underline">
-              Log in
-            </Link>
-          </p>
-        </CardFooter>
-      </form>
+        </Form>
+      </CardContent>
+      <CardFooter className="justify-center">
+        <Text size="sm" tone="muted">
+          Already have an account? <Link to={loginHref}>Log in</Link>
+        </Text>
+      </CardFooter>
     </Card>
   );
 };

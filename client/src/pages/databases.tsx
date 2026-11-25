@@ -1,8 +1,7 @@
 import { Navigate, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Database } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, EmptyState, Skeleton } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { CreateResourceDialog } from "@/components/create-resource-dialog";
 import { api, unwrap } from "@/lib/api";
@@ -21,7 +20,7 @@ export const DatabasesPage = () => {
   });
 
   if (isLoading) {
-    return <Skeleton className="h-64 w-full" />;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
 
   if (data?.databases[0]) {
@@ -31,24 +30,23 @@ export const DatabasesPage = () => {
   return (
     <>
       <PageHeader title="Database" description="A private Postgres database isolated to this project." />
-      <Card>
-        <CardContent className="flex min-h-72 flex-col items-center justify-center gap-4 text-center">
-          <div className="flex size-12 items-center justify-center border bg-muted/40">
-            <Database className="size-5 text-muted-foreground" />
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium">Create a new database</p>
-            <p className="max-w-md text-sm text-muted-foreground">Provision Postgres with a dedicated user and ready-to-copy connection strings.</p>
-          </div>
-          <CreateResourceDialog
-            title="Create database"
-            description="A new empty Postgres database with its own user, password, and shadow database."
-            triggerLabel="Create database"
-            placeholder="main"
-            isPending={createDatabase.isPending}
-            onSubmit={(name) => createDatabase.mutateAsync(name)}
-          />
-        </CardContent>
+      <Card className="py-0">
+        <EmptyState
+          className="min-h-72"
+          icon={Database}
+          title="Create a new database"
+          description="Provision Postgres with a dedicated user and ready-to-copy connection strings."
+          action={
+            <CreateResourceDialog
+              title="Create database"
+              description="A new empty Postgres database with its own user, password, and shadow database."
+              triggerLabel="Create database"
+              placeholder="main"
+              isPending={createDatabase.isPending}
+              onSubmit={(name) => createDatabase.mutateAsync(name)}
+            />
+          }
+        />
       </Card>
     </>
   );

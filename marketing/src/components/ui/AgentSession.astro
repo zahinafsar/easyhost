@@ -1,0 +1,127 @@
+---
+interface Step {
+  kind: "prompt" | "say" | "tool" | "done";
+  text: string;
+  output?: string[];
+  running?: string;
+}
+
+interface Props {
+  title: string;
+  agent: string;
+  cwd: string;
+  steps: Step[];
+  class?: string;
+}
+
+const { title, agent, cwd, steps, class: className } = Astro.props;
+---
+
+<figure class:list={["session", className]} data-session aria-label={`${agent} deploying an app with the ezhst CLI`}>
+  <div class="session-bar">
+    <span class="session-dots" aria-hidden="true"><i /><i /><i /></span>
+    <span class="session-title">{title}</span>
+    <span class="session-spacer" />
+  </div>
+  <div class="session-body">
+    <div class="session-head">
+      <span class="session-mark" aria-hidden="true" />
+      <span class="session-head-text">
+        <span class="session-agent">{agent}</span>
+        <span class="session-cwd">cwd: {cwd}</span>
+      </span>
+    </div>
+    <ol class="session-log">
+      {
+        steps.map((step, index) => (
+          <li class:list={["session-step", `session-${step.kind}`]} data-step={index} data-kind={step.kind} data-text={step.text} data-running={step.running}>
+            {step.kind === "prompt" && (
+              <p class="session-line">
+                <span class="session-caret">&gt;</span>
+                <span class="session-typed">{step.text}</span>
+              </p>
+            )}
+            {step.kind !== "prompt" && (
+              <p class="session-line">
+                <span class="session-dot" aria-hidden="true" />
+                {step.kind === "tool" && (
+                  <span class="session-text"><span class="session-tool">Bash</span><span class="session-args">({step.text})</span></span>
+                )}
+                {step.kind !== "tool" && <span class="session-text" set:html={step.text} />}
+              </p>
+            )}
+            {step.output && (
+              <div class="session-output">
+                {step.output.map((line) => (
+                  <p class="session-output-line">{line}</p>
+                ))}
+              </div>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+    <div class="session-input">
+      <span class="session-caret">&gt;</span>
+      <span class="session-cursor" aria-hidden="true" />
+    </div>
+  </div>
+</figure>
+
+<script>
+  const wait = (ms: number) => {
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, ms);
+    });
+  };
+
+  const run = async (root: HTMLElement) => {
+    const steps = Array.from(root.querySelectorAll<HTMLElement>("[data-step]"));
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      return;
+    }
+    root.classList.add("session-animated");
+    while (root.isConnected) {
+      steps.forEach((step) => {
+        step.classList.remove("session-shown", "session-running");
+        const typed = step.querySelector<HTMLElement>(".session-typed");
+        if (typed) {
+          typed.textContent = "";
+        }
+      });
+      await wait(600);
+      for (const step of steps) {
+        const kind = step.dataset.kind;
+        step.classList.add("session-shown");
+        if (kind === "prompt") {
+          const typed = step.querySelector<HTMLElement>(".session-typed");
+          const text = step.dataset.text ?? "";
+          for (let i = 1; i <= text.length; i++) {
+            if (typed) {
+              typed.textContent = text.slice(0, i);
+            }
+            await wait(45);
+          }
+          await wait(500);
+        } else if (kind === "tool") {
+          step.classList.add("session-running");
+          let delay = 700;
+          if (step.dataset.running) {
+            delay = 1800;
+          }
+          await wait(delay);
+          step.classList.remove("session-running");
+          await wait(350);
+        } else {
+          await wait(700);
+        }
+      }
+      await wait(5000);
+    }
+  };
+
+  document.querySelectorAll<HTMLElement>("[data-session]").forEach((root) => {
+    run(root);
+  });
+</script>

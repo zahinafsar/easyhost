@@ -1,12 +1,58 @@
 import { useState } from "react";
-import { ChevronDown, Plus } from "lucide-react";
-import { Popover as PopoverPrimitive } from "radix-ui";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Field } from "@/components/ui/field";
+import { Form } from "@/components/ui/form";
+import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Stack } from "@/components/ui/stack";
+import { Text } from "@/components/ui/text";
 
 type Project = { id: string; name: string };
+
+export const CreateProjectDialog = ({
+  open,
+  onOpenChange,
+  isCreating,
+  onCreate,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isCreating: boolean;
+  onCreate: (name: string) => Promise<unknown>;
+}) => {
+  const [name, setName] = useState("");
+
+  const submit = async () => {
+    await onCreate(name.trim());
+    setName("");
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <Form onSubmit={submit}>
+          <DialogHeader>
+            <DialogTitle>New project</DialogTitle>
+            <DialogDescription>Create a workspace for up to 2 apps, a database and storage.</DialogDescription>
+          </DialogHeader>
+          <Field label="Project name" htmlFor="project-name">
+            <Input id="project-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="My next project" autoFocus required />
+          </Field>
+          <DialogFooter>
+            <Button type="submit" loading={isCreating} disabled={!name.trim()}>
+              {isCreating ? "Creating..." : "Create project"}
+            </Button>
+          </DialogFooter>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export const ProjectSwitcher = ({
   projects,
@@ -14,107 +60,63 @@ export const ProjectSwitcher = ({
   isCreating,
   onSelect,
   onCreate,
+  onCreateRequest,
 }: {
   projects: Project[];
   selectedId?: string;
   isCreating: boolean;
   onSelect: (projectId: string) => void;
   onCreate: (name: string) => Promise<unknown>;
+  onCreateRequest?: () => void;
 }) => {
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [name, setName] = useState("");
   const selectedProject = projects.find((project) => project.id === selectedId);
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    await onCreate(name.trim());
-    setName("");
-    setCreateOpen(false);
+  const requestCreate = () => {
+    if (onCreateRequest) {
+      onCreateRequest();
+      return;
+    }
+    setCreateOpen(true);
   };
 
   return (
     <>
-      <div className="space-y-2 border-t p-3">
-        <PopoverPrimitive.Root open={pickerOpen} onOpenChange={setPickerOpen}>
-          <PopoverPrimitive.Trigger asChild>
-            <button
-              type="button"
-              aria-label="Select project"
-              className="flex h-10 w-full items-center gap-3 border bg-background px-3 text-left outline-none transition-colors hover:bg-muted/60 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
-            >
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold">{selectedProject?.name ?? "No projects"}</span>
-              <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform ${pickerOpen ? "rotate-180" : ""}`} />
-            </button>
-          </PopoverPrimitive.Trigger>
-          <PopoverPrimitive.Portal>
-            <PopoverPrimitive.Content
-              align="start"
-              side="top"
-              sideOffset={8}
-              className="z-50 w-[var(--radix-popover-trigger-width)] border bg-popover p-1 text-popover-foreground shadow-lg outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1"
-            >
-              <div role="listbox" aria-label="Projects" className="max-h-72 space-y-1 overflow-y-auto">
-                {!projects.length && <p className="px-3 py-4 text-center text-sm text-muted-foreground">No projects yet</p>}
-                {projects.map((project) => (
-                  <button
-                    key={project.id}
-                    type="button"
-                    role="option"
-                    aria-selected={project.id === selectedId}
-                    className={`w-full truncate px-3 py-2 text-left text-sm font-medium outline-none transition-colors hover:bg-muted focus-visible:bg-muted ${project.id === selectedId ? "bg-muted" : ""}`}
-                    onClick={() => {
-                      onSelect(project.id);
-                      setPickerOpen(false);
-                    }}
-                  >
-                    {project.name}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-2 border-t pt-2">
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium outline-none transition-colors hover:bg-muted focus-visible:bg-muted"
-                  onClick={() => {
-                    setPickerOpen(false);
-                    setCreateOpen(true);
-                  }}
-                >
-                  <Plus className="size-4" />
-                  Create project
-                </button>
-              </div>
-            </PopoverPrimitive.Content>
-          </PopoverPrimitive.Portal>
-        </PopoverPrimitive.Root>
-      </div>
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <form onSubmit={submit} className="space-y-4">
-            <DialogHeader>
-              <DialogTitle>New project</DialogTitle>
-              <DialogDescription>Create a workspace for up to 2 apps, a database and storage.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2">
-              <Label htmlFor="project-name">Project name</Label>
-              <Input
-                id="project-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="My next project"
-                autoFocus
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={isCreating || !name.trim()}>
-                {isCreating ? "Creating..." : "Create project"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="secondary" block aria-label="Select project" className="h-14 justify-start gap-3 rounded-2xl px-2.5 has-[>svg]:px-2.5">
+            <Avatar name={selectedProject?.name ?? "No projects"} size="sm" className="rounded-xl" />
+            <Stack gap={0} className="flex-1 text-left">
+              <Text as="span" size="base" weight="medium" truncate>
+                {selectedProject?.name ?? "No projects"}
+              </Text>
+              <Text as="span" size="2xs" tone="muted">
+                Project
+              </Text>
+            </Stack>
+            <Icon icon={ChevronsUpDown} size="sm" tone="muted" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="start" className="w-(--radix-dropdown-menu-trigger-width) min-w-60">
+          <DropdownMenuLabel>Projects</DropdownMenuLabel>
+          {!projects.length && <DropdownMenuItem disabled>No projects yet</DropdownMenuItem>}
+          {projects.map((project) => (
+            <DropdownMenuItem key={project.id} aria-selected={project.id === selectedId} onSelect={() => onSelect(project.id)}>
+              <Avatar name={project.name} size="xs" className="rounded-lg" />
+              <Text as="span" size="base" weight="medium" truncate className="flex-1">
+                {project.name}
+              </Text>
+              {project.id === selectedId && <Icon icon={Check} tone="success" />}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={requestCreate}>
+            <Plus />
+            Create project
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {!onCreateRequest && <CreateProjectDialog open={createOpen} onOpenChange={setCreateOpen} isCreating={isCreating} onCreate={onCreate} />}
     </>
   );
 };

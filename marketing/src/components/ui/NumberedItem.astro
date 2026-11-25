@@ -1,0 +1,24 @@
+---
+interface Props {
+  title?: string;
+  text?: string;
+  level?: 3 | 4;
+  class?: string;
+}
+
+const { title, text, level = 3, class: className } = Astro.props;
+const Title = `h${level}`;
+const hasTitleSlot = Astro.slots.has("title");
+---
+
+<li class:list={["numbered-item", className]}>
+  <span class="numbered-index" aria-hidden="true" />
+  <div class="numbered-main">
+    {hasTitleSlot && <Title class="numbered-title"><slot name="title" /></Title>}
+    {!hasTitleSlot && title && <Title class="numbered-title">{title}</Title>}
+  </div>
+  <div class="numbered-text">
+    {text && <p>{text}</p>}
+    <slot />
+  </div>
+</li>

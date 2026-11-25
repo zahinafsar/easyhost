@@ -1,0 +1,27 @@
+---
+import Badge from "./Badge.astro";
+import Icon from "./Icon.astro";
+
+interface Props {
+  value: string;
+  label: string;
+  delta?: string;
+  deltaTone?: "green" | "orange" | "red" | "neutral";
+  icon?: string;
+  size?: "md" | "lg";
+  tone?: "default" | "inverse";
+  class?: string;
+}
+
+const { value, label, delta, deltaTone = "green", icon, size = "md", tone = "default", class: className } = Astro.props;
+---
+
+<div class:list={["stat", `stat-${size}`, `stat-${tone}`, className]}>
+  <div class="stat-head">
+    {icon && <Icon name={icon} size={14} />}
+    <span class="stat-label">{label}</span>
+    {delta && <Badge tone={deltaTone}>{delta}</Badge>}
+  </div>
+  <div class="stat-value">{value}</div>
+  <slot />
+</div>

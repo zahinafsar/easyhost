@@ -2,7 +2,18 @@
 import Base from "../layouts/Base.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
-import CopyCode from "../components/CopyCode.astro";
+import StartCta from "../components/ui/StartCta.astro";
+import DocLayout from "../components/ui/DocLayout.astro";
+import Toc from "../components/ui/Toc.astro";
+import Breadcrumbs from "../components/ui/Breadcrumbs.astro";
+import Heading from "../components/ui/Heading.astro";
+import Text from "../components/ui/Text.astro";
+import Prose from "../components/ui/Prose.astro";
+import Box from "../components/ui/Box.astro";
+import Stack from "../components/ui/Stack.astro";
+import Accordion from "../components/ui/Accordion.astro";
+import AccordionItem from "../components/ui/AccordionItem.astro";
+import NavLink from "../components/ui/NavLink.astro";
 import { inline, renderMarkdown } from "../seo/markdown.mjs";
 import { absolute, HELD_BACK_FAMILIES, jsonLd, SITE, sitePages, UPDATED_LABEL } from "../seo/site.mjs";
 
@@ -19,7 +30,12 @@ let robots = "index, follow, max-image-preview:large, max-snippet:-1";
 if (HELD_BACK_FAMILIES.has(page.family)) {
   robots = "noindex, follow";
 }
-const lastCrumb = page.crumbs.length - 1;
+const tocItems = toc.map((item) => {
+  return { href: `#${item.id}`, html: inline(item.title) };
+});
+if (page.faq.length > 0) {
+  tocItems.push({ href: "#faq", html: "FAQ" });
+}
 ---
 
 <Base>
@@ -43,79 +59,39 @@ const lastCrumb = page.crumbs.length - 1;
     <script is:inline type="application/ld+json" set:html={jsonLd(page)} />
   </Fragment>
   <Nav>
-    <a href="/">Home</a>
-    <a href="/frameworks">Frameworks</a>
-    <a href="/guides">Guides</a>
-    <a href="/docs" class="keep">Docs</a>
+    <NavLink href="/">Home</NavLink>
+    <NavLink href="/frameworks">Frameworks</NavLink>
+    <NavLink href="/guides">Guides</NavLink>
+    <NavLink href="/docs" keep>Docs</NavLink>
   </Nav>
 
-  <div class="container docs">
-    <aside class="toc">
-      <p class="toc-title">On this page</p>
-      <ol>
-        {
-          toc.map((item) => (
-            <li>
-              <a href={`#${item.id}`} set:html={inline(item.title)} />
-            </li>
-          ))
-        }
-        {
-          page.faq.length > 0 && (
-            <li>
-              <a href="#faq">FAQ</a>
-            </li>
-          )
-        }
-      </ol>
-    </aside>
+  <DocLayout>
+    <Toc slot="aside" items={tocItems} />
+    <Box class="doc-head">
+      <Stack gap="md">
+        <Breadcrumbs items={page.crumbs} />
+        <Heading level={1} size="xl" html={inline(page.h1)} />
+        <Text size="lg" tone="muted" html={inline(page.lead)} />
+        <Text size="sm" tone="subtle">Last updated {UPDATED_LABEL}</Text>
+      </Stack>
+    </Box>
+    <Prose html={html} />
+    {
+      page.faq.length > 0 && (
+        <Box as="section" id="faq" class="doc-section">
+          <Stack gap="lg">
+            <Heading level={2} size="lg">Frequently asked questions</Heading>
+            <Accordion>
+              {page.faq.map((item) => (
+                <AccordionItem questionHtml={inline(item.q)} answerHtml={inline(item.a)} />
+              ))}
+            </Accordion>
+          </Stack>
+        </Box>
+      )
+    }
+    <StartCta />
+  </DocLayout>
 
-    <main class="doc">
-      <div class="doc-head">
-        <ol class="crumbs" aria-label="Breadcrumb">
-          {
-            page.crumbs.map((crumb, position) => {
-              if (position === lastCrumb) {
-                return <li aria-current="page">{crumb.name}</li>;
-              }
-              return (
-                <li>
-                  <a href={crumb.path}>{crumb.name}</a>
-                </li>
-              );
-            })
-          }
-        </ol>
-        <h1 set:html={inline(page.h1)} />
-        <p class="lead" set:html={inline(page.lead)} />
-        <p class="doc-meta">Last updated {UPDATED_LABEL}</p>
-      </div>
-      <Fragment set:html={html} />
-      {
-        page.faq.length > 0 && (
-          <section id="faq">
-            <h2>Frequently asked questions</h2>
-            {page.faq.map((item) => (
-              <Fragment>
-                <h3 set:html={inline(item.q)} />
-                <p set:html={inline(item.a)} />
-              </Fragment>
-            ))}
-          </section>
-        )
-      }
-      <section id="start">
-        <h2>Start for free</h2>
-        <p>Install the skill, choose Global or Local, then tell your agent to deploy. No credit card, no config files.</p>
-        <div class="code"><pre>npx ezhst skill install</pre></div>
-        <div class="doc-cta">
-          <a href="https://app.reverhost.com/register" class="btn btn-primary">Sign up free</a>
-          <a href="/docs" class="btn btn-outline">Read the docs</a>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <Footer />
-  <CopyCode />
+  <Footer cta={false} />
 </Base>

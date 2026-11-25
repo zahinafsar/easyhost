@@ -1,0 +1,39 @@
+---
+import { ICONS } from "./icons.mjs";
+
+interface Props {
+  name: string;
+  size?: number;
+  stroke?: number;
+  label?: string;
+  class?: string;
+}
+
+const { name, size = 16, stroke = 1.75, label, class: className } = Astro.props;
+const body = ICONS[name];
+if (!body) {
+  throw new Error(`Icon "${name}" is not in src/components/ui/icons.mjs`);
+}
+let ariaHidden: "true" | undefined = "true";
+let role: string | undefined;
+if (label) {
+  ariaHidden = undefined;
+  role = "img";
+}
+---
+
+<svg
+  class:list={["icon", `icon-${name}`, className]}
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width={stroke}
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden={ariaHidden}
+  aria-label={label}
+  role={role}
+  set:html={body}
+/>

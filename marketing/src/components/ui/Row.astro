@@ -1,0 +1,10 @@
+---
+interface Props {
+  tone?: "default" | "muted" | "highlight";
+  class?: string;
+}
+
+const { tone = "default", class: className } = Astro.props;
+---
+
+<tr class:list={["table-row", `table-row-${tone}`, className]}><slot /></tr>

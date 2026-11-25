@@ -1,0 +1,17 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  icon: string;
+  tone?: "white" | "dark" | "green" | "orange" | "muted";
+  size?: "sm" | "md" | "lg";
+  class?: string;
+}
+
+const { icon, tone = "white", size = "md", class: className } = Astro.props;
+const iconSizes = { sm: 14, md: 18, lg: 22 };
+---
+
+<span class:list={["icon-tile", `icon-tile-${tone}`, `icon-tile-${size}`, className]} aria-hidden="true">
+  <Icon name={icon} size={iconSizes[size]} />
+</span>

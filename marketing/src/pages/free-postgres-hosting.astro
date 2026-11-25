@@ -2,7 +2,63 @@
 import Base from "../layouts/Base.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
-import CopyCode from "../components/CopyCode.astro";
+import StartCta from "../components/ui/StartCta.astro";
+import NavLink from "../components/ui/NavLink.astro";
+import Section from "../components/ui/Section.astro";
+import Frame from "../components/ui/Frame.astro";
+import Stack from "../components/ui/Stack.astro";
+import Box from "../components/ui/Box.astro";
+import Breadcrumbs from "../components/ui/Breadcrumbs.astro";
+import Heading from "../components/ui/Heading.astro";
+import Accent from "../components/ui/Accent.astro";
+import Text from "../components/ui/Text.astro";
+import Link from "../components/ui/Link.astro";
+import InlineCode from "../components/ui/InlineCode.astro";
+import Badge from "../components/ui/Badge.astro";
+import Button from "../components/ui/Button.astro";
+import DocLayout from "../components/ui/DocLayout.astro";
+import Toc from "../components/ui/Toc.astro";
+import Table from "../components/ui/Table.astro";
+import Row from "../components/ui/Row.astro";
+import Cell from "../components/ui/Cell.astro";
+import CodeBlock from "../components/ui/CodeBlock.astro";
+import CommandList from "../components/ui/CommandList.astro";
+import CommandRow from "../components/ui/CommandRow.astro";
+import Callout from "../components/ui/Callout.astro";
+import List from "../components/ui/List.astro";
+import ListItem from "../components/ui/ListItem.astro";
+import Accordion from "../components/ui/Accordion.astro";
+import AccordionItem from "../components/ui/AccordionItem.astro";
+
+const crumbs = [
+  { name: "Reverhost", path: "/" },
+  { name: "Free Postgres hosting", path: "/free-postgres-hosting" },
+];
+
+const toc = [
+  { href: "#included", label: "What you get" },
+  { href: "#create", label: "Create a database" },
+  { href: "#connect", label: "Connect from your app" },
+  { href: "#prisma", label: "Prisma migrations" },
+  { href: "#cli", label: "Query from the CLI" },
+  { href: "#limits", label: "Limits and caveats" },
+  { href: "#faq", label: "FAQ" },
+];
+
+const createCode = `npx ezhst db create main
+npx ezhst db info --json
+npx ezhst env set DATABASE_URL="postgresql://..."
+npx ezhst redeploy`;
+
+const drizzleCode = `import { drizzle } from "drizzle-orm/node-postgres";
+
+export const db = drizzle(process.env.DATABASE_URL!);`;
+
+const prismaCode = `datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}`;
 ---
 
 <Base>
@@ -105,133 +161,135 @@ import CopyCode from "../components/CopyCode.astro";
       }
     </script>
   </Fragment>
-    <Nav>
-          <a href="/">Home</a>
-          <a href="/free-nextjs-hosting">Free hosting</a>
-          <a href="/vercel-alternative">vs Vercel</a>
-          <a href="/docs" class="keep">Docs</a>
-    </Nav>
 
-    <div class="container docs">
-      <aside class="toc">
-        <p class="toc-title">On this page</p>
-        <ol>
-          <li><a href="#included">What you get</a></li>
-          <li><a href="#create">Create a database</a></li>
-          <li><a href="#connect">Connect from your app</a></li>
-          <li><a href="#prisma">Prisma migrations</a></li>
-          <li><a href="#cli">Query from the CLI</a></li>
-          <li><a href="#limits">Limits and caveats</a></li>
-          <li><a href="#faq">FAQ</a></li>
-        </ol>
-      </aside>
+  <Nav>
+    <NavLink href="/">Home</NavLink>
+    <NavLink href="/free-nextjs-hosting">Free hosting</NavLink>
+    <NavLink href="/vercel-alternative">vs Vercel</NavLink>
+    <NavLink href="/docs" keep>Docs</NavLink>
+  </Nav>
 
-      <main class="doc">
-        <div class="doc-head">
-          <ol class="crumbs" aria-label="Breadcrumb">
-            <li><a href="/">Reverhost</a></li><li aria-current="page">Free Postgres hosting</li>
-          </ol>
-          <h1>Free Postgres hosting that comes with your app</h1>
-          <p class="lead">Every Reverhost project can have one free Postgres 16 database. You get a standard connection string over TLS, a separate shadow database for Prisma, and a CLI that can run SQL. There is no credit card, and the database is not deleted on a timer.</p>
-          <p class="doc-meta">Last updated November 9, 2026</p>
-        </div>
+  <Section size="full" space="none">
+    <Frame padding="md">
+      <Stack gap="md" align="center">
+        <Breadcrumbs items={crumbs} />
+        <Heading level={1} size="xl" align="center" maxWidth="820px" reveal={0}>Free <Accent>Postgres</Accent> hosting that comes with your app</Heading>
+        <Text size="lg" tone="muted" align="center" maxWidth="720px" balance reveal={1}>Every Reverhost project can have one free Postgres 16 database. You get a standard connection string over TLS, a separate shadow database for Prisma, and a CLI that can run SQL. There is no credit card, and the database is not deleted on a timer.</Text>
+        <Stack direction="row" gap="xs" wrap justify="center" reveal={2}>
+          <Badge tone="white" icon="database">Postgres 16</Badge>
+          <Badge tone="white" icon="lock">TLS from anywhere</Badge>
+          <Badge tone="white" icon="layers">Shadow database for Prisma</Badge>
+          <Badge tone="green" icon="clock">No expiry</Badge>
+        </Stack>
+        <Stack direction="row" gap="sm" wrap justify="center" reveal={2}>
+          <Button href="https://app.reverhost.com/register" size="lg">Sign up free</Button>
+          <Button href="/docs#database" variant="secondary" size="lg">Database docs</Button>
+        </Stack>
+        <Text size="sm" tone="subtle" align="center">Last updated November 9, 2026</Text>
+      </Stack>
+    </Frame>
+  </Section>
 
-        <section id="included">
-          <h2>What the free Postgres database includes</h2>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Feature</th><th>Details</th></tr></thead>
-              <tbody>
-                <tr><td>Engine</td><td>Postgres 16</td></tr>
-                <tr><td>Databases</td><td>1 per project, 3 projects per account (10 on Pro)</td></tr>
-                <tr><td>Size</td><td>128 MB per database</td></tr>
-                <tr><td>Access</td><td>Your own database and role, reachable from anywhere over TLS</td></tr>
-                <tr><td>Connections</td><td>Up to 20 at a time per database</td></tr>
-                <tr><td>Shadow database</td><td>Included, for <code>prisma migrate dev</code></td></tr>
-                <tr><td>Tools</td><td>SQL from the CLI, plus a table browser and editor in the dashboard</td></tr>
-                <tr><td>Expiry</td><td>None</td></tr>
-                <tr><td>Price</td><td>$0</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p>The connection string works with any Postgres client, so you can use the database from your Reverhost app, from your laptop, or from an app hosted somewhere else.</p>
-        </section>
+  <DocLayout>
+    <Toc slot="aside" items={toc} />
 
-        <section id="create">
-          <h2>Create a database</h2>
-          <div class="code"><pre>npx ezhst db create main
-npx ezhst db info --json
-npx ezhst env set DATABASE_URL="postgresql://..."
-npx ezhst redeploy</pre></div>
-          <p><code>db info</code> returns the connection string and the shadow connection string. Setting <code>DATABASE_URL</code> with <code>env set</code> makes it available to your app on the next deploy. A coding agent with the <a href="/guides/deploy-nextjs-with-ai-agents">Reverhost skill</a> does all four steps when you ask it to "add a Postgres database".</p>
-        </section>
+    <Box as="section" id="included" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">What the free Postgres database includes</Heading>
+        <Table columns={["Feature", "Details"]}>
+          <Row><Cell head>Engine</Cell><Cell>Postgres 16</Cell></Row>
+          <Row><Cell head>Databases</Cell><Cell>1 per project, 3 projects per account (10 on Pro)</Cell></Row>
+          <Row><Cell head>Size</Cell><Cell>128 MB per database</Cell></Row>
+          <Row><Cell head>Access</Cell><Cell>Your own database and role, reachable from anywhere over TLS</Cell></Row>
+          <Row><Cell head>Connections</Cell><Cell>Up to 20 at a time per database</Cell></Row>
+          <Row><Cell head>Shadow database</Cell><Cell status="yes">Included, for <InlineCode>prisma migrate dev</InlineCode></Cell></Row>
+          <Row><Cell head>Tools</Cell><Cell>SQL from the CLI, plus a table browser and editor in the dashboard</Cell></Row>
+          <Row><Cell head>Expiry</Cell><Cell>None</Cell></Row>
+          <Row tone="highlight"><Cell head>Price</Cell><Cell status="yes">$0</Cell></Row>
+        </Table>
+        <Text tone="muted">The connection string works with any Postgres client, so you can use the database from your Reverhost app, from your laptop, or from an app hosted somewhere else.</Text>
+      </Stack>
+    </Box>
 
-        <section id="connect">
-          <h2>Connect from your Next.js app</h2>
-          <p>Use whichever client you already use. With Drizzle:</p>
-          <div class="code"><div class="code-label">lib/db.ts</div><pre>import &#123; drizzle &#125; from "drizzle-orm/node-postgres";
+    <Box as="section" id="create" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">Create a database</Heading>
+        <CodeBlock code={createCode} />
+        <Text tone="muted"><InlineCode>db info</InlineCode> returns the connection string and the shadow connection string. Setting <InlineCode>DATABASE_URL</InlineCode> with <InlineCode>env set</InlineCode> makes it available to your app on the next deploy. A coding agent with the <Link href="/guides/deploy-nextjs-with-ai-agents">Reverhost skill</Link> does all four steps when you ask it to "add a Postgres database".</Text>
+      </Stack>
+    </Box>
 
-export const db = drizzle(process.env.DATABASE_URL!);</pre></div>
-          <p>With Prisma, <code>DATABASE_URL</code> is read from the datasource block in <code>schema.prisma</code> as usual.</p>
-          <p>Because your app is a long-running Node.js process rather than a set of serverless functions, a normal connection pool works and you do not need a pooling proxy in front of the database.</p>
-        </section>
+    <Box as="section" id="connect" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">Connect from your Next.js app</Heading>
+        <Text tone="muted">Use whichever client you already use. With Drizzle:</Text>
+        <CodeBlock code={drizzleCode} label="lib/db.ts" />
+        <Text tone="muted">With Prisma, <InlineCode>DATABASE_URL</InlineCode> is read from the datasource block in <InlineCode>schema.prisma</InlineCode> as usual.</Text>
+        <Callout tone="success" icon="server">
+          <Text size="sm">Because your app is a long-running Node.js process rather than a set of serverless functions, a normal connection pool works and you do not need a pooling proxy in front of the database.</Text>
+        </Callout>
+      </Stack>
+    </Box>
 
-        <section id="prisma">
-          <h2>Prisma migrations and the shadow database</h2>
-          <p><code>prisma migrate dev</code> needs a second, empty database to detect drift. On a host that gives you a single database, you have to find one somewhere else. Reverhost creates it for you and returns its URL from <code>ezhst db info</code>.</p>
-          <div class="code"><div class="code-label">prisma/schema.prisma</div><pre>datasource db &#123;
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-&#125;</pre></div>
-          <p>Run migrations from your machine against the connection string, for example <code>prisma migrate deploy</code> before a deploy.</p>
-        </section>
+    <Box as="section" id="prisma" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">Prisma migrations and the shadow database</Heading>
+        <Text tone="muted"><InlineCode>prisma migrate dev</InlineCode> needs a second, empty database to detect drift. On a host that gives you a single database, you have to find one somewhere else. Reverhost creates it for you and returns its URL from <InlineCode>ezhst db info</InlineCode>.</Text>
+        <CodeBlock code={prismaCode} label="prisma/schema.prisma" />
+        <Text tone="muted">Run migrations from your machine against the connection string, for example <InlineCode>prisma migrate deploy</InlineCode> before a deploy.</Text>
+      </Stack>
+    </Box>
 
-        <section id="cli">
-          <h2>Query it from the command line</h2>
-          <div class="cmds">
-            <div class="cmd-row"><code>ezhst db query "select count(*) from users"</code><span>Run one SQL statement.</span></div>
-            <div class="cmd-row"><code>ezhst db query --file seed.sql</code><span>Run a SQL file.</span></div>
-            <div class="cmd-row"><code>ezhst db rows users --page 2</code><span>Browse rows in a table.</span></div>
-            <div class="cmd-row"><code>ezhst db reset-password</code><span>Rotate the password and print the new connection string.</span></div>
-          </div>
-          <p>All of them accept <code>--json</code>, which is how agents inspect a schema or check that a migration worked. Statements run through the CLI and dashboard time out after 15 seconds. See the <a href="/docs#database">database docs</a> for every command.</p>
-        </section>
+    <Box as="section" id="cli" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">Query it from the command line</Heading>
+        <CommandList>
+          <CommandRow command={'ezhst db query "select count(*) from users"'}>Run one SQL statement.</CommandRow>
+          <CommandRow command="ezhst db query --file seed.sql">Run a SQL file.</CommandRow>
+          <CommandRow command="ezhst db rows users --page 2">Browse rows in a table.</CommandRow>
+          <CommandRow command="ezhst db reset-password">Rotate the password and print the new connection string.</CommandRow>
+        </CommandList>
+        <Text tone="muted">All of them accept <InlineCode>--json</InlineCode>, which is how agents inspect a schema or check that a migration worked. Statements run through the CLI and dashboard time out after 15 seconds. See the <Link href="/docs#database">database docs</Link> for every command.</Text>
+      </Stack>
+    </Box>
 
-        <section id="limits">
-          <h2>Limits and caveats</h2>
-          <ul>
-            <li>One database per project. Create another project if you need a second one.</li>
-            <li>Databases live on a shared Postgres server in one region. This is meant for side projects, prototypes and small apps, not for heavy production workloads.</li>
-            <li>Each database allows up to 20 concurrent connections.</li>
-            <li>Keep your own backups of anything important. <code>pg_dump</code> works with the connection string.</li>
-          </ul>
-          <p>For comparison, Render's free Postgres databases expire 30 days after creation and are capped at 1 GB, according to the <a href="https://render.com/docs/free" rel="noopener">Render free tier docs</a> as of September 2026.</p>
-        </section>
+    <Box as="section" id="limits" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">Limits and caveats</Heading>
+        <Box tone="white" border shadow radius="lg" padding="md">
+          <List marker="dot" gap="md" divided>
+            <ListItem icon="database" tone="orange">One database per project. Create another project if you need a second one.</ListItem>
+            <ListItem icon="server" tone="orange">Databases live on a shared Postgres server in one region. This is meant for side projects, prototypes and small apps, not for heavy production workloads.</ListItem>
+            <ListItem icon="plug" tone="orange">Each database allows up to 20 concurrent connections.</ListItem>
+            <ListItem icon="hard-drive" tone="orange">Keep your own backups of anything important. <InlineCode>pg_dump</InlineCode> works with the connection string.</ListItem>
+          </List>
+        </Box>
+        <Text tone="muted">For comparison, Render's free Postgres databases expire 30 days after creation and are capped at 1 GB, according to the <Link href="https://render.com/docs/free" rel="noopener">Render free tier docs</Link> as of September 2026.</Text>
+      </Stack>
+    </Box>
 
-        <section id="faq">
-          <h2>Frequently asked questions</h2>
-          <h3>Is the Reverhost Postgres database free forever?</h3>
-          <p>It is free with no trial period and no expiry date. Each project can have one database.</p>
-          <h3>Can I connect from outside Reverhost?</h3>
-          <p>Yes. The connection string uses a public host with TLS, so it works from your laptop, from CI and from apps hosted elsewhere.</p>
-          <h3>Does it work with Prisma and Drizzle?</h3>
-          <p>Yes. It is a standard Postgres 16 database. A shadow database for <code>prisma migrate dev</code> is included.</p>
-          <h3>Can I use the database without hosting an app on Reverhost?</h3>
-          <p>Yes. Create a project, create its database and use the connection string anywhere. You do not have to deploy an app to the project.</p>
-        </section>
+    <Box as="section" id="faq" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">Frequently asked questions</Heading>
+        <Accordion>
+          <AccordionItem question="Is the Reverhost Postgres database free forever?">
+            <Text tone="muted">It is free with no trial period and no expiry date. Each project can have one database.</Text>
+          </AccordionItem>
+          <AccordionItem question="Can I connect from outside Reverhost?">
+            <Text tone="muted">Yes. The connection string uses a public host with TLS, so it works from your laptop, from CI and from apps hosted elsewhere.</Text>
+          </AccordionItem>
+          <AccordionItem question="Does it work with Prisma and Drizzle?">
+            <Text tone="muted">Yes. It is a standard Postgres 16 database. A shadow database for <InlineCode>prisma migrate dev</InlineCode> is included.</Text>
+          </AccordionItem>
+          <AccordionItem question="Can I use the database without hosting an app on Reverhost?">
+            <Text tone="muted">Yes. Create a project, create its database and use the connection string anywhere. You do not have to deploy an app to the project.</Text>
+          </AccordionItem>
+        </Accordion>
+      </Stack>
+    </Box>
 
-        <section id="start">
-          <h2>Start for free</h2>
-          <p>Install the skill, choose Global or Local, then tell your agent to deploy. No credit card, no config files.</p>
-          <div class="code"><pre>npx ezhst skill install</pre></div>
-          <div class="doc-cta">
-            <a href="https://app.reverhost.com/register" class="btn btn-primary">Sign up free</a>
-            <a href="/docs" class="btn btn-outline">Read the docs</a>
-          </div>
-        </section>
-      </main>
-    </div>
-    <Footer />
-    <CopyCode />
+    <StartCta />
+  </DocLayout>
+
+  <Footer cta={false} />
 </Base>

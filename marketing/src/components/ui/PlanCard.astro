@@ -1,0 +1,48 @@
+---
+import Badge from "./Badge.astro";
+import Button from "./Button.astro";
+import Icon from "./Icon.astro";
+
+interface Props {
+  name: string;
+  price: string;
+  period?: string;
+  description?: string;
+  features: string[];
+  tag?: string;
+  highlight?: boolean;
+  cta: { label: string; href: string };
+  class?: string;
+}
+
+const { name, price, period, description, features, tag, highlight = false, cta, class: className } = Astro.props;
+let ctaVariant: "primary" | "dark-inverse" = "primary";
+let tagTone: "green" | "neutral" = "neutral";
+if (highlight) {
+  ctaVariant = "dark-inverse";
+  tagTone = "green";
+}
+---
+
+<article class:list={["plan", highlight && "plan-highlight", className]}>
+  <div class="plan-top">
+    <div class="plan-name-row">
+      <h3 class="plan-name">{name}</h3>
+      {tag && <Badge tone={tagTone}>{tag}</Badge>}
+    </div>
+    <p class="plan-price">{price}{period && <span>{period}</span>}</p>
+    {description && <p class="plan-desc">{description}</p>}
+  </div>
+  <ul class="plan-list">
+    {
+      features.map((feature) => (
+        <li>
+          <span class="plan-check" aria-hidden="true"><Icon name="check" size={12} stroke={2.5} /></span>
+          <span>{feature}</span>
+        </li>
+      ))
+    }
+  </ul>
+  <slot />
+  <Button href={cta.href} variant={ctaVariant} size="lg" block>{cta.label}</Button>
+</article>

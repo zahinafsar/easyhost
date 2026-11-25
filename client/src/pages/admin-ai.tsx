@@ -1,17 +1,31 @@
-import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Link } from "@/components/ui/link";
+import { Stack } from "@/components/ui/stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Text } from "@/components/ui/text";
 import { StatusBadge } from "@/components/status-badge";
 import { adminQuery } from "@/lib/queries";
-import { AdminHeader, ChartCard, EmptyRow, PageSkeleton, RangePicker, Stat, StatGrid, formatNumber, useAdminRange } from "@/components/admin-layout";
+import {
+  AdminHeader,
+  ChartCard,
+  ChartGrid,
+  EmptyRow,
+  PageSkeleton,
+  RangePicker,
+  Stat,
+  StatGrid,
+  StatusBreakdown,
+  TableCard,
+  formatNumber,
+  useAdminRange,
+} from "@/components/admin-layout";
 
 export const AdminAiPage = () => {
   const { days } = useAdminRange();
   const { data } = useQuery(adminQuery().ai(days));
 
   return (
-    <div className="space-y-6">
+    <Stack gap={6}>
       <AdminHeader title="AI Builder" description="Token spend, builder runs and AI apps." action={<RangePicker />} />
       {!data && <PageSkeleton />}
       {data && (
@@ -30,19 +44,18 @@ export const AdminAiPage = () => {
             <Stat label="AI apps" value={formatNumber(data.totals.aiApps)} />
             <Stat label="Unspent token balance" value={formatNumber(data.totals.outstandingBalance)} hint="Across all users" />
             <Stat label="Free builds used" value={formatNumber(data.totals.freeBuildsUsed)} />
-            <div className="border bg-card p-4">
-              <p className="text-xs text-muted-foreground">AI apps by state</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {data.totals.statuses.map((row) => (
-                  <span key={row.status} className="flex items-center gap-1 text-sm tabular-nums">
-                    <StatusBadge status={row.status} />
+            <StatusBreakdown label="AI apps by state">
+              {data.totals.statuses.map((row) => (
+                <Stack key={row.status} direction="row" align="center" gap={1}>
+                  <StatusBadge status={row.status} />
+                  <Text as="span" size="sm" tabular>
                     {row.count}
-                  </span>
-                ))}
-              </div>
-            </div>
+                  </Text>
+                </Stack>
+              ))}
+            </StatusBreakdown>
           </StatGrid>
-          <div className="grid gap-4 lg:grid-cols-2">
+          <ChartGrid>
             <ChartCard
               title="Tokens per day"
               type="bar"
@@ -55,76 +68,72 @@ export const AdminAiPage = () => {
               ]}
             />
             <ChartCard title="Builder runs per day" type="line" data={data.series} xKey="day" series={[{ key: "runs", label: "Runs", color: "var(--chart-3)" }]} />
-          </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardDescription>Top users by tokens</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead className="text-right">Tokens</TableHead>
-                      <TableHead className="text-right">Runs</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
+          </ChartGrid>
+          <ChartGrid>
+            <TableCard title="Top users by tokens">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead className="text-right">Tokens</TableHead>
+                    <TableHead className="text-right">Runs</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.topUsers.length === 0 && <EmptyRow colSpan={4}>No usage in this period</EmptyRow>}
+                  {data.topUsers.map((row) => (
+                    <TableRow key={row.userId}>
+                      <TableCell>
+                        <Link to={`/admin/users/${row.userId}`}>{row.email}</Link>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{formatNumber(row.tokens)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatNumber(row.runs)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatNumber(row.balance)}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.topUsers.length === 0 && <EmptyRow colSpan={4}>No usage in this period</EmptyRow>}
-                    {data.topUsers.map((row) => (
-                      <TableRow key={row.userId}>
-                        <TableCell>
-                          <Link to={`/admin/users/${row.userId}`} className="text-sm hover:underline">
-                            {row.email}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">{formatNumber(row.tokens)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatNumber(row.runs)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatNumber(row.balance)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardDescription>Top apps by tokens</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>App</TableHead>
-                      <TableHead className="text-right">Tokens</TableHead>
-                      <TableHead className="text-right">Runs</TableHead>
-                      <TableHead className="text-right">Input / output</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.topApps.length === 0 && <EmptyRow colSpan={4}>No usage in this period</EmptyRow>}
-                    {data.topApps.map((row) => (
-                      <TableRow key={`${row.appId}-${row.appName}`}>
-                        <TableCell>
-                          <p className="font-mono text-sm">{row.appName}</p>
-                          {!row.appId && <p className="text-xs text-muted-foreground">Deleted</p>}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">{formatNumber(row.tokens)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatNumber(row.runs)}</TableCell>
-                        <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
+                  ))}
+                </TableBody>
+              </Table>
+            </TableCard>
+            <TableCard title="Top apps by tokens">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>App</TableHead>
+                    <TableHead className="text-right">Tokens</TableHead>
+                    <TableHead className="text-right">Runs</TableHead>
+                    <TableHead className="text-right">Input / output</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.topApps.length === 0 && <EmptyRow colSpan={4}>No usage in this period</EmptyRow>}
+                  {data.topApps.map((row) => (
+                    <TableRow key={`${row.appId}-${row.appName}`}>
+                      <TableCell>
+                        <Text size="sm" mono>
+                          {row.appName}
+                        </Text>
+                        {!row.appId && (
+                          <Text size="xs" tone="muted">
+                            Deleted
+                          </Text>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{formatNumber(row.tokens)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatNumber(row.runs)}</TableCell>
+                      <TableCell className="text-right">
+                        <Text as="span" size="xs" tone="muted" tabular>
                           {formatNumber(row.inputTokens)} / {formatNumber(row.outputTokens)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
+                        </Text>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableCard>
+          </ChartGrid>
         </>
       )}
-    </div>
+    </Stack>
   );
 };

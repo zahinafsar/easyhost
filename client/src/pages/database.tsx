@@ -1,21 +1,52 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Copy, Eye, EyeOff, KeyRound, Play, Table2, Trash2 } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Play, Table2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Alert,
+  Button,
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Code,
+  EmptyState,
+  FormActions,
+  Grid,
+  HStack,
+  Icon,
+  Input,
+  Kbd,
+  List,
+  ListItem,
+  Skeleton,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableEmpty,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Text,
+  Textarea,
+  UsageMeter,
+} from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmButton } from "@/components/confirm-button";
+import { SecretField } from "@/components/resources/secret-field";
+import { SelectableList, SelectableListItem } from "@/components/ui/selectable-list";
+import { CellValue } from "@/components/ui/cell-value";
 import { api, unwrap } from "@/lib/api";
 import { databasesQuery, userQuery } from "@/lib/queries";
 import { formatBytes } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 
 const formatCell = (value: unknown) => {
@@ -61,7 +92,7 @@ const EditableCell = ({
 
   if (editing) {
     return (
-      <div className="flex min-w-48 items-center gap-1">
+      <HStack gap={1} className="min-w-48">
         <Input
           autoFocus
           value={draft}
@@ -75,35 +106,21 @@ const EditableCell = ({
               setEditing(false);
             }
           }}
-          className="h-7 font-mono text-xs"
+          className="h-8 rounded-sm font-mono text-xs"
         />
         {nullable && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => commit(null)}
-          >
+          <Button variant="secondary" size="xs" onMouseDown={(event) => event.preventDefault()} onClick={() => commit(null)}>
             NULL
           </Button>
         )}
-      </div>
+      </HStack>
     );
   }
 
   return (
-    <div
-      onClick={start}
-      className={cn(
-        "max-w-xs truncate",
-        editable && "cursor-text hover:bg-muted/60",
-        value === null && "italic text-muted-foreground",
-      )}
-      title={value ?? "NULL"}
-    >
+    <CellValue editable={editable} empty={value === null} title={value ?? "NULL"} onEdit={start}>
       {value ?? "NULL"}
-    </div>
+    </CellValue>
   );
 };
 
@@ -116,38 +133,52 @@ const BlockedTables = ({ databaseId, tables }: { databaseId: string; tables: { n
   });
 
   return (
-    <Card className="border-red-300">
-      <CardHeader>
-        <CardTitle className="text-base">Database is blocked</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          This database is larger than its size limit, so connections are blocked and the project's apps are stopped. Truncate or drop tables to get under the limit.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {!tables.length && <p className="text-sm text-muted-foreground">No tables.</p>}
-        {tables.map((table) => (
-          <div key={table.name} className="flex items-center justify-between gap-3 border p-3">
-            <span className="font-mono text-sm">{table.name}</span>
-            <div className="flex gap-2">
-              <ConfirmButton
-                title={`Truncate ${table.name}?`}
-                description="Every row in this table will be permanently deleted. The table itself stays."
-                confirmLabel="Truncate"
-                onConfirm={() => clear.mutate({ table: table.name, mode: "truncate" })}
-              >
-                <Button variant="outline" size="sm" disabled={clear.isPending}>Truncate</Button>
-              </ConfirmButton>
-              <ConfirmButton
-                title={`Drop ${table.name}?`}
-                description="The table and all its rows will be permanently deleted."
-                confirmLabel="Drop"
-                onConfirm={() => clear.mutate({ table: table.name, mode: "drop" })}
-              >
-                <Button variant="destructive" size="sm" disabled={clear.isPending}>Drop</Button>
-              </ConfirmButton>
-            </div>
-          </div>
-        ))}
+    <Card>
+      <CardContent>
+        <Stack gap={5}>
+          <Alert variant="danger" title="Database is blocked">
+            This database is larger than its size limit, so connections are blocked and the project's apps are stopped. Truncate or drop tables to get under the limit.
+          </Alert>
+          {!tables.length && <EmptyState size="sm" bordered title="No tables." />}
+          {!!tables.length && (
+            <List variant="divided">
+              {tables.map((table) => (
+                <ListItem key={table.name}>
+                  <HStack justify="between" gap={3}>
+                    <HStack gap={2}>
+                      <Icon icon={Table2} tone="muted" />
+                      <Text as="span" size="sm" mono>
+                        {table.name}
+                      </Text>
+                    </HStack>
+                    <HStack gap={2}>
+                      <ConfirmButton
+                        title={`Truncate ${table.name}?`}
+                        description="Every row in this table will be permanently deleted. The table itself stays."
+                        confirmLabel="Truncate"
+                        onConfirm={() => clear.mutate({ table: table.name, mode: "truncate" })}
+                      >
+                        <Button variant="secondary" size="sm" disabled={clear.isPending}>
+                          Truncate
+                        </Button>
+                      </ConfirmButton>
+                      <ConfirmButton
+                        title={`Drop ${table.name}?`}
+                        description="The table and all its rows will be permanently deleted."
+                        confirmLabel="Drop"
+                        onConfirm={() => clear.mutate({ table: table.name, mode: "drop" })}
+                      >
+                        <Button variant="destructive" size="sm" disabled={clear.isPending}>
+                          Drop
+                        </Button>
+                      </ConfirmButton>
+                    </HStack>
+                  </HStack>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Stack>
       </CardContent>
     </Card>
   );
@@ -172,10 +203,8 @@ const TableEditor = ({ databaseId, tables }: { databaseId: string; tables: { nam
 
   if (!tables.length) {
     return (
-      <Card>
-        <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          No tables yet. Create them with your ORM migrations or the SQL console.
-        </CardContent>
+      <Card className="py-0">
+        <EmptyState icon={Table2} title="No tables yet" description="Create them with your ORM migrations or the SQL console." />
       </Card>
     );
   }
@@ -188,85 +217,78 @@ const TableEditor = ({ databaseId, tables }: { databaseId: string; tables: { nam
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-      <Card className="h-fit gap-0 py-2">
+    <Grid cols="sidebar-left" gap={6} align="start">
+      <SelectableList label="Tables" className="max-h-[32rem]">
         {tables.map((item) => (
-          <button
+          <SelectableListItem
             key={item.name}
-            onClick={() => {
+            icon={Table2}
+            active={item.name === table}
+            onSelect={() => {
               setSelected(item.name);
               setPage(1);
             }}
-            className={cn(
-              "flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted",
-              item.name === table && "bg-muted font-medium",
-            )}
           >
-            <Table2 className="size-4 text-muted-foreground" />
-            <span className="truncate">{item.name}</span>
-          </button>
+            {item.name}
+          </SelectableListItem>
         ))}
-      </Card>
-      <div className="min-w-0 space-y-3">
-        {rows.isLoading && <Skeleton className="h-64 w-full" />}
-        {rows.isError && <p className="text-sm text-destructive">{rows.error.message}</p>}
+      </SelectableList>
+      <Stack gap={3}>
+        {rows.isLoading && <Skeleton className="h-64 w-full rounded-xl" />}
+        {rows.isError && <Alert variant="danger">{rows.error.message}</Alert>}
         {data && (
           <>
-            <Card className="overflow-auto py-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {data.columns.map((column) => (
-                      <TableHead key={column.name} className="whitespace-nowrap">
-                        <span className="font-mono">{column.name}</span>
-                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+            <Table framed>
+              <TableHeader>
+                <TableRow>
+                  {data.columns.map((column) => (
+                    <TableHead key={column.name}>
+                      <HStack as="span" gap={2} inline>
+                        <Text as="span" size="inherit" mono className="normal-case tracking-normal text-foreground">
+                          {column.name}
+                        </Text>
+                        <Text as="span" size="2xs" tone="muted" className="normal-case tracking-normal">
                           {column.type}
                           {column.isPrimaryKey && " PK"}
-                        </span>
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {!data.rows.length && (
-                    <TableRow>
-                      <TableCell colSpan={data.columns.length} className="py-10 text-center text-sm text-muted-foreground">
-                        This table is empty.
-                      </TableCell>
+                        </Text>
+                      </HStack>
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {!data.rows.length && <TableEmpty colSpan={data.columns.length}>This table is empty.</TableEmpty>}
+                {data.rows.map((row, index) => {
+                  const key = Object.fromEntries(data.primaryKey.map((name) => [name, row[name]]));
+                  return (
+                    <TableRow key={`${page}-${index}`}>
+                      {data.columns.map((column) => (
+                        <TableCell key={column.name} className="font-mono text-xs">
+                          <EditableCell
+                            value={row[column.name]}
+                            nullable={column.nullable}
+                            editable={editable}
+                            onSave={(value) => save.mutate({ key, column: column.name, value })}
+                          />
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  )}
-                  {data.rows.map((row, index) => {
-                    const key = Object.fromEntries(data.primaryKey.map((name) => [name, row[name]]));
-                    return (
-                      <TableRow key={`${page}-${index}`}>
-                        {data.columns.map((column) => (
-                          <TableCell key={column.name} className="font-mono text-xs">
-                            <EditableCell
-                              value={row[column.name]}
-                              nullable={column.nullable}
-                              editable={editable}
-                              onSave={(value) => save.mutate({ key, column: column.name, value })}
-                            />
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </Card>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            <FormActions align="end">
+              <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled={lastRow >= data.total} onClick={() => setPage(page + 1)}>
+              <Button variant="secondary" size="sm" disabled={lastRow >= data.total} onClick={() => setPage(page + 1)}>
                 Next
               </Button>
-            </div>
+            </FormActions>
           </>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Grid>
   );
 };
 
@@ -282,36 +304,50 @@ const SqlConsole = ({ databaseId }: { databaseId: string }) => {
   const rows = (result?.rows ?? []) as Record<string, unknown>[];
 
   return (
-    <div className="space-y-4">
-      <Textarea
-        value={sql}
-        onChange={(event) => setSql(event.target.value)}
-        onKeyDown={(event) => {
-          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-            run.mutate(undefined);
-          }
-        }}
-        className="min-h-40 font-mono text-sm"
-      />
-      <div className="flex items-center gap-3">
-        <Button onClick={() => run.mutate(undefined)} disabled={run.isPending}>
-          <Play className="size-4" />
-          Run
-        </Button>
-        <span className="text-xs text-muted-foreground">Cmd/Ctrl + Enter</span>
-      </div>
+    <Stack gap={4}>
+      <Card>
+        <CardContent>
+          <Stack gap={4}>
+            <Textarea
+              aria-label="SQL"
+              value={sql}
+              onChange={(event) => setSql(event.target.value)}
+              onKeyDown={(event) => {
+                if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                  run.mutate(undefined);
+                }
+              }}
+              className="min-h-40 font-mono text-sm"
+              spellCheck={false}
+            />
+            <HStack gap={3}>
+              <Button onClick={() => run.mutate(undefined)} loading={run.isPending}>
+                {!run.isPending && <Play />}
+                Run
+              </Button>
+              <HStack gap={1}>
+                <Kbd>Cmd/Ctrl</Kbd>
+                <Text as="span" size="xs" tone="muted">
+                  +
+                </Text>
+                <Kbd>Enter</Kbd>
+              </HStack>
+            </HStack>
+          </Stack>
+        </CardContent>
+      </Card>
       {result && !result.columns.length && (
-        <p className="text-sm text-muted-foreground">
+        <Alert variant="success">
           {result.command} {result.rowCount ?? 0} row(s).
-        </p>
+        </Alert>
       )}
       {result && !!result.columns.length && (
-        <Card className="overflow-auto py-0">
-          <Table>
+        <Stack gap={2}>
+          <Table framed>
             <TableHeader>
               <TableRow>
                 {result.columns.map((column) => (
-                  <TableHead key={column} className="font-mono">
+                  <TableHead key={column} className="font-mono normal-case tracking-normal">
                     {column}
                   </TableHead>
                 ))}
@@ -329,10 +365,14 @@ const SqlConsole = ({ databaseId }: { databaseId: string }) => {
               ))}
             </TableBody>
           </Table>
-          {result.truncated && <p className="p-3 text-xs text-muted-foreground">Showing the first 1000 rows.</p>}
-        </Card>
+          {result.truncated && (
+            <Text size="xs" tone="muted">
+              Showing the first 1000 rows.
+            </Text>
+          )}
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 };
 
@@ -356,7 +396,12 @@ export const DatabasePage = () => {
   });
 
   if (isLoading || !data) {
-    return <Skeleton className="h-64 w-full" />;
+    return (
+      <Stack gap={6}>
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </Stack>
+    );
   }
 
   const { database, tables } = data;
@@ -371,6 +416,20 @@ export const DatabasePage = () => {
     toast.success("Copied");
   };
 
+  const display = (value: string) => {
+    if (revealed) {
+      return value;
+    }
+    return maskPassword(value);
+  };
+
+  let revealLabel = "Show";
+  let RevealIcon = Eye;
+  if (revealed) {
+    revealLabel = "Hide";
+    RevealIcon = EyeOff;
+  }
+
   return (
     <>
       <PageHeader
@@ -383,68 +442,76 @@ export const DatabasePage = () => {
             onConfirm={() => remove.mutate(undefined)}
           >
             <Button variant="destructive">
-              <Trash2 className="size-4" />
+              <Trash2 />
               Delete
             </Button>
           </ConfirmButton>
         }
       />
+      <Stack gap={6}>
+        <Grid cols="sidebar" gap={6} align="start">
+          <Card>
+            <CardHeader>
+              <CardTitle>Connection</CardTitle>
+              <CardDescription>
+                Using psql or a GUI client like TablePlus? Change the sslmode parameter to <Code>sslmode=require</Code>.
+              </CardDescription>
+              <CardAction>
+                <HStack gap={2}>
+                  <Button variant="ghost" size="sm" onClick={() => setRevealed(!revealed)}>
+                    <RevealIcon />
+                    {revealLabel}
+                  </Button>
+                  <ConfirmButton
+                    title="Reset password?"
+                    description="The current connection string stops working immediately. Apps using it must be updated."
+                    confirmLabel="Reset"
+                    onConfirm={() => resetPassword.mutate(undefined)}
+                  >
+                    <Button variant="secondary" size="sm" disabled={resetPassword.isPending}>
+                      <KeyRound />
+                      Reset password
+                    </Button>
+                  </ConfirmButton>
+                </HStack>
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              <Stack gap={4}>
+                {connections.map((connection) => (
+                  <SecretField key={connection.label} label={connection.label} display={display(connection.value)} onCopy={() => copy(connection.value)} />
+                ))}
+              </Stack>
+            </CardContent>
+          </Card>
+          <Card variant="inset">
+            <CardHeader>
+              <CardTitle>Usage</CardTitle>
+              <CardDescription>Postgres size counted against this project's limit.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UsageMeter label="Database size" used={database.sizeBytes} limit={database.limitBytes} format={formatBytes} />
+            </CardContent>
+          </Card>
+        </Grid>
 
-      <Card className="mb-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Connection</CardTitle>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setRevealed(!revealed)}>
-              {revealed ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              {revealed ? "Hide" : "Show"}
-            </Button>
-            <ConfirmButton
-              title="Reset password?"
-              description="The current connection string stops working immediately. Apps using it must be updated."
-              confirmLabel="Reset"
-              onConfirm={() => resetPassword.mutate(undefined)}
-            >
-              <Button variant="outline" size="sm" disabled={resetPassword.isPending}>
-                <KeyRound className="size-4" />
-                Reset password
-              </Button>
-            </ConfirmButton>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {connections.map((connection) => (
-            <div key={connection.label} className="space-y-1.5">
-              <p className="text-xs text-muted-foreground">{connection.label}</p>
-              <div className="flex items-stretch border bg-muted/40">
-                <pre className="min-w-0 flex-1 overflow-x-auto p-3 font-mono text-xs">
-                  {revealed ? connection.value : maskPassword(connection.value)}
-                </pre>
-                <Button variant="ghost" size="icon" className="h-auto rounded-none border-l" onClick={() => copy(connection.value)}>
-                  <Copy className="size-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-          <p className="text-xs text-muted-foreground">
-            Using psql or a GUI client like TablePlus? Change the sslmode parameter to sslmode=require.
-          </p>
-        </CardContent>
-      </Card>
+        {database.blocked && <BlockedTables databaseId={database.id} tables={tables} />}
 
-      {database.blocked && <BlockedTables databaseId={database.id} tables={tables} />}
-
-      {!database.blocked && <Tabs defaultValue="tables">
-        <TabsList>
-          <TabsTrigger value="tables">Table editor</TabsTrigger>
-          <TabsTrigger value="sql">SQL console</TabsTrigger>
-        </TabsList>
-        <TabsContent value="tables" className="mt-4">
-          <TableEditor databaseId={database.id} tables={tables} />
-        </TabsContent>
-        <TabsContent value="sql" className="mt-4">
-          <SqlConsole databaseId={database.id} />
-        </TabsContent>
-      </Tabs>}
+        {!database.blocked && (
+          <Tabs defaultValue="tables">
+            <TabsList>
+              <TabsTrigger value="tables">Table editor</TabsTrigger>
+              <TabsTrigger value="sql">SQL console</TabsTrigger>
+            </TabsList>
+            <TabsContent value="tables">
+              <TableEditor databaseId={database.id} tables={tables} />
+            </TabsContent>
+            <TabsContent value="sql">
+              <SqlConsole databaseId={database.id} />
+            </TabsContent>
+          </Tabs>
+        )}
+      </Stack>
     </>
   );
 };

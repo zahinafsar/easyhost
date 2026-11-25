@@ -1,0 +1,21 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  command: string;
+  prompt?: string;
+  copyLabel?: string;
+  tone?: "light" | "dark";
+  class?: string;
+}
+
+const { command, prompt = "$", copyLabel = "Copy command", tone = "light", class: className } = Astro.props;
+---
+
+<div class:list={["copy-line", `copy-line-${tone}`, className]}>
+  <code class="copy-line-text">{prompt && <span class="copy-line-prompt">{prompt}</span>}{command}</code>
+  <button class="copy" type="button" data-copy={command} aria-label={copyLabel}>
+    <Icon name="copy" size={15} class="icon-copy" />
+    <Icon name="check" size={15} class="icon-done" />
+  </button>
+</div>

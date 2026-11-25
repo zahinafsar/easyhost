@@ -1,0 +1,30 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  href: string;
+  tone?: "default" | "muted" | "inherit" | "inverse" | "accent";
+  underline?: "always" | "hover" | "none";
+  external?: boolean;
+  icon?: string;
+  weight?: "regular" | "medium";
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { href, tone = "default", underline = "hover", external = false, icon, weight, class: className, ...rest } = Astro.props;
+let target: string | undefined;
+let rel: string | undefined;
+if (external) {
+  target = "_blank";
+  rel = "noopener noreferrer";
+}
+---
+
+<a
+  href={href}
+  class:list={["link", `link-${tone}`, `link-underline-${underline}`, weight && `weight-${weight}`, icon && "link-has-icon", className]}
+  target={target}
+  rel={rel}
+  {...rest}
+><slot />{icon && <Icon name={icon} size={14} />}</a>

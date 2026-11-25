@@ -1,0 +1,21 @@
+---
+interface Props {
+  title?: string;
+  tone?: "light" | "dark" | "frosted";
+  padding?: "none" | "sm" | "md";
+  class?: string;
+}
+
+const { title, tone = "light", padding = "md", class: className } = Astro.props;
+---
+
+<figure class:list={["mock", `mock-${tone}`, `mock-pad-${padding}`, className]}>
+  <div class="mock-bar">
+    <span class="mock-dots" aria-hidden="true"><i /><i /><i /></span>
+    {title && <span class="mock-title">{title}</span>}
+    <span class="mock-actions"><slot name="actions" /></span>
+  </div>
+  <div class="mock-body">
+    <slot />
+  </div>
+</figure>

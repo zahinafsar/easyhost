@@ -1,0 +1,25 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  tone?: "info" | "success" | "warning";
+  icon?: string;
+  title?: string;
+  class?: string;
+}
+
+const { tone = "info", icon, title, class: className } = Astro.props;
+const defaults = { info: "info", success: "circle-check", warning: "triangle-alert" };
+let iconName = icon;
+if (!iconName) {
+  iconName = defaults[tone];
+}
+---
+
+<div class:list={["callout", `callout-${tone}`, className]}>
+  <span class="callout-icon" aria-hidden="true"><Icon name={iconName} size={16} /></span>
+  <div class="callout-body">
+    {title && <p class="callout-title">{title}</p>}
+    <slot />
+  </div>
+</div>

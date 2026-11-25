@@ -1,0 +1,19 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  tone?: "neutral" | "green" | "orange" | "red" | "blue" | "dark" | "white" | "outline";
+  size?: "sm" | "md";
+  icon?: string;
+  dot?: boolean;
+  class?: string;
+}
+
+const { tone = "neutral", size = "sm", icon, dot = false, class: className } = Astro.props;
+---
+
+<span class:list={["badge", `badge-${tone}`, `badge-${size}`, className]}>
+  {dot && <span class="badge-dot" aria-hidden="true" />}
+  {icon && <Icon name={icon} size={12} />}
+  <slot />
+</span>

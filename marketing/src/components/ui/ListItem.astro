@@ -1,0 +1,18 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  icon?: string;
+  tone?: "green" | "orange" | "red" | "muted" | "dark";
+  html?: string;
+  class?: string;
+}
+
+const { icon, tone, html, class: className } = Astro.props;
+---
+
+<li class:list={["list-item", tone && `list-item-${tone}`, icon && "list-item-icon", className]}>
+  <span class="list-marker" aria-hidden="true">{icon && <Icon name={icon} size={14} stroke={2} />}</span>
+  {html !== undefined && <span class="list-content" set:html={html} />}
+  {html === undefined && <span class="list-content"><slot /></span>}
+</li>

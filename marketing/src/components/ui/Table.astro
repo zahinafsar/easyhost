@@ -1,0 +1,33 @@
+---
+interface Props {
+  columns?: string[];
+  caption?: string;
+  highlight?: number;
+  layout?: "auto" | "fixed";
+  class?: string;
+}
+
+const { columns = [], caption, highlight, layout = "auto", class: className } = Astro.props;
+let style: string | undefined;
+if (highlight !== undefined) {
+  style = `--hl:${highlight + 1}`;
+}
+---
+
+<div class:list={["table-wrap", "table-frame", className]}>
+  <table class:list={["table", `table-${layout}`, highlight !== undefined && "table-highlight"]} style={style}>
+    {caption && <caption>{caption}</caption>}
+    {columns.length > 0 && (
+      <thead>
+        <tr>
+          {columns.map((column) => (
+            <th scope="col">{column}</th>
+          ))}
+        </tr>
+      </thead>
+    )}
+    <tbody>
+      <slot />
+    </tbody>
+  </table>
+</div>

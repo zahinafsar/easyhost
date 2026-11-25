@@ -1,0 +1,43 @@
+---
+interface Props {
+  title?: string;
+  text?: string;
+  layout?: "center" | "left" | "split";
+  level?: 1 | 2 | 3;
+  size?: "display" | "xl" | "lg" | "md";
+  tone?: "default" | "inverse";
+  id?: string;
+  class?: string;
+}
+
+const { title, text, layout = "center", level = 2, size, tone = "default", id, class: className } = Astro.props;
+const Title = `h${level}`;
+let resolved = size;
+if (!resolved) {
+  resolved = "xl";
+  if (level === 1) {
+    resolved = "display";
+  }
+}
+const hasTitle = Astro.slots.has("title");
+const hasText = Astro.slots.has("text");
+const hasActions = Astro.slots.has("actions");
+---
+
+<header id={id} class:list={["section-head", `section-head-${layout}`, `section-head-${tone}`, className]}>
+  <div class="section-head-main">
+    {hasTitle && <Title class:list={["heading", `heading-${resolved}`, "section-head-title"]}><slot name="title" /></Title>}
+    {!hasTitle && title && <Title class:list={["heading", `heading-${resolved}`, "section-head-title"]}>{title}</Title>}
+  </div>
+  {(text || hasText || hasActions) && (
+    <div class="section-head-side">
+      {hasText && <p class="section-head-text"><slot name="text" /></p>}
+      {!hasText && text && <p class="section-head-text">{text}</p>}
+      {hasActions && (
+        <div class="section-head-actions">
+          <slot name="actions" />
+        </div>
+      )}
+    </div>
+  )}
+</header>

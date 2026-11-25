@@ -1,15 +1,40 @@
 import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Copy, ExternalLink, Eye, EyeOff, File, Folder, KeyRound, Link2, Trash2, Upload } from "lucide-react";
+import { ChevronLeft, ExternalLink, Eye, EyeOff, File, Folder, KeyRound, Link2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Button,
+  buttonVariants,
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Code,
+  Grid,
+  HStack,
+  Icon,
+  IconButton,
+  Input,
+  Link,
+  Skeleton,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableEmpty,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Text,
+  UsageMeter,
+} from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmButton } from "@/components/confirm-button";
 import { CodeBlock } from "@/components/code-block";
+import { SecretField } from "@/components/resources/secret-field";
 import { api, unwrap, upload } from "@/lib/api";
 import { storageQuery, userQuery } from "@/lib/queries";
 import { formatBytes, formatDate } from "@/lib/format";
@@ -71,7 +96,12 @@ export const BucketPage = () => {
   };
 
   if (isLoading || !data) {
-    return <Skeleton className="h-64 w-full" />;
+    return (
+      <Stack gap={6}>
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </Stack>
+    );
   }
 
   const { bucket, objects } = data;
@@ -93,14 +123,21 @@ export const BucketPage = () => {
     return credential.value;
   };
 
+  let revealLabel = "Show";
+  let RevealIcon = Eye;
+  if (revealed) {
+    revealLabel = "Hide";
+    RevealIcon = EyeOff;
+  }
+
   return (
     <>
       <PageHeader
         title={bucket.name}
         description={usageDescription(prefix || "Root", usage.data)}
         action={
-          <div className="flex flex-wrap items-center gap-3">
-            <input
+          <>
+            <Input
               ref={fileInput}
               type="file"
               multiple
@@ -113,8 +150,8 @@ export const BucketPage = () => {
                 }
               }}
             />
-            <Button onClick={() => fileInput.current?.click()} disabled={uploadFiles.isPending}>
-              <Upload className="size-4" />
+            <Button onClick={() => fileInput.current?.click()} loading={uploadFiles.isPending}>
+              {!uploadFiles.isPending && <Upload />}
               {uploadFiles.isPending ? "Uploading..." : "Upload"}
             </Button>
             <ConfirmButton
@@ -122,15 +159,20 @@ export const BucketPage = () => {
               description="All files in this bucket will be permanently deleted."
               onConfirm={() => removeBucket.mutate(undefined)}
             >
-              <Button variant="destructive" size="icon">
-                <Trash2 className="size-4" />
-              </Button>
+              <IconButton icon={Trash2} label="Delete bucket" variant="destructive" size="default" tooltip={false} />
             </ConfirmButton>
-          </div>
+          </>
         }
       />
-      <Card className="py-0">
-        <Table>
+      <Stack gap={6}>
+        {usage.data && (
+          <Card className="py-5">
+            <CardContent className="px-5">
+              <UsageMeter label="Storage used" used={usage.data.usedBytes} limit={usage.data.limitBytes} format={formatBytes} />
+            </CardContent>
+          </Card>
+        )}
+        <Table framed>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
@@ -143,30 +185,28 @@ export const BucketPage = () => {
             {prefix && (
               <TableRow className="cursor-pointer" onClick={() => setPrefix(parentPrefix && `${parentPrefix}/`)}>
                 <TableCell colSpan={4}>
-                  <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <ChevronLeft className="size-4" />
-                    Back
-                  </span>
+                  <HStack gap={2}>
+                    <Icon icon={ChevronLeft} tone="muted" />
+                    <Text as="span" size="sm" tone="muted">
+                      Back
+                    </Text>
+                  </HStack>
                 </TableCell>
               </TableRow>
             )}
-            {!objects.length && (
-              <TableRow>
-                <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
-                  No files here yet.
-                </TableCell>
-              </TableRow>
-            )}
+            {!objects.length && <TableEmpty colSpan={4}>No files here yet.</TableEmpty>}
             {objects.map((object) => {
               const name = object.key.slice(prefix.length);
               if (object.isFolder) {
                 return (
                   <TableRow key={object.key} className="cursor-pointer" onClick={() => setPrefix(object.key)}>
                     <TableCell colSpan={4}>
-                      <span className="flex items-center gap-2 font-medium">
-                        <Folder className="size-4 text-muted-foreground" />
-                        {name}
-                      </span>
+                      <HStack gap={2}>
+                        <Icon icon={Folder} tone="muted" />
+                        <Text as="span" weight="medium">
+                          {name}
+                        </Text>
+                      </HStack>
                     </TableCell>
                   </TableRow>
                 );
@@ -174,90 +214,77 @@ export const BucketPage = () => {
               return (
                 <TableRow key={object.key}>
                   <TableCell>
-                    <span className="flex items-center gap-2">
-                      <File className="size-4 text-muted-foreground" />
-                      {name}
-                    </span>
+                    <HStack gap={2}>
+                      <Icon icon={File} tone="muted" />
+                      <Text as="span">{name}</Text>
+                    </HStack>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatBytes(object.size)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDate(object.lastModified)}</TableCell>
                   <TableCell>
-                    <div className="flex justify-end gap-1">
+                    <Text as="span" size="sm" tone="muted" tabular>
+                      {formatBytes(object.size)}
+                    </Text>
+                  </TableCell>
+                  <TableCell>
+                    <Text as="span" size="sm" tone="muted">
+                      {formatDate(object.lastModified)}
+                    </Text>
+                  </TableCell>
+                  <TableCell>
+                    <HStack gap={1} justify="end">
                       {object.url && (
                         <>
-                          <Button variant="ghost" size="icon" asChild>
-                            <a href={object.url} target="_blank" rel="noreferrer">
-                              <ExternalLink className="size-4" />
-                            </a>
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => copy(object.url as string, "Link copied")}>
-                            <Link2 className="size-4" />
-                          </Button>
+                          <Link href={object.url} variant="plain" inline={false} aria-label="Open file" className={buttonVariants({ variant: "ghost", size: "icon-sm" })}>
+                            <ExternalLink />
+                          </Link>
+                          <IconButton icon={Link2} label="Copy link" onClick={() => copy(object.url as string, "Link copied")} />
                         </>
                       )}
-                      <ConfirmButton
-                        title="Delete file?"
-                        description={object.key}
-                        onConfirm={() => removeObject.mutate(object.key)}
-                      >
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="size-4" />
-                        </Button>
+                      <ConfirmButton title="Delete file?" description={object.key} onConfirm={() => removeObject.mutate(object.key)}>
+                        <IconButton icon={Trash2} label="Delete file" tooltip={false} />
                       </ConfirmButton>
-                    </div>
+                    </HStack>
                   </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
-      </Card>
-      <Card className="mt-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">S3 credentials</CardTitle>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setRevealed(!revealed)}>
-              {revealed ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              {revealed ? "Hide" : "Show"}
-            </Button>
-            <ConfirmButton
-              title="Rotate keys?"
-              description="The current access key stops working immediately. Apps using it must be updated."
-              confirmLabel="Rotate"
-              onConfirm={() => rotateKeys.mutate(undefined)}
-            >
-              <Button variant="outline" size="sm" disabled={rotateKeys.isPending}>
-                <KeyRound className="size-4" />
-                Rotate keys
-              </Button>
-            </ConfirmButton>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {credentials.map((credential) => (
-              <div key={credential.label} className="min-w-0 space-y-1.5">
-                <p className="text-xs text-muted-foreground">{credential.label}</p>
-                <div className="flex items-stretch border bg-muted/40">
-                  <pre className="min-w-0 flex-1 overflow-x-auto p-3 font-mono text-xs">{displayValue(credential)}</pre>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-auto rounded-none border-l"
-                    onClick={() => copy(credential.value, "Copied")}
-                  >
-                    <Copy className="size-4" />
+        <Card>
+          <CardHeader>
+            <CardTitle>S3 credentials</CardTitle>
+            <CardDescription>Works with any S3 client (AWS SDK, rclone, s3cmd, Cyberduck). Use path-style addressing.</CardDescription>
+            <CardAction>
+              <HStack gap={2}>
+                <Button variant="ghost" size="sm" onClick={() => setRevealed(!revealed)}>
+                  <RevealIcon />
+                  {revealLabel}
+                </Button>
+                <ConfirmButton
+                  title="Rotate keys?"
+                  description="The current access key stops working immediately. Apps using it must be updated."
+                  confirmLabel="Rotate"
+                  onConfirm={() => rotateKeys.mutate(undefined)}
+                >
+                  <Button variant="secondary" size="sm" disabled={rotateKeys.isPending}>
+                    <KeyRound />
+                    Rotate keys
                   </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Works with any S3 client (AWS SDK, rclone, s3cmd, Cyberduck). Use path-style addressing. Files are publicly
-            readable at {bucket.baseUrl}/&lt;key&gt;.
-          </p>
-          <CodeBlock
-            code={`import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+                </ConfirmButton>
+              </HStack>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            <Stack gap={5}>
+              <Grid cols={2} gap={4}>
+                {credentials.map((credential) => (
+                  <SecretField key={credential.label} label={credential.label} display={displayValue(credential)} onCopy={() => copy(credential.value, "Copied")} />
+                ))}
+              </Grid>
+              <Text size="sm" tone="muted">
+                Files are publicly readable at <Code>{bucket.baseUrl}/&lt;key&gt;</Code>.
+              </Text>
+              <CodeBlock
+                code={`import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
   endpoint: process.env.S3_ENDPOINT,
@@ -274,9 +301,11 @@ await s3.send(
 );
 
 const url = "${bucket.baseUrl}/avatars/me.png";`}
-          />
-        </CardContent>
-      </Card>
+              />
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
     </>
   );
 };

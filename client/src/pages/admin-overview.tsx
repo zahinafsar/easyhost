@@ -1,12 +1,16 @@
-import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CircleCheck, CircleX } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { Link } from "@/components/ui/link";
+import { List, ListItem } from "@/components/ui/list";
+import { Stack } from "@/components/ui/stack";
+import { Text } from "@/components/ui/text";
 import { adminQuery } from "@/lib/queries";
-import { cn } from "@/lib/utils";
 import {
   AdminHeader,
   ChartCard,
+  ChartGrid,
   PageSkeleton,
   RangePicker,
   Stat,
@@ -23,7 +27,7 @@ export const AdminOverviewPage = () => {
   const health = useQuery(adminQuery().health());
 
   return (
-    <div className="space-y-6">
+    <Stack gap={6}>
       <AdminHeader title="Overview" description={`Platform activity over the last ${days} days, compared with the ${days} days before.`} action={<RangePicker />} />
       {!data && <PageSkeleton />}
       {data && (
@@ -76,7 +80,7 @@ export const AdminOverviewPage = () => {
               href="/admin/ai"
             />
           </StatGrid>
-          <div className="grid gap-4 lg:grid-cols-2">
+          <ChartGrid>
             <ChartCard
               title="Signups and new projects"
               data={data.series}
@@ -93,36 +97,54 @@ export const AdminOverviewPage = () => {
               data={data.series.map((row) => ({ day: row.day, other: row.deployments - row.failed, failed: row.failed }))}
               xKey="day"
               series={[
-                { key: "other", label: "Not failed", color: "var(--chart-2)" },
-                { key: "failed", label: "Failed", color: "var(--destructive)" },
+                { key: "other", label: "Not failed", color: "var(--chart-1)" },
+                { key: "failed", label: "Failed", color: "var(--chart-4)" },
               ]}
             />
-            <ChartCard title="AI tokens" data={data.series} xKey="day" series={[{ key: "tokens", label: "Tokens", color: "var(--chart-4)" }]} />
+            <ChartCard title="AI tokens" data={data.series} xKey="day" series={[{ key: "tokens", label: "Tokens", color: "var(--chart-1)" }]} />
             <Card>
               <CardHeader>
                 <CardDescription>Platform</CardDescription>
-                <CardTitle className="text-2xl tabular-nums">
+                <CardTitle className="text-[26px] leading-tight tracking-[-0.035em] tabular-nums">
                   {formatNumber(data.totals.databases)} databases, {formatNumber(data.totals.buckets)} buckets
                 </CardTitle>
               </CardHeader>
-              <CardContent className="divide-y">
-                {health.data?.checks.map((check) => (
-                  <div key={check.name} className="flex items-center gap-3 py-2.5">
-                    {check.ok ? <CircleCheck className="size-4 shrink-0 text-emerald-600" /> : <CircleX className="size-4 shrink-0 text-destructive" />}
-                    <span className="flex-1 text-sm">{check.name}</span>
-                    <span className={cn("text-xs", check.ok ? "text-muted-foreground" : "text-destructive")}>{check.detail}</span>
-                  </div>
-                ))}
-                <div className="pt-3 text-sm">
-                  <Link to="/admin/resources" className="text-muted-foreground underline-offset-4 hover:underline">
-                    Open resources
-                  </Link>
-                </div>
+              <CardContent>
+                <List variant="divided">
+                  {health.data?.checks.map((check) => {
+                    let StatusIcon = CircleX;
+                    let tone: "success" | "danger" = "danger";
+                    let detailTone: "muted" | "danger" = "danger";
+                    if (check.ok) {
+                      StatusIcon = CircleCheck;
+                      tone = "success";
+                      detailTone = "muted";
+                    }
+                    return (
+                      <ListItem key={check.name}>
+                        <Stack direction="row" align="center" gap={3}>
+                          <Icon icon={StatusIcon} tone={tone} />
+                          <Text as="span" size="sm" className="flex-1">
+                            {check.name}
+                          </Text>
+                          <Text as="span" size="xs" tone={detailTone} truncate>
+                            {check.detail}
+                          </Text>
+                        </Stack>
+                      </ListItem>
+                    );
+                  })}
+                </List>
               </CardContent>
+              <CardFooter className="mt-auto">
+                <Link to="/admin/resources" variant="muted">
+                  Open resources
+                </Link>
+              </CardFooter>
             </Card>
-          </div>
+          </ChartGrid>
         </>
       )}
-    </div>
+    </Stack>
   );
 };

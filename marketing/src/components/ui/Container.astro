@@ -1,0 +1,13 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg" | "xl";
+  as?: string;
+  id?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { size = "lg", as: Tag = "div", id, class: className, ...rest } = Astro.props;
+---
+
+<Tag id={id} class:list={["container", `container-${size}`, className]} {...rest}><slot /></Tag>

@@ -3,12 +3,32 @@ import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Copy, LogOut, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Alert,
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Form,
+  HStack,
+  IconButton,
+  Input,
+  Section,
+  Skeleton,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Text,
+  UsageMeter,
+} from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmButton } from "@/components/confirm-button";
 import { api, unwrap } from "@/lib/api";
@@ -60,7 +80,7 @@ export const MembersPage = () => {
   });
 
   if (isLoading || !data) {
-    return <Skeleton className="h-64 w-full" />;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
 
   const isOwner = data.role === "owner";
@@ -74,6 +94,11 @@ export const MembersPage = () => {
     await navigator.clipboard.writeText(link);
     toast.success("Invite link copied");
   };
+
+  let inviteLabel = "Send invite";
+  if (invite.isPending) {
+    inviteLabel = "Sending...";
+  }
 
   return (
     <>
@@ -89,58 +114,63 @@ export const MembersPage = () => {
               confirmVariant="destructive"
               onConfirm={() => leave.mutate(undefined)}
             >
-              <Button variant="outline" disabled={leave.isPending}>
-                <LogOut className="size-4" />
+              <Button variant="secondary" disabled={leave.isPending}>
+                <LogOut />
                 Leave project
               </Button>
             </ConfirmButton>
           )
         }
       />
-      <div className="space-y-8">
+      <Stack gap={8}>
         {isOwner && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Invite a member</CardTitle>
+              <CardTitle>Invite a member</CardTitle>
               <CardDescription>
                 They get an email with a link that works for 7 days. {used} / {data.limit} members and invites used.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <form
-                className="flex gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  invite.mutate(undefined);
-                }}
-              >
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="teammate@example.com"
-                  required
-                />
-                <Button type="submit" disabled={invite.isPending || !email.trim() || used >= data.limit}>
-                  <Send className="size-4" />
-                  {invite.isPending ? "Sending..." : "Send invite"}
-                </Button>
-              </form>
-              {inviteLink && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="truncate font-mono text-xs">{inviteLink}</span>
-                  <Button variant="ghost" size="sm" onClick={() => copyLink(inviteLink)}>
-                    <Copy className="size-4" />
-                    Copy link
+            <CardContent>
+              <Stack gap={4}>
+                <UsageMeter label="Members and invites" used={used} limit={data.limit} className="max-w-sm" />
+                <Form gap="sm" className="sm:flex-row" onSubmit={() => invite.mutate(undefined)}>
+                  <Input
+                    type="email"
+                    aria-label="Email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="teammate@example.com"
+                    required
+                  />
+                  <Button type="submit" loading={invite.isPending} disabled={!email.trim() || used >= data.limit} className="shrink-0">
+                    {!invite.isPending && <Send />}
+                    {inviteLabel}
                   </Button>
-                </div>
-              )}
+                </Form>
+                {inviteLink && (
+                  <Alert
+                    variant="success"
+                    title="Invite link"
+                    action={
+                      <Button variant="secondary" size="sm" onClick={() => copyLink(inviteLink)}>
+                        <Copy />
+                        Copy link
+                      </Button>
+                    }
+                  >
+                    <Text as="span" size="xs" mono truncate tone="inherit" className="block">
+                      {inviteLink}
+                    </Text>
+                  </Alert>
+                )}
+              </Stack>
             </CardContent>
           </Card>
         )}
 
-        <Card className="py-0">
-          <Table>
+        <Section title="People" spacing="sm">
+          <Table framed>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
@@ -153,15 +183,32 @@ export const MembersPage = () => {
             <TableBody>
               {people.map((person) => (
                 <TableRow key={person.id}>
-                  <TableCell className="font-medium">
-                    {person.name}
-                    {person.id === user?.id && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                  <TableCell>
+                    <HStack gap={3}>
+                      <Avatar name={person.name} size="sm" />
+                      <Text as="span" weight="medium">
+                        {person.name}
+                      </Text>
+                      {person.id === user?.id && (
+                        <Text as="span" size="xs" tone="muted">
+                          (you)
+                        </Text>
+                      )}
+                    </HStack>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{person.email}</TableCell>
+                  <TableCell>
+                    <Text as="span" size="sm" tone="muted">
+                      {person.email}
+                    </Text>
+                  </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{person.role}</Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{person.joinedAt && formatDate(person.joinedAt)}</TableCell>
+                  <TableCell>
+                    <Text as="span" size="sm" tone="muted">
+                      {person.joinedAt && formatDate(person.joinedAt)}
+                    </Text>
+                  </TableCell>
                   <TableCell>
                     {isOwner && person.role === "Member" && (
                       <ConfirmButton
@@ -170,9 +217,7 @@ export const MembersPage = () => {
                         confirmLabel="Remove"
                         onConfirm={() => remove.mutate(person.id)}
                       >
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="size-4" />
-                        </Button>
+                        <IconButton icon={Trash2} label="Remove member" variant="ghost" size="sm" tooltip={false} />
                       </ConfirmButton>
                     )}
                   </TableCell>
@@ -180,51 +225,59 @@ export const MembersPage = () => {
               ))}
             </TableBody>
           </Table>
-        </Card>
+        </Section>
 
         {data.invites.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-sm font-medium text-muted-foreground">Pending invites</h2>
-            <Card className="py-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Invited by</TableHead>
-                    <TableHead>Expires</TableHead>
-                    <TableHead className="w-12" />
+          <Section title="Pending invites" spacing="sm">
+            <Table framed>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Invited by</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead className="w-12" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.invites.map((pending) => (
+                  <TableRow key={pending.id}>
+                    <TableCell>
+                      <Text as="span" weight="medium">
+                        {pending.email}
+                      </Text>
+                    </TableCell>
+                    <TableCell>
+                      <Text as="span" size="sm" tone="muted">
+                        {pending.invitedBy}
+                      </Text>
+                    </TableCell>
+                    <TableCell>
+                      {pending.expired && <Badge variant="warning">Expired</Badge>}
+                      {!pending.expired && (
+                        <Text as="span" size="sm" tone="muted">
+                          {formatDate(pending.expiresAt)}
+                        </Text>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isOwner && (
+                        <ConfirmButton
+                          title={`Revoke the invite for ${pending.email}?`}
+                          description="The invite link stops working."
+                          confirmLabel="Revoke"
+                          onConfirm={() => revoke.mutate(pending.id)}
+                        >
+                          <IconButton icon={Trash2} label="Revoke invite" variant="ghost" size="sm" tooltip={false} />
+                        </ConfirmButton>
+                      )}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.invites.map((pending) => (
-                    <TableRow key={pending.id}>
-                      <TableCell className="font-medium">{pending.email}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{pending.invitedBy}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {pending.expired ? "Expired" : formatDate(pending.expiresAt)}
-                      </TableCell>
-                      <TableCell>
-                        {isOwner && (
-                          <ConfirmButton
-                            title={`Revoke the invite for ${pending.email}?`}
-                            description="The invite link stops working."
-                            confirmLabel="Revoke"
-                            onConfirm={() => revoke.mutate(pending.id)}
-                          >
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </ConfirmButton>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
-          </div>
+                ))}
+              </TableBody>
+            </Table>
+          </Section>
         )}
-      </div>
+      </Stack>
     </>
   );
 };

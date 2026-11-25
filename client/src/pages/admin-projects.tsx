@@ -1,22 +1,26 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Trash2, UserRound } from "lucide-react";
+import { Search, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
+import { IconButton } from "@/components/ui/icon-button";
+import { InputGroup } from "@/components/ui/input";
+import { Link } from "@/components/ui/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Stack } from "@/components/ui/stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Text } from "@/components/ui/text";
 import { ConfirmButton } from "@/components/confirm-button";
 import { api, unwrap } from "@/lib/api";
 import { adminQuery, type AdminProjectFilters } from "@/lib/queries/admin";
 import { formatBytes, formatDate } from "@/lib/format";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { AdminHeader, EmptyRow, IMPERSONATE_NOTICE, Paginator, formatNumber } from "@/components/admin-layout";
+import { AdminHeader, EmptyRow, IMPERSONATE_NOTICE, Paginator, TableCard, formatNumber } from "@/components/admin-layout";
 import { useImpersonate } from "@/pages/admin-users";
 
 export const useDeleteProject = (onDone?: () => void) => {
@@ -45,11 +49,9 @@ export const ProjectActions = ({
   const impersonate = useImpersonate();
   const remove = useDeleteProject(onDeleted);
   return (
-    <div className="flex justify-end gap-2">
+    <Stack direction="row" justify="end" gap={2}>
       <ConfirmButton title={`Impersonate ${project.owner.email}?`} description={IMPERSONATE_NOTICE} confirmLabel="Impersonate" onConfirm={() => impersonate.mutate(project.owner.id)}>
-        <Button size="icon-sm" variant="outline" aria-label="Impersonate owner" disabled={user?.id === project.owner.id || impersonate.isPending}>
-          <UserRound className="size-4" />
-        </Button>
+        <IconButton icon={UserRound} label="Impersonate owner" variant="secondary" tooltip={false} disabled={user?.id === project.owner.id || impersonate.isPending} />
       </ConfirmButton>
       <ConfirmButton
         title={`Delete ${project.name}?`}
@@ -58,11 +60,9 @@ export const ProjectActions = ({
         confirmVariant="destructive"
         onConfirm={() => remove.mutate(project.id)}
       >
-        <Button size="icon-sm" variant="outline" aria-label="Delete project" disabled={remove.isPending}>
-          <Trash2 className="size-4" />
-        </Button>
+        <IconButton icon={Trash2} label="Delete project" variant="secondary" tooltip={false} disabled={remove.isPending} />
       </ConfirmButton>
-    </div>
+    </Stack>
   );
 };
 
@@ -90,21 +90,21 @@ export const AdminProjectsPage = () => {
   const { data } = useQuery(adminQuery().projects(filters));
 
   return (
-    <div className="space-y-6">
+    <Stack gap={6}>
       <AdminHeader title="Projects" description="Every project with its apps, data and live usage." />
-      <div className="flex flex-wrap items-center gap-2">
-        <form
-          className="flex min-w-64 flex-1 gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
+      <Stack direction="row" align="center" wrap gap={2}>
+        <Form
+          gap="sm"
+          className="min-w-64 flex-1 flex-row"
+          onSubmit={() => {
             update({ search: draft.trim() });
           }}
         >
-          <Input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Search by name, slug or owner email" />
-          <Button type="submit" variant="outline">
+          <InputGroup icon={Search} className="flex-1" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Search by name, slug or owner email" />
+          <Button type="submit" variant="secondary">
             Search
           </Button>
-        </form>
+        </Form>
         <Select value={filters.state} onValueChange={(value) => update({ state: value as AdminProjectFilters["state"] })}>
           <SelectTrigger className="w-36">
             <SelectValue />
@@ -127,63 +127,64 @@ export const AdminProjectsPage = () => {
             <SelectItem value="name">Name</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      {!data && <Skeleton className="h-96 w-full" />}
+      </Stack>
+      {!data && <Skeleton className="h-96 w-full rounded-xl" />}
       {data && (
-        <Card>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead className="text-right">Apps</TableHead>
-                  <TableHead className="text-right">Memory</TableHead>
-                  <TableHead className="text-right">CPU</TableHead>
-                  <TableHead className="text-right">Database</TableHead>
-                  <TableHead className="text-right">Deploys</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead />
+        <TableCard footer={<Paginator page={data.page} pages={data.pages} total={data.total} label="projects" onPage={(page) => update({ page })} />}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project</TableHead>
+                <TableHead>Owner</TableHead>
+                <TableHead className="text-right">Apps</TableHead>
+                <TableHead className="text-right">Memory</TableHead>
+                <TableHead className="text-right">CPU</TableHead>
+                <TableHead className="text-right">Database</TableHead>
+                <TableHead className="text-right">Deploys</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.projects.length === 0 && <EmptyRow colSpan={9}>No projects match these filters</EmptyRow>}
+              {data.projects.map((project) => (
+                <TableRow key={project.id}>
+                  <TableCell>
+                    <Link to={`/admin/projects/${project.id}`}>{project.name}</Link>
+                    <Stack direction="row" align="center" gap={1}>
+                      <Text as="span" size="xs" tone="muted" mono>
+                        {project.slug}
+                      </Text>
+                      {project.suspended && <Badge variant="destructive">Suspended</Badge>}
+                      {project.databaseBlocked && <Badge variant="destructive">DB blocked</Badge>}
+                    </Stack>
+                  </TableCell>
+                  <TableCell>
+                    <Link to={`/admin/users/${project.owner.id}`} variant="muted">
+                      {project.owner.email}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {project.runningApps} / {project.apps}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{project.memoryBytes === null ? "-" : formatBytes(project.memoryBytes)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{project.cpuPercent === null ? "-" : `${project.cpuPercent}%`}</TableCell>
+                  <TableCell className="text-right tabular-nums">{project.databaseBytes === null ? "-" : formatBytes(project.databaseBytes)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatNumber(project.deployments)}</TableCell>
+                  <TableCell>
+                    <Text as="span" size="sm" tone="muted">
+                      {formatDate(project.createdAt)}
+                    </Text>
+                  </TableCell>
+                  <TableCell>
+                    <ProjectActions project={project} />
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.projects.length === 0 && <EmptyRow colSpan={9}>No projects match these filters</EmptyRow>}
-                {data.projects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell>
-                      <Link to={`/admin/projects/${project.id}`} className="font-medium hover:underline">
-                        {project.name}
-                      </Link>
-                      <div className="flex items-center gap-1">
-                        <span className="font-mono text-xs text-muted-foreground">{project.slug}</span>
-                        {project.suspended && <Badge variant="destructive">Suspended</Badge>}
-                        {project.databaseBlocked && <Badge variant="destructive">DB blocked</Badge>}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Link to={`/admin/users/${project.owner.id}`} className="text-sm hover:underline">
-                        {project.owner.email}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {project.runningApps} / {project.apps}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{project.memoryBytes === null ? "-" : formatBytes(project.memoryBytes)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{project.cpuPercent === null ? "-" : `${project.cpuPercent}%`}</TableCell>
-                    <TableCell className="text-right tabular-nums">{project.databaseBytes === null ? "-" : formatBytes(project.databaseBytes)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatNumber(project.deployments)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{formatDate(project.createdAt)}</TableCell>
-                    <TableCell>
-                      <ProjectActions project={project} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <Paginator page={data.page} pages={data.pages} total={data.total} label="projects" onPage={(page) => update({ page })} />
-          </CardContent>
-        </Card>
+              ))}
+            </TableBody>
+          </Table>
+        </TableCard>
       )}
-    </div>
+    </Stack>
   );
 };

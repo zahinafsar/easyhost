@@ -1,0 +1,27 @@
+---
+import Box from "./Box.astro";
+import Stack from "./Stack.astro";
+import Heading from "./Heading.astro";
+import Text from "./Text.astro";
+import CopyLine from "./CopyLine.astro";
+import Button from "./Button.astro";
+
+interface Props {
+  id?: string;
+  class?: string;
+}
+
+const { id = "start", class: className } = Astro.props;
+---
+
+<Box as="section" id={id} class:list={["doc-section", className]} tone="dark" radius="xl" padding="lg">
+  <Stack gap="md">
+    <Heading level={2} size="lg" tone="inverse">Start for free</Heading>
+    <Text tone="inverse-muted">Install the skill, choose Global or Local, then tell your agent to deploy. No credit card, no config files.</Text>
+    <CopyLine command="npx ezhst skill install" tone="dark" />
+    <Stack direction="row" gap="sm" wrap>
+      <Button href="https://app.reverhost.com/register" variant="dark-inverse">Sign up free</Button>
+      <Button href="/docs" variant="ghost-inverse">Read the docs</Button>
+    </Stack>
+  </Stack>
+</Box>

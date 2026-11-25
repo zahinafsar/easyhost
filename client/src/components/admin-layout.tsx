@@ -1,4 +1,5 @@
-import { NavLink, Navigate, Outlet, useSearchParams, Link } from "react-router";
+import { useState } from "react";
+import { Navigate, Outlet, useLocation, useSearchParams } from "react-router";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import {
   Activity,
@@ -8,26 +9,51 @@ import {
   FolderKanban,
   Hammer,
   LayoutDashboard,
+  Menu,
   ScrollText,
+  ShieldCheck,
   Sparkles,
   TrendingDown,
   TrendingUp,
   UserRound,
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
+import { Avatar } from "@/components/ui/avatar";
+import { Box } from "@/components/ui/box";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { Container } from "@/components/ui/container";
+import { Grid } from "@/components/ui/grid";
+import { IconButton } from "@/components/ui/icon-button";
+import { Logo } from "@/components/ui/image";
+import { Link, NavItem } from "@/components/ui/link";
+import { Pagination } from "@/components/ui/pagination";
+import { Pill } from "@/components/ui/pill";
+import { Progress } from "@/components/ui/progress";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Stack } from "@/components/ui/stack";
+import { Stat as StatBase, StatGroup, type StatDelta } from "@/components/ui/stat";
+import { TableEmpty } from "@/components/ui/table";
+import { Text } from "@/components/ui/text";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+const INSIGHTS_NAV = [
   { to: "/admin/overview", label: "Overview", icon: LayoutDashboard },
   { to: "/admin/growth", label: "Growth", icon: TrendingUp },
   { to: "/admin/revenue", label: "Revenue", icon: CreditCard },
   { to: "/admin/builds", label: "Builds", icon: Hammer },
   { to: "/admin/ai", label: "AI Builder", icon: Sparkles },
   { to: "/admin/resources", label: "Resources", icon: Activity },
+];
+
+const MANAGE_NAV = [
   { to: "/admin/users", label: "Users", icon: UserRound },
   { to: "/admin/projects", label: "Projects", icon: FolderKanban },
   { to: "/admin/audit", label: "Audit log", icon: ScrollText },
@@ -143,31 +169,17 @@ export const usePageParam = () => {
 export const RangePicker = () => {
   const { days, setDays } = useAdminRange();
   return (
-    <div className="flex border">
-      {RANGES.map((range) => (
-        <button
-          key={range.days}
-          type="button"
-          onClick={() => setDays(range.days)}
-          className={cn("px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted", range.days === days && "bg-foreground text-background hover:bg-foreground")}
-        >
-          {range.label}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      aria-label="Date range"
+      value={String(days)}
+      onValueChange={(value) => setDays(Number(value))}
+      options={RANGES.map((range) => ({ value: String(range.days), label: range.label }))}
+    />
   );
 };
 
-export const AdminHeader = ({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) => {
-  return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
-      </div>
-      {action}
-    </div>
-  );
+export const AdminHeader = ({ title, description, action }: { title: React.ReactNode; description?: React.ReactNode; action?: React.ReactNode }) => {
+  return <PageHeader title={title} description={description} action={action} className="mb-0" />;
 };
 
 const deltaPercent = (current: number, previous: number) => {
@@ -178,6 +190,44 @@ const deltaPercent = (current: number, previous: number) => {
     return null;
   }
   return Math.round(((current - previous) / previous) * 1000) / 10;
+};
+
+const buildDelta = (current: number | null | undefined, previous: number | null | undefined, invert: boolean): StatDelta | null => {
+  if (typeof current !== "number" || typeof previous !== "number") {
+    return null;
+  }
+  const change = deltaPercent(current, previous);
+  if (change === 0) {
+    return { value: "No change", tone: "muted" };
+  }
+  const up = current >= previous;
+  let good = up;
+  if (invert) {
+    good = !up;
+  }
+  let text = "New";
+  if (change !== null && change > 0) {
+    text = `+${change}%`;
+  } else if (change !== null) {
+    text = `${change}%`;
+  }
+  let TrendIcon = TrendingDown;
+  if (up) {
+    TrendIcon = TrendingUp;
+  }
+  let tone: StatDelta["tone"] = "warning";
+  if (good) {
+    tone = "success";
+  }
+  return {
+    value: (
+      <>
+        <TrendIcon />
+        {text}
+      </>
+    ),
+    tone,
+  };
 };
 
 export const Stat = ({
@@ -197,49 +247,40 @@ export const Stat = ({
   invert?: boolean;
   href?: string;
 }) => {
-  let delta: React.ReactNode = null;
-  if (typeof current === "number" && typeof previous === "number") {
-    const change = deltaPercent(current, previous);
-    const up = current >= previous;
-    let good = up;
-    if (invert) {
-      good = !up;
-    }
-    let text = "New";
-    if (change !== null && change > 0) {
-      text = `+${change}%`;
-    } else if (change !== null) {
-      text = `${change}%`;
-    }
-    if (change === 0) {
-      delta = <span className="text-xs text-muted-foreground">No change</span>;
-    } else {
-      delta = (
-        <span className={cn("flex items-center gap-1 text-xs font-medium", good ? "text-emerald-700" : "text-red-700")}>
-          {up ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-          {text}
-        </span>
-      );
-    }
-  }
-  const body = (
-    <div className={cn("h-full border bg-card p-4", href && "transition-colors hover:bg-muted/50")}>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-        {delta}
-        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
-      </div>
-    </div>
-  );
+  const delta = buildDelta(current, previous, invert);
   if (href) {
-    return <Link to={href}>{body}</Link>;
+    return (
+      <Link to={href} variant="plain" inline={false} className="block h-full rounded-xl">
+        <StatBase label={label} value={value} delta={delta} hint={hint} className="h-full transition-[box-shadow,border-color] hover:border-border-strong" />
+      </Link>
+    );
   }
-  return body;
+  return <StatBase label={label} value={value} delta={delta} hint={hint} className="h-full" />;
 };
 
 export const StatGrid = ({ children, className }: { children: React.ReactNode; className?: string }) => {
-  return <div className={cn("grid grid-cols-2 gap-4 lg:grid-cols-4", className)}>{children}</div>;
+  return (
+    <StatGroup cols={4} className={cn("grid-cols-2", className)}>
+      {children}
+    </StatGroup>
+  );
+};
+
+export const StatusBreakdown = ({ label, children }: { label: string; children: React.ReactNode }) => {
+  return (
+    <Card className="h-full gap-3 py-5">
+      <CardContent className="px-5">
+        <Stack gap={3}>
+          <Text size="sm" tone="muted">
+            {label}
+          </Text>
+          <Stack direction="row" wrap gap={2}>
+            {children}
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
 };
 
 export const Meter = ({ label, used, total, format }: { label: string; used: number; total: number; format: (value: number) => string }) => {
@@ -247,18 +288,24 @@ export const Meter = ({ label, used, total, format }: { label: string; used: num
   if (total > 0) {
     percent = Math.min(100, Math.round((used / total) * 100));
   }
+  let tone: "success" | "warning" | "danger" = "success";
+  if (percent >= 90) {
+    tone = "danger";
+  } else if (percent >= 75) {
+    tone = "warning";
+  }
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-3 text-sm">
-        <span>{label}</span>
-        <span className="text-muted-foreground tabular-nums">
+    <Stack gap={2}>
+      <Stack direction="row" align="baseline" justify="between" gap={3}>
+        <Text size="sm" weight="medium">
+          {label}
+        </Text>
+        <Text size="xs" tone="muted" tabular mono>
           {format(used)} of {format(total)} ({percent}%)
-        </span>
-      </div>
-      <div className="mt-2 h-2 bg-muted">
-        <div className={cn("h-full bg-primary", percent >= 90 && "bg-destructive")} style={{ width: `${percent}%` }} />
-      </div>
-    </div>
+        </Text>
+      </Stack>
+      <Progress value={percent} tone={tone} size="lg" />
+    </Stack>
   );
 };
 
@@ -300,9 +347,13 @@ export const ChartCard = <T extends Record<string, unknown>>({
   if (time) {
     tickFormatter = formatTime;
   }
+  let stackId: string | undefined;
+  if (stacked) {
+    stackId = "stack";
+  }
   const axes = [
-    <CartesianGrid key="grid" vertical={false} />,
-    <XAxis key="x" dataKey={String(xKey)} tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tickFormatter={(tick) => tickFormatter(String(tick))} />,
+    <CartesianGrid key="grid" vertical={false} strokeDasharray="3 4" />,
+    <XAxis key="x" dataKey={String(xKey)} tickLine={false} axisLine={false} tickMargin={10} minTickGap={24} tickFormatter={(tick) => tickFormatter(String(tick))} />,
     <YAxis key="y" tickLine={false} axisLine={false} width={48} tickFormatter={(tick) => format(Number(tick))} />,
     <ChartTooltip
       key="tooltip"
@@ -310,10 +361,14 @@ export const ChartCard = <T extends Record<string, unknown>>({
         <ChartTooltipContent
           labelFormatter={(_, payload) => tickFormatter(String(payload?.[0]?.payload?.[xKey] ?? ""))}
           formatter={(raw, name) => (
-            <div className="flex w-full items-center justify-between gap-4">
-              <span className="text-muted-foreground">{config[String(name)]?.label}</span>
-              <span className="font-mono font-medium tabular-nums">{format(Number(raw))}</span>
-            </div>
+            <Stack direction="row" align="center" justify="between" gap={4} className="w-full">
+              <Text as="span" size="xs" tone="muted">
+                {config[String(name)]?.label}
+              </Text>
+              <Text as="span" size="xs" weight="medium" mono tabular>
+                {format(Number(raw))}
+              </Text>
+            </Stack>
           )}
         />
       }
@@ -325,11 +380,17 @@ export const ChartCard = <T extends Record<string, unknown>>({
   let chart: React.ReactElement;
   if (type === "bar") {
     chart = (
-      <BarChart data={data}>
+      <BarChart data={data} barCategoryGap="22%">
         {axes}
-        {series.map((item) => (
-          <Bar key={item.key} dataKey={item.key} fill={`var(--color-${item.key})`} stackId={stacked ? "stack" : undefined} />
-        ))}
+        {series.map((item, index) => {
+          let radius: [number, number, number, number] = [6, 6, 6, 6];
+          if (stacked && index < series.length - 1) {
+            radius = [0, 0, 0, 0];
+          } else if (stacked) {
+            radius = [6, 6, 0, 0];
+          }
+          return <Bar key={item.key} dataKey={item.key} fill={`var(--color-${item.key})`} stackId={stackId} radius={radius} maxBarSize={28} />;
+        })}
       </BarChart>
     );
   } else if (type === "line") {
@@ -337,7 +398,7 @@ export const ChartCard = <T extends Record<string, unknown>>({
       <LineChart data={data}>
         {axes}
         {series.map((item) => (
-          <Line key={item.key} dataKey={item.key} type="monotone" stroke={`var(--color-${item.key})`} strokeWidth={2} dot={false} />
+          <Line key={item.key} dataKey={item.key} type="monotone" stroke={`var(--color-${item.key})`} strokeWidth={2.25} dot={false} activeDot={{ r: 4 }} />
         ))}
       </LineChart>
     );
@@ -352,29 +413,35 @@ export const ChartCard = <T extends Record<string, unknown>>({
             type="monotone"
             stroke={`var(--color-${item.key})`}
             fill={`var(--color-${item.key})`}
-            fillOpacity={0.15}
-            strokeWidth={2}
-            stackId={stacked ? "stack" : undefined}
+            fillOpacity={0.12}
+            strokeWidth={2.25}
+            stackId={stackId}
           />
         ))}
       </AreaChart>
     );
   }
   return (
-    <Card className={className}>
+    <Card className={cn("min-w-0", className)}>
       <CardHeader>
         <CardDescription>{title}</CardDescription>
-        {value !== undefined && <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>}
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        {value !== undefined && <CardTitle className="text-[26px] leading-none tracking-[-0.035em] tabular-nums">{value}</CardTitle>}
+        {description && (
+          <Text size="xs" tone="muted">
+            {description}
+          </Text>
+        )}
       </CardHeader>
       <CardContent>
         {data.length === 0 && (
-          <div className="flex items-center justify-center text-sm text-muted-foreground" style={{ height }}>
-            No data yet
-          </div>
+          <Stack align="center" justify="center" className="rounded-lg bg-surface-2" style={{ height }}>
+            <Text size="sm" tone="muted">
+              No data yet
+            </Text>
+          </Stack>
         )}
         {data.length > 0 && (
-          <ChartContainer config={config} className="w-full" style={{ height }}>
+          <ChartContainer config={config} className="aspect-auto w-full" style={{ height }}>
             {chart}
           </ChartContainer>
         )}
@@ -383,55 +450,135 @@ export const ChartCard = <T extends Record<string, unknown>>({
   );
 };
 
-export const Paginator = ({ page, pages, total, label, onPage }: { page: number; pages: number; total: number; label: string; onPage: (page: number) => void }) => {
+export const ChartGrid = ({ children, className }: { children: React.ReactNode; className?: string }) => {
   return (
-    <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-      <span>
-        {formatNumber(total)} {label}, page {page} of {pages}
-      </span>
-      <div className="flex gap-2">
-        <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => onPage(page - 1)}>
-          Previous
-        </Button>
-        <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => onPage(page + 1)}>
-          Next
-        </Button>
-      </div>
-    </div>
+    <Grid cols={2} className={cn("sm:grid-cols-1 lg:grid-cols-2", className)}>
+      {children}
+    </Grid>
   );
+};
+
+export const TableCard = ({
+  title,
+  description,
+  action,
+  footer,
+  className,
+  children,
+}: {
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+  footer?: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) => {
+  const hasHeader = !!(title || description || action);
+  return (
+    <Card className={cn("min-w-0 gap-4 pb-2", footer && "pb-5", !hasHeader && "pt-2", className)}>
+      {hasHeader && (
+        <CardHeader>
+          {title && <CardTitle>{title}</CardTitle>}
+          {description && <CardDescription>{description}</CardDescription>}
+          {action && <CardAction>{action}</CardAction>}
+        </CardHeader>
+      )}
+      <CardContent className="px-0">{children}</CardContent>
+      {footer && <CardFooter className="border-t pt-4">{footer}</CardFooter>}
+    </Card>
+  );
+};
+
+export const Paginator = ({ page, pages, total, label, onPage }: { page: number; pages: number; total: number; label: string; onPage: (page: number) => void }) => {
+  return <Pagination className="w-full" page={page} pageCount={pages} onPageChange={onPage} summary={`${formatNumber(total)} ${label}, page ${page} of ${pages}`} />;
 };
 
 export const PageSkeleton = () => {
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <Stack gap={4}>
+      <Grid cols={4}>
         {[0, 1, 2, 3].map((index) => (
-          <Skeleton key={index} className="h-24" />
+          <Skeleton key={index} className="h-28 rounded-xl" />
         ))}
-      </div>
-      <Skeleton className="h-72 w-full" />
-    </div>
+      </Grid>
+      <Skeleton className="h-72 w-full rounded-xl" />
+    </Stack>
   );
 };
 
 export const EmptyRow = ({ colSpan, children }: { colSpan: number; children: React.ReactNode }) => {
+  return <TableEmpty colSpan={colSpan}>{children}</TableEmpty>;
+};
+
+const sectionLabel = (pathname: string) => {
+  const item = [...INSIGHTS_NAV, ...MANAGE_NAV].find((entry) => pathname === entry.to || pathname.startsWith(`${entry.to}/`));
+  if (item) {
+    return item.label;
+  }
+  return "Overview";
+};
+
+const AdminSidebar = ({ user, onNavigate }: { user: { name: string; email: string }; onNavigate?: () => void }) => {
   return (
-    <tr>
-      <td colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">
-        {children}
-      </td>
-    </tr>
+    <Stack gap={6} className="h-full">
+      <Stack direction="row" align="center" gap={2} className="px-1.5 pt-1">
+        <Link to="/admin/overview" variant="plain" aria-label="Admin home" onClick={onNavigate}>
+          <Logo />
+        </Link>
+        <Pill tone="inverse" size="sm" icon={ShieldCheck}>
+          Admin
+        </Pill>
+      </Stack>
+      <Stack as="nav" gap={1} aria-label="Admin">
+        {INSIGHTS_NAV.map((item) => (
+          <NavItem key={item.to} to={item.to} icon={item.icon} onClick={onNavigate}>
+            {item.label}
+          </NavItem>
+        ))}
+        {MANAGE_NAV.map((item) => (
+          <NavItem key={item.to} to={item.to} icon={item.icon} onClick={onNavigate}>
+            {item.label}
+          </NavItem>
+        ))}
+      </Stack>
+      <Box className="mt-auto rounded-2xl border border-border bg-surface-2 p-3">
+        <Stack direction="row" align="center" gap={3}>
+          <Avatar name={user.name} size="sm" />
+          <Stack gap={0} className="flex-1">
+            <Text as="span" size="sm" weight="medium" truncate>
+              {user.name}
+            </Text>
+            <Text as="span" size="xs" tone="muted" truncate>
+              {user.email}
+            </Text>
+          </Stack>
+        </Stack>
+        <Stack direction="row" align="center" justify="between" gap={2} className="mt-3">
+          <ThemeToggle variant="segmented" />
+          <Link to="/" variant="plain" inline={false} className={buttonVariants({ variant: "ghost", size: "sm" })} onClick={onNavigate}>
+            <ArrowLeft />
+            Dashboard
+          </Link>
+        </Stack>
+      </Box>
+    </Stack>
   );
 };
 
 export const AdminLayout = () => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   if (isLoading) {
     return (
-      <div className="p-8">
-        <Skeleton className="h-8 w-48" />
-      </div>
+      <Box className="flex min-h-dvh gap-3 p-3">
+        <Skeleton className="hidden h-[calc(100dvh-1.5rem)] w-64 shrink-0 rounded-3xl md:block" />
+        <Stack gap={3} className="flex-1">
+          <Skeleton className="h-14 w-full rounded-md" />
+          <Skeleton className="h-[calc(100dvh-6rem)] w-full rounded-3xl" />
+        </Stack>
+      </Box>
     );
   }
   if (!user) {
@@ -442,51 +589,51 @@ export const AdminLayout = () => {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-muted/30 md:flex">
-        <div className="flex h-14 items-center gap-2 border-b px-5 font-semibold">
-          <img src="/logo.svg" alt="" className="h-6 w-auto" />
-          Reverhost
-          <span className="bg-foreground px-1.5 py-0.5 text-[10px] font-medium uppercase leading-none tracking-wide text-background">Admin</span>
-        </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn("flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground", isActive && "bg-muted font-medium text-foreground")
-              }
-            >
-              <item.icon className="size-4" />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="border-t p-3">
-          <p className="truncate px-3 text-sm font-medium">{user.name}</p>
-          <p className="truncate px-3 text-xs text-muted-foreground">{user.email}</p>
-          <Button asChild variant="ghost" size="sm" className="mt-2 w-full justify-start">
-            <Link to="/">
-              <ArrowLeft className="size-4" />
+    <Box className="flex min-h-dvh gap-3 p-2 md:p-3">
+      <Box as="aside" className="sticky top-3 hidden h-[calc(100dvh-1.5rem)] w-64 shrink-0 overflow-y-auto rounded-3xl border border-border bg-surface p-3 scrollbar-thin md:block">
+        <AdminSidebar user={user} />
+      </Box>
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent side="left" className="bg-surface p-3">
+          <VisuallyHidden>
+            <SheetHeader>
+              <SheetTitle>Admin navigation</SheetTitle>
+              <SheetDescription>Switch admin section</SheetDescription>
+            </SheetHeader>
+          </VisuallyHidden>
+          <AdminSidebar user={user} onNavigate={() => setMobileNavOpen(false)} />
+        </SheetContent>
+      </Sheet>
+      <Stack gap={3} className="min-w-0 flex-1">
+        <Stack
+          as="header"
+          direction="row"
+          align="center"
+          justify="between"
+          gap={3}
+          className="sticky top-2 z-30 h-14 rounded-md border border-border bg-surface pr-2 pl-2 md:top-3 md:pl-5"
+        >
+          <Stack direction="row" align="center" gap={2} className="flex-1">
+            <IconButton icon={Menu} label="Open navigation" variant="ghost" size="default" className="md:hidden" tooltip={false} onClick={() => setMobileNavOpen(true)} />
+            <Stack direction="row" align="center" gap={2} className="h-9 min-w-0 rounded-md bg-surface-2 px-3.5 md:bg-transparent md:px-0">
+              <ShieldCheck className="size-4 shrink-0 text-muted-foreground" />
+              <Breadcrumb items={[{ label: "Admin", to: "/admin/overview" }, { label: sectionLabel(location.pathname) }]} />
+            </Stack>
+          </Stack>
+          <Stack direction="row" align="center" gap={2}>
+            <Link to="/" variant="plain" inline={false} className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "hidden sm:inline-flex")}>
+              <ArrowLeft />
               Back to dashboard
             </Link>
-          </Button>
-        </div>
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <nav className="flex gap-1 overflow-x-auto border-b p-2 md:hidden">
-          {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} className={({ isActive }) => cn("flex shrink-0 items-center gap-2 px-3 py-1.5 text-sm", isActive && "bg-muted font-medium")}>
-              <item.icon className="size-4" />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <main className="mx-auto w-full max-w-7xl p-6 md:p-8">
-          <Outlet />
-        </main>
-      </div>
-    </div>
+            <ThemeToggle className="md:hidden" />
+          </Stack>
+        </Stack>
+        <Box as="main" className="min-w-0 flex-1 rounded-3xl border border-border bg-surface">
+          <Container className="py-6 md:px-8 md:py-10">
+            <Outlet />
+          </Container>
+        </Box>
+      </Stack>
+    </Box>
   );
 };

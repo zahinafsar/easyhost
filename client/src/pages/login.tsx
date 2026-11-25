@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, Field, Form, Heading, Input, Link, Text } from "@/components/ui";
 import { api, unwrap } from "@/lib/api";
 import { userQuery } from "@/lib/queries";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -30,45 +27,43 @@ export const LoginPage = () => {
     registerHref = `/register?redirect=${encodeURIComponent(redirect)}`;
   }
 
+  let submitLabel = "Log in";
+  if (login.isPending) {
+    submitLabel = "Logging in...";
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Log in</CardTitle>
+    <Card variant="frosted">
+      <CardHeader className="gap-2">
+        <Heading level={1}>Log in</Heading>
         <CardDescription>Welcome back to Reverhost.</CardDescription>
       </CardHeader>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          login.mutate(undefined);
-        }}
-      >
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+      <CardContent>
+        <Form onSubmit={() => login.mutate(undefined)}>
+          <Field label="Email" htmlFor="email">
             <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link to="/forgot-password" className="text-xs text-muted-foreground hover:underline">
+          </Field>
+          <Field
+            label="Password"
+            htmlFor="password"
+            labelAside={
+              <Link to="/forgot-password" variant="muted">
                 Forgot password?
               </Link>
-            </div>
+            }
+          >
             <Input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-          </div>
-        </CardContent>
-        <CardFooter className="mt-6 flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={login.isPending}>
-            {login.isPending ? "Logging in..." : "Log in"}
+          </Field>
+          <Button type="submit" block loading={login.isPending} className="mt-1">
+            {submitLabel}
           </Button>
-          <p className="text-sm text-muted-foreground">
-            No account?{" "}
-            <Link to={registerHref} className="text-foreground hover:underline">
-              Sign up
-            </Link>
-          </p>
-        </CardFooter>
-      </form>
+        </Form>
+      </CardContent>
+      <CardFooter className="justify-center">
+        <Text size="sm" tone="muted">
+          No account? <Link to={registerHref}>Sign up</Link>
+        </Text>
+      </CardFooter>
     </Card>
   );
 };

@@ -1,0 +1,23 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  steps: string[];
+  label?: string;
+  class?: string;
+}
+
+const { steps, label, class: className } = Astro.props;
+const last = steps.length - 1;
+---
+
+<ol class:list={["flow", className]} aria-label={label}>
+  {
+    steps.map((step, position) => (
+      <li class="flow-step">
+        <span class="flow-chip">{step}</span>
+        {position < last && <Icon name="chevron-right" size={14} class="flow-sep" />}
+      </li>
+    ))
+  }
+</ol>

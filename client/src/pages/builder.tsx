@@ -1,13 +1,34 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Coins, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Coins, Plus, Sparkles } from "lucide-react";
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Field,
+  Form,
+  Input,
+  Link,
+  Skeleton,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableEmpty,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Text,
+  UsageMeter,
+} from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap } from "@/lib/api";
@@ -51,10 +72,10 @@ export const BuilderPage = () => {
   });
 
   if (isLoading || projectApps.isLoading) {
-    return <Skeleton className="h-64 w-full" />;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
   if (error) {
-    return <p role="alert" className="text-destructive">{error.message}</p>;
+    return <Alert variant="danger">{error.message}</Alert>;
   }
   if (!data || !projectApps.data) {
     return null;
@@ -66,28 +87,59 @@ export const BuilderPage = () => {
   const available = checked && !!availability.data?.available;
   const needsTokens = !!tokens.data && !tokens.data.freeAppAvailable && tokens.data.balance < tokens.data.minTokensToBuild;
 
+  let nameError: string | undefined = undefined;
+  if (checked && !availability.data?.available) {
+    nameError = availability.data?.reason ?? undefined;
+  }
+  let nameAside: React.ReactNode = null;
+  if (checked && availability.data?.available) {
+    nameAside = (
+      <Text as="span" size="xs" tone="success" mono truncate>
+        {availability.data.url} is available
+      </Text>
+    );
+  }
+
   return (
     <>
-      <PageHeader title="Builder" description="Describe an app and AI builds it, live at its own address." action={
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link to="/subscription"><Coins className="size-4" />{tokens.data?.balance.toLocaleString("en-US") ?? 0} tokens</Link>
-          </Button>
-          <Button disabled={used >= limit || needsTokens} onClick={() => setOpen(true)}><Plus className="size-4" />Create app</Button>
-        </div>
-      } />
-      {needsTokens && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span>Your free AI app is used. Upgrade to Pro for 1,000 tokens every month.</span>
-          <Button asChild size="sm"><Link to="/subscription">Upgrade</Link></Button>
-        </div>
-      )}
-      <div className="mb-6 flex items-center justify-between border-b pb-3 text-sm">
-        <span className="text-muted-foreground">Apps in this project</span>
-        <span className="font-mono tabular-nums">{used} / {limit}</span>
-      </div>
-      <div className="border">
-        <Table>
+      <PageHeader
+        title="Builder"
+        description="Describe an app and AI builds it, live at its own address."
+        action={
+          <>
+            <Button asChild variant="secondary">
+              <Link to="/subscription" variant="plain">
+                <Coins />
+                {tokens.data?.balance.toLocaleString("en-US") ?? 0} tokens
+              </Link>
+            </Button>
+            <Button disabled={used >= limit || needsTokens} onClick={() => setOpen(true)}>
+              <Plus />
+              Create app
+            </Button>
+          </>
+        }
+      />
+      <Stack gap={5}>
+        {needsTokens && (
+          <Alert
+            variant="warning"
+            icon={Sparkles}
+            action={
+              <Button asChild size="sm">
+                <Link to="/subscription" variant="plain">Upgrade</Link>
+              </Button>
+            }
+          >
+            Your free AI app is used. Upgrade to Pro for 1,000 tokens every month.
+          </Alert>
+        )}
+        <Card className="py-5">
+          <CardContent className="px-5">
+            <UsageMeter label="Apps in this project" used={used} limit={limit} />
+          </CardContent>
+        </Card>
+        <Table framed>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
@@ -97,40 +149,62 @@ export const BuilderPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {!data.apps.length && (
-              <TableRow>
-                <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
-                  No AI apps yet. Create one and describe what it should do.
-                </TableCell>
-              </TableRow>
-            )}
+            {!data.apps.length && <TableEmpty colSpan={4}>No AI apps yet. Create one and describe what it should do.</TableEmpty>}
             {data.apps.map((app) => (
               <TableRow key={app.id}>
-                <TableCell className="font-medium">
-                  <Link to={`/builder/${app.id}`} className="hover:underline focus-visible:outline-2 focus-visible:outline-ring">
-                    {app.name}
-                  </Link>
+                <TableCell>
+                  <Link to={`/builder/${app.id}`}>{app.name}</Link>
                 </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">{app.url}</TableCell>
-                <TableCell><StatusBadge status={displayStatus(app)} /></TableCell>
-                <TableCell className="text-right text-sm text-muted-foreground">{formatDate(app.updatedAt)}</TableCell>
+                <TableCell>
+                  <Text as="span" size="xs" tone="muted" mono>
+                    {app.url}
+                  </Text>
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={displayStatus(app)} />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Text as="span" size="sm" tone="muted">
+                    {formatDate(app.updatedAt)}
+                  </Text>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </div>
+      </Stack>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <form className="space-y-5" onSubmit={(event) => { event.preventDefault(); if (available) { create.mutate(undefined); } }}>
-            <DialogHeader><DialogTitle>New AI app</DialogTitle><DialogDescription>The name becomes the app's address, so it must be unique.</DialogDescription></DialogHeader>
-            <div className="space-y-2">
-              <Label htmlFor="ai-app-name">App name</Label>
-              <Input id="ai-app-name" value={name} onChange={(event) => setName(event.target.value.toLowerCase())} placeholder="my-app" maxLength={40} className="font-mono" required autoFocus />
-              {checked && availability.data?.available && <p className="text-xs text-emerald-700">{availability.data.url} is available</p>}
-              {checked && !availability.data?.available && <p className="text-xs text-destructive">{availability.data?.reason}</p>}
-            </div>
-            <DialogFooter><Button type="submit" disabled={create.isPending || !available}>{create.isPending ? "Creating..." : "Create app"}</Button></DialogFooter>
-          </form>
+          <Form
+            onSubmit={() => {
+              if (available) {
+                create.mutate(undefined);
+              }
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>New AI app</DialogTitle>
+              <DialogDescription>The name becomes the app's address, so it must be unique.</DialogDescription>
+            </DialogHeader>
+            <Field label="App name" htmlFor="ai-app-name" error={nameError} labelAside={nameAside}>
+              <Input
+                id="ai-app-name"
+                value={name}
+                onChange={(event) => setName(event.target.value.toLowerCase())}
+                placeholder="my-app"
+                maxLength={40}
+                className="font-mono"
+                aria-invalid={!!nameError || undefined}
+                required
+                autoFocus
+              />
+            </Field>
+            <DialogFooter>
+              <Button type="submit" loading={create.isPending} disabled={!available}>
+                Create app
+              </Button>
+            </DialogFooter>
+          </Form>
         </DialogContent>
       </Dialog>
     </>

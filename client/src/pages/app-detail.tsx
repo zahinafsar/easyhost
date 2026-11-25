@@ -1,33 +1,62 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { InferRequestType } from "hono/client";
-import { CheckCircle2, ExternalLink, FileText, List, Play, Plus, RefreshCw, Sparkles, Square, Trash2, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileText, Globe, List as ListIcon, Play, Plus, RefreshCw, Rocket, Sparkles, Square, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Alert,
+  Button,
+  buttonVariants,
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Code,
+  EmptyState,
+  Field,
+  Form,
+  FormActions,
+  Grid,
+  HStack,
+  Icon,
+  IconButton,
+  Input,
+  Link,
+  List,
+  ListItem,
+  NativeSelect,
+  NativeSelectOption,
+  Pre,
+  SegmentedControl,
+  Skeleton,
+  Stack,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Text,
+  Textarea,
+} from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { ConfirmButton } from "@/components/confirm-button";
 import { CodeBlock } from "@/components/code-block";
+import { SelectableList, SelectableListItem } from "@/components/ui/selectable-list";
 import { api, unwrap } from "@/lib/api";
 import { appsQuery, projectsQuery, userQuery } from "@/lib/queries";
 import { formatDate } from "@/lib/format";
 import { mergeEnv, parseEnv, stringifyEnv, type EnvRow } from "@/lib/dotenv";
-import { cn } from "@/lib/utils";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 
 const DeploymentLog = ({ appId, deploymentId }: { appId: string; deploymentId: string }) => {
   const { data } = useQuery(appsQuery().deployment(appId, deploymentId));
   return (
-    <pre className="max-h-96 overflow-auto bg-zinc-950 p-4 font-mono text-xs leading-relaxed text-zinc-100">
+    <Pre tone="terminal" className="max-h-96 min-h-48 overflow-auto">
       {data?.deployment.log || "Waiting for logs..."}
-    </pre>
+    </Pre>
   );
 };
 
@@ -96,18 +125,36 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
     toast.success(`Added ${parsed.length} ${label}`);
   };
 
+  let description = "Paste a .env into a key field to add many variables at once.";
+  if (mode === "text") {
+    description = "Paste a full .env file. Comments and blank lines are ignored. Saving replaces all variables with this content.";
+  }
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base">Environment variables</CardTitle>
-        <Button variant="ghost" size="sm" onClick={switchMode}>
-          {mode === "table" ? <FileText className="size-4" /> : <List className="size-4" />}
-          {mode === "table" ? "Edit as .env" : "Edit as table"}
-        </Button>
+      <CardHeader>
+        <CardTitle>Environment variables</CardTitle>
+        <CardDescription>{description}</CardDescription>
+        <CardAction>
+          <SegmentedControl
+            size="sm"
+            aria-label="Editor mode"
+            value={mode}
+            onValueChange={(next) => {
+              if (next !== mode) {
+                switchMode();
+              }
+            }}
+            options={[
+              { value: "table", label: "Table", icon: ListIcon },
+              { value: "text", label: ".env", icon: FileText },
+            ]}
+          />
+        </CardAction>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {mode === "text" && (
-          <>
+      <CardContent>
+        <Stack gap={4}>
+          {mode === "text" && (
             <Textarea
               value={text}
               onChange={(event) => setText(event.target.value)}
@@ -116,44 +163,39 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
               spellCheck={false}
               autoFocus
             />
-            <p className="text-xs text-muted-foreground">
-              Paste a full .env file. Comments and blank lines are ignored. Saving replaces all variables with this content.
-            </p>
-          </>
-        )}
-        {mode === "table" && (
-          <>
-            {!rows.length && (
-              <p className="text-sm text-muted-foreground">No variables yet. Add one, or paste a .env into a key field.</p>
-            )}
-            {rows.map((row, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  className="font-mono"
-                  placeholder="KEY"
-                  value={row.key}
-                  onChange={(event) => update(index, "key", event.target.value)}
-                  onPaste={(event) => pasteIntoKey(index, event)}
-                />
-                <Input className="font-mono" placeholder="value" value={row.value} onChange={(event) => update(index, "value", event.target.value)} />
-                <Button variant="ghost" size="icon" onClick={() => setRows(rows.filter((_, current) => current !== index))}>
-                  <X className="size-4" />
-                </Button>
-              </div>
-            ))}
-          </>
-        )}
-        <div className="flex gap-2">
-          {mode === "table" && (
-            <Button variant="outline" size="sm" onClick={() => setRows([...rows, { key: "", value: "" }])}>
-              <Plus className="size-4" />
-              Add variable
-            </Button>
           )}
-          <Button size="sm" onClick={() => save.mutate(undefined)} disabled={save.isPending}>
-            Save
-          </Button>
-        </div>
+          {mode === "table" && (
+            <Stack gap={2}>
+              {!rows.length && (
+                <EmptyState size="sm" bordered title="No variables yet" description="Add one, or paste a .env into a key field." />
+              )}
+              {rows.map((row, index) => (
+                <HStack key={index} gap={2}>
+                  <Input
+                    className="font-mono"
+                    placeholder="KEY"
+                    value={row.key}
+                    onChange={(event) => update(index, "key", event.target.value)}
+                    onPaste={(event) => pasteIntoKey(index, event)}
+                  />
+                  <Input className="font-mono" placeholder="value" value={row.value} onChange={(event) => update(index, "value", event.target.value)} />
+                  <IconButton icon={X} label="Remove variable" size="default" onClick={() => setRows(rows.filter((_, current) => current !== index))} />
+                </HStack>
+              ))}
+            </Stack>
+          )}
+          <FormActions align="between">
+            {mode === "table" && (
+              <Button variant="secondary" size="sm" onClick={() => setRows([...rows, { key: "", value: "" }])}>
+                <Plus />
+                Add variable
+              </Button>
+            )}
+            <Button size="sm" className="ml-auto" onClick={() => save.mutate(undefined)} loading={save.isPending}>
+              Save
+            </Button>
+          </FormActions>
+        </Stack>
       </CardContent>
     </Card>
   );
@@ -227,59 +269,80 @@ const BuildSettings = ({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Build settings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          className="space-y-5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            save.mutate(undefined);
-          }}
-        >
-          <p className="text-sm text-muted-foreground">Leave a field empty to detect it automatically.</p>
-          <div className="space-y-2">
-            <Label htmlFor="nodeVersion">Node.js version</Label>
-            <select
-              id="nodeVersion"
-              value={form.nodeVersion}
-              onChange={(event) => setForm({ ...form, nodeVersion: event.target.value })}
-              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
-            >
-              <option value="">Auto: from engines.node, otherwise {nodeVersions[nodeVersions.length - 1]}</option>
-              {nodeVersions.map((version) => (
-                <option key={version} value={version}>
-                  Node {version}
-                </option>
-              ))}
-            </select>
-          </div>
-          {BUILD_FIELDS.map((field) => (
-            <div key={field.key} className="space-y-2">
-              <Label htmlFor={field.key}>{field.label}</Label>
-              <Input
-                id={field.key}
-                className="font-mono"
-                placeholder={field.placeholder}
-                value={form[field.key]}
-                onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
-                spellCheck={false}
-              />
-              <p className="text-xs text-muted-foreground">{field.hint}</p>
-            </div>
-          ))}
-          <Button type="submit" size="sm" disabled={save.isPending}>
-            Save
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <Grid cols="sidebar" gap={6} align="start">
+      <Card>
+        <CardHeader>
+          <CardTitle>Build settings</CardTitle>
+          <CardDescription>Leave a field empty to detect it automatically.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form onSubmit={() => save.mutate(undefined)}>
+            <Field label="Node.js version" htmlFor="nodeVersion">
+              <NativeSelect id="nodeVersion" value={form.nodeVersion} onChange={(event) => setForm({ ...form, nodeVersion: event.target.value })}>
+                <NativeSelectOption value="">Auto: from engines.node, otherwise {nodeVersions[nodeVersions.length - 1]}</NativeSelectOption>
+                {nodeVersions.map((version) => (
+                  <NativeSelectOption key={version} value={version}>
+                    Node {version}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+            {BUILD_FIELDS.map((field) => (
+              <Field key={field.key} label={field.label} htmlFor={field.key}>
+                <Input
+                  id={field.key}
+                  className="font-mono"
+                  placeholder={field.placeholder}
+                  value={form[field.key]}
+                  onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+                  spellCheck={false}
+                />
+              </Field>
+            ))}
+            <FormActions align="start">
+              <Button type="submit" size="sm" loading={save.isPending}>
+                Save
+              </Button>
+            </FormActions>
+          </Form>
+        </CardContent>
+      </Card>
+      <Card variant="inset">
+        <CardHeader>
+          <CardTitle>How each step runs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <List variant="divided">
+            {BUILD_FIELDS.map((field) => (
+              <ListItem key={field.key}>
+                <Stack gap={1}>
+                  <Text size="sm" weight="medium">
+                    {field.label}
+                  </Text>
+                  <Text size="sm" tone="muted">
+                    {field.hint}
+                  </Text>
+                </Stack>
+              </ListItem>
+            ))}
+          </List>
+        </CardContent>
+      </Card>
+    </Grid>
   );
 };
 
 type Domain = { id: string; hostname: string; status: string; error: string | null };
+
+const DnsRecord = ({ type, name, value }: { type: string; name: string; value: string }) => {
+  return (
+    <Grid cols={3} gap={2}>
+      <Code className="block px-3 py-2 text-xs">Type: {type}</Code>
+      <Code className="block px-3 py-2 text-xs">Name: {name}</Code>
+      <Code className="block px-3 py-2 text-xs">Value: {value}</Code>
+    </Grid>
+  );
+};
 
 const DomainsPanel = ({
   appId,
@@ -301,8 +364,7 @@ const DomainsPanel = ({
   });
 
   const verify = useApiMutation({
-    mutationFn: (domainId: string) =>
-      unwrap(api.apps[":id"].domains[":domainId"].verify.$post({ param: { id: appId, domainId } })),
+    mutationFn: (domainId: string) => unwrap(api.apps[":id"].domains[":domainId"].verify.$post({ param: { id: appId, domainId } })),
     invalidate,
     success: "Domain is live",
   });
@@ -314,92 +376,78 @@ const DomainsPanel = ({
   });
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Custom domains</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form
-            className="flex gap-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              add.mutate(undefined);
-            }}
-          >
-            <Input
-              value={hostname}
-              onChange={(event) => setHostname(event.target.value.toLowerCase())}
-              placeholder="www.example.com"
-              className="font-mono"
-            />
-            <Button type="submit" disabled={add.isPending || !hostname.trim()}>
-              <Plus className="size-4" />
-              Add domain
-            </Button>
-          </form>
-          {!domains.length && <p className="text-sm text-muted-foreground">No custom domains yet.</p>}
+    <Card>
+      <CardHeader>
+        <CardTitle>Custom domains</CardTitle>
+        <CardDescription>Point your own hostname at this app. HTTPS certificates are issued automatically once DNS is verified.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Stack gap={4}>
+          <Form gap="sm" onSubmit={() => add.mutate(undefined)}>
+            <HStack gap={2}>
+              <Input
+                aria-label="Hostname"
+                value={hostname}
+                onChange={(event) => setHostname(event.target.value.toLowerCase())}
+                placeholder="www.example.com"
+                className="font-mono"
+              />
+              <Button type="submit" loading={add.isPending} disabled={!hostname.trim()}>
+                <Plus />
+                Add domain
+              </Button>
+            </HStack>
+          </Form>
+          {!domains.length && <EmptyState size="sm" bordered icon={Globe} title="No custom domains yet." />}
           {domains.map((domain) => (
-            <div key={domain.id} className="space-y-3 border p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  {domain.status === "ACTIVE" && <CheckCircle2 className="size-4 text-emerald-600" />}
-                  <a
-                    href={`https://${domain.hostname}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-mono text-sm font-medium hover:underline"
-                  >
-                    {domain.hostname}
-                  </a>
-                  <StatusBadge status={domain.status} />
-                </div>
-                <div className="flex gap-2">
+            <Card key={domain.id} variant="inset" className="gap-4 py-4">
+              <CardContent className="px-4">
+                <Stack gap={3}>
+                  <Stack direction="row" align="center" justify="between" wrap gap={2}>
+                    <HStack gap={3}>
+                      {domain.status === "ACTIVE" && <Icon icon={CheckCircle2} tone="success" />}
+                      <Link href={`https://${domain.hostname}`} className="font-mono text-sm">
+                        {domain.hostname}
+                      </Link>
+                      <StatusBadge status={domain.status} />
+                    </HStack>
+                    <HStack gap={2}>
+                      {domain.status !== "ACTIVE" && (
+                        <Button variant="secondary" size="sm" onClick={() => verify.mutate(domain.id)} loading={verify.isPending && verify.variables === domain.id}>
+                          <RefreshCw />
+                          Verify
+                        </Button>
+                      )}
+                      <ConfirmButton
+                        title={`Remove ${domain.hostname}?`}
+                        description="The domain stops serving this app and its HTTPS certificate is deleted."
+                        confirmLabel="Remove"
+                        onConfirm={() => remove.mutate(domain.id)}
+                      >
+                        <IconButton icon={Trash2} label="Remove domain" tooltip={false} />
+                      </ConfirmButton>
+                    </HStack>
+                  </Stack>
+                  {domain.error && <Alert variant="danger">{domain.error}</Alert>}
                   {domain.status !== "ACTIVE" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => verify.mutate(domain.id)}
-                      disabled={verify.isPending && verify.variables === domain.id}
-                    >
-                      <RefreshCw className="size-4" />
-                      Verify
-                    </Button>
+                    <Stack gap={2}>
+                      <Text size="sm" tone="muted">
+                        Add one of these records at your DNS provider, then click Verify:
+                      </Text>
+                      <DnsRecord type="CNAME" name={domain.hostname} value={dnsTarget.cname} />
+                      <Text size="sm" tone="muted">
+                        For a root domain (example.com) use an A record instead:
+                      </Text>
+                      <DnsRecord type="A" name={domain.hostname} value={dnsTarget.ip} />
+                    </Stack>
                   )}
-                  <ConfirmButton
-                    title={`Remove ${domain.hostname}?`}
-                    description="The domain stops serving this app and its HTTPS certificate is deleted."
-                    confirmLabel="Remove"
-                    onConfirm={() => remove.mutate(domain.id)}
-                  >
-                    <Button variant="ghost" size="sm">
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </ConfirmButton>
-                </div>
-              </div>
-              {domain.error && <p className="text-sm text-destructive">{domain.error}</p>}
-              {domain.status !== "ACTIVE" && (
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>Add one of these records at your DNS provider, then click Verify:</p>
-                  <div className="grid gap-2 font-mono text-xs sm:grid-cols-3">
-                    <span className="border bg-muted/40 px-3 py-2">Type: CNAME</span>
-                    <span className="border bg-muted/40 px-3 py-2">Name: {domain.hostname}</span>
-                    <span className="border bg-muted/40 px-3 py-2">Value: {dnsTarget.cname}</span>
-                  </div>
-                  <p>For a root domain (example.com) use an A record instead:</p>
-                  <div className="grid gap-2 font-mono text-xs sm:grid-cols-3">
-                    <span className="border bg-muted/40 px-3 py-2">Type: A</span>
-                    <span className="border bg-muted/40 px-3 py-2">Name: {domain.hostname}</span>
-                    <span className="border bg-muted/40 px-3 py-2">Value: {dnsTarget.ip}</span>
-                  </div>
-                </div>
-              )}
-            </div>
+                </Stack>
+              </CardContent>
+            </Card>
           ))}
-        </CardContent>
-      </Card>
-    </div>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -436,11 +484,16 @@ export const AppDetailPage = () => {
   });
 
   if (error) {
-    return <p role="alert" className="text-destructive">{error.message}</p>;
+    return <Alert variant="danger">{error.message}</Alert>;
   }
 
   if (isLoading || !data) {
-    return <Skeleton className="h-64 w-full" />;
+    return (
+      <Stack gap={6}>
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </Stack>
+    );
   }
 
   const { app, deployments } = data;
@@ -455,38 +508,38 @@ export const AppDetailPage = () => {
     <>
       <PageHeader
         title={app.name}
-        description={app.url}
+        description={
+          <Link href={app.url} variant="muted" className="font-mono text-[13px]">
+            {app.url}
+          </Link>
+        }
         action={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild>
-              <a href={app.url} target="_blank" rel="noreferrer">
-                <ExternalLink className="size-4" />
-                Visit
-              </a>
-            </Button>
+          <>
+            <Link href={app.url} variant="plain" inline={false} className={buttonVariants({ variant: "secondary" })}>
+              <ExternalLink />
+              Visit
+            </Link>
             {isAi && (
-              <Button variant="outline" asChild>
-                <Link to={`/builder/${app.id}`}>
-                  <Sparkles className="size-4" />
-                  Open builder
-                </Link>
-              </Button>
+              <Link to={`/builder/${app.id}`} variant="plain" inline={false} className={buttonVariants({ variant: "secondary" })}>
+                <Sparkles />
+                Open builder
+              </Link>
             )}
             {!isAi && (
-              <Button variant="outline" onClick={() => redeploy.mutate(undefined)} disabled={redeploy.isPending}>
-                <RefreshCw className="size-4" />
+              <Button variant="secondary" onClick={() => redeploy.mutate(undefined)} loading={redeploy.isPending}>
+                <RefreshCw />
                 Redeploy
               </Button>
             )}
             {app.status === "STOPPED" && (
-              <Button variant="outline" onClick={() => start.mutate(undefined)} disabled={start.isPending}>
-                <Play className="size-4" />
+              <Button variant="secondary" onClick={() => start.mutate(undefined)} loading={start.isPending}>
+                <Play />
                 Start
               </Button>
             )}
             {app.status === "RUNNING" && (
-              <Button variant="outline" onClick={() => stop.mutate(undefined)} disabled={stop.isPending}>
-                <Square className="size-4" />
+              <Button variant="secondary" onClick={() => stop.mutate(undefined)} loading={stop.isPending}>
+                <Square />
                 Stop
               </Button>
             )}
@@ -496,17 +549,19 @@ export const AppDetailPage = () => {
               onConfirm={() => remove.mutate(undefined)}
             >
               <Button variant="destructive">
-                <Trash2 className="size-4" />
+                <Trash2 />
                 Delete app
               </Button>
             </ConfirmButton>
-          </div>
+          </>
         }
       />
-      <div className="mb-6 flex items-center gap-3">
+      <HStack gap={3} className="-mt-4 mb-6">
         <StatusBadge status={app.status} />
-        <span className="text-sm text-muted-foreground">Updated {formatDate(app.updatedAt)}</span>
-      </div>
+        <Text as="span" size="sm" tone="muted">
+          Updated {formatDate(app.updatedAt)}
+        </Text>
+      </HStack>
       <Tabs defaultValue={defaultTab}>
         <TabsList>
           {!isAi && <TabsTrigger value="deployments">Deployments</TabsTrigger>}
@@ -517,52 +572,58 @@ export const AppDetailPage = () => {
           {!isAi && <TabsTrigger value="build">Build</TabsTrigger>}
           <TabsTrigger value="domains">Domains</TabsTrigger>
         </TabsList>
-        <TabsContent value="deployments" className="mt-4">
+        <TabsContent value="deployments">
           {!deployments.length && (
-            <Card>
-              <CardContent className="space-y-3 py-6">
-                <p className="text-sm text-muted-foreground">No deployments yet. From your Node.js app folder run:</p>
-                <CodeBlock code={`npx ezhst deploy --project ${app.projectId} --app ${app.slug}`} />
-              </CardContent>
+            <Card className="py-0">
+              <EmptyState
+                icon={Rocket}
+                title="No deployments yet"
+                description="From your Node.js app folder run:"
+                action={<CodeBlock tone="terminal" className="w-full max-w-xl text-left" code={`npx ezhst deploy --project ${app.projectId} --app ${app.slug}`} />}
+              />
             </Card>
           )}
           {!!deployments.length && (
-            <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-              <Card className="gap-0 py-0">
+            <Grid cols="sidebar-left" gap={4} align="start">
+              <SelectableList label="Deployments" className="max-h-[32rem]">
                 {deployments.map((deployment) => (
-                  <button
+                  <SelectableListItem
                     key={deployment.id}
-                    onClick={() => setSelected(deployment.id)}
-                    className={cn(
-                      "flex w-full items-center justify-between border-b px-4 py-3 text-left text-sm last:border-b-0 hover:bg-muted/50",
-                      activeDeployment === deployment.id && "bg-muted",
-                    )}
+                    active={activeDeployment === deployment.id}
+                    onSelect={() => setSelected(deployment.id)}
+                    trailing={<StatusBadge status={deployment.status} />}
                   >
-                    <span className="text-muted-foreground">{formatDate(deployment.createdAt)}</span>
-                    <StatusBadge status={deployment.status} />
-                  </button>
+                    {formatDate(deployment.createdAt)}
+                  </SelectableListItem>
                 ))}
-              </Card>
+              </SelectableList>
               {activeDeployment && <DeploymentLog appId={app.id} deploymentId={activeDeployment} />}
-            </div>
+            </Grid>
           )}
         </TabsContent>
-        <TabsContent value="logs" className="mt-4 space-y-3">
-          <Button variant="outline" size="sm" onClick={() => logs.refetch()} disabled={logs.isFetching}>
-            <RefreshCw className="size-4" />
-            Refresh
-          </Button>
-          <pre className="max-h-[32rem] overflow-auto bg-zinc-950 p-4 font-mono text-xs leading-relaxed text-zinc-100">
-            {logs.data?.logs || "No logs yet."}
-          </pre>
+        <TabsContent value="logs">
+          <Stack gap={3}>
+            <HStack justify="between" gap={3}>
+              <Text size="sm" tone="muted">
+                Output from the running container.
+              </Text>
+              <Button variant="secondary" size="sm" onClick={() => logs.refetch()} loading={logs.isFetching}>
+                <RefreshCw />
+                Refresh
+              </Button>
+            </HStack>
+            <Pre tone="terminal" className="max-h-[32rem] min-h-48 overflow-auto">
+              {logs.data?.logs || "No logs yet."}
+            </Pre>
+          </Stack>
         </TabsContent>
-        <TabsContent value="env" className="mt-4">
+        <TabsContent value="env">
           <EnvEditor key={app.id} appId={app.id} initial={app.env as Record<string, string>} />
         </TabsContent>
-        <TabsContent value="build" className="mt-4">
+        <TabsContent value="build">
           <BuildSettings key={app.id} appId={app.id} initial={app} nodeVersions={data.nodeVersions} />
         </TabsContent>
-        <TabsContent value="domains" className="mt-4">
+        <TabsContent value="domains">
           <DomainsPanel appId={app.id} domains={data.domains} dnsTarget={data.dnsTarget} />
         </TabsContent>
       </Tabs>

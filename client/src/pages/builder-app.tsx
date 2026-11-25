@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -20,24 +20,56 @@ import {
   FilePen,
   FileText,
   HardDrive,
-  Loader2,
+  Monitor,
   MousePointerClick,
   Package,
   Play,
   RefreshCw,
   Search,
+  SendHorizontal,
+  Smartphone,
+  Sparkles,
+  Tablet,
   Terminal,
   Trash2,
   X,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
-import remarkGfm from "remark-gfm";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  EmptyState,
+  Form,
+  Grid,
+  HStack,
+  Icon,
+  IconBadge,
+  IconButton,
+  Image,
+  Input,
+  Link,
+  List,
+  ListItem,
+  Markdown,
+  Pill,
+  Pre,
+  SegmentedControl,
+  Skeleton,
+  Spinner,
+  Stack,
+  StatusDot,
+  Text,
+  Textarea,
+  Tooltip,
+} from "@/components/ui";
+import { Embed } from "@/components/ui/embed";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap, upload } from "@/lib/api";
 import { aiAppsQuery, appsQuery, tokensQuery } from "@/lib/queries";
@@ -77,11 +109,19 @@ type InspectorMessage =
   | { type: "easyhost:select"; element: SelectedElement }
   | { type: "easyhost:inspect-exit" }
   | { type: "easyhost:inspector-ready" };
+type Device = "desktop" | "tablet" | "mobile";
+type View = "preview" | "code";
 
 const MAX_ELEMENTS = 5;
 const MAX_ATTACHMENTS = 5;
 const ASSET_DIR = "public/uploads/";
 const IMAGE_ACCEPT = ".png,.jpg,.jpeg,.gif,.webp,.avif,.svg,.ico";
+
+const DEVICE_WIDTHS: Record<Device, string> = {
+  desktop: "max-w-full",
+  tablet: "max-w-[820px]",
+  mobile: "max-w-[390px]",
+};
 
 const isAssetPath = (path: string) => path.startsWith(ASSET_DIR);
 
@@ -90,15 +130,19 @@ const assetSrc = (appId: string, path: string) => {
 };
 
 const AttachmentChip = ({ appId, path, onRemove }: { appId: string; path: string; onRemove?: () => void }) => (
-  <span title={`/uploads/${path.slice(ASSET_DIR.length)}`} className="inline-flex max-w-full items-center gap-1.5 border bg-background p-0.5 pr-2 text-xs text-foreground">
-    <img src={assetSrc(appId, path)} alt="" className="size-6 shrink-0 bg-muted object-cover" />
-    <span className="truncate">{path.slice(ASSET_DIR.length)}</span>
-    {onRemove && (
-      <button type="button" onClick={onRemove} aria-label="Remove image" className="shrink-0 text-muted-foreground hover:text-foreground">
-        <X className="size-3" />
-      </button>
-    )}
-  </span>
+  <HStack
+    as="span"
+    inline
+    gap={2}
+    title={`/uploads/${path.slice(ASSET_DIR.length)}`}
+    className="max-w-full rounded-md border border-border bg-surface p-0.5 pr-2.5"
+  >
+    <Image src={assetSrc(appId, path)} alt="" rounded="full" fit="cover" className="size-6 shrink-0 bg-muted" />
+    <Text as="span" size="xs" truncate>
+      {path.slice(ASSET_DIR.length)}
+    </Text>
+    {onRemove && <IconButton icon={X} label="Remove image" size="xs" tooltip={false} onClick={onRemove} className="-mr-1 size-5" />}
+  </HStack>
 );
 
 const elementLabel = (element: SelectedElement) => {
@@ -112,16 +156,12 @@ const elementLabel = (element: SelectedElement) => {
 };
 
 const ElementChip = ({ element, onRemove }: { element: SelectedElement; onRemove?: () => void }) => (
-  <span title={element.selector} className="inline-flex max-w-full items-center gap-1.5 border bg-background px-2 py-0.5 text-xs text-foreground">
-    <MousePointerClick className="size-3 shrink-0 text-muted-foreground" />
-    <span className="shrink-0 font-mono text-muted-foreground">{element.tag}</span>
-    <span className="truncate">{elementLabel(element)}</span>
-    {onRemove && (
-      <button type="button" onClick={onRemove} aria-label="Remove element" className="shrink-0 text-muted-foreground hover:text-foreground">
-        <X className="size-3" />
-      </button>
-    )}
-  </span>
+  <Pill title={element.selector} icon={MousePointerClick} size="sm" onRemove={onRemove} removeLabel="Remove element">
+    <Text as="span" size="inherit" tone="muted" mono className="mr-1.5">
+      {element.tag}
+    </Text>
+    {elementLabel(element)}
+  </Pill>
 );
 
 type Respond = (body: { stepId: string; answers?: Record<string, string>; approve?: true; theme?: string }) => void;
@@ -162,18 +202,18 @@ const upsert = (steps: Step[], step: Step) => {
 
 const StatusIcon = ({ status }: { status: ToolStep["status"] }) => {
   if (status === "running") {
-    return <Loader2 className="size-3.5 animate-spin text-primary" />;
+    return <Spinner size="sm" tone="accent" label="Running" />;
   }
   if (status === "error") {
-    return <X className="size-3.5 text-destructive" />;
+    return <Icon icon={X} size="sm" tone="danger" label="Failed" />;
   }
-  return <Check className="size-3.5 text-emerald-600" />;
+  return <Icon icon={Check} size="sm" tone="success" label="Done" />;
 };
 
 const ToolStepView = ({ step }: { step: ToolStep }) => {
   const [open, setOpen] = useState<boolean | null>(null);
-  const detailRef = useRef<HTMLPreElement>(null);
-  const Icon = TOOL_ICONS[step.tool] ?? FileCode2;
+  const detailRef = useRef<HTMLElement>(null);
+  const ToolIcon = TOOL_ICONS[step.tool] ?? FileCode2;
   const hasBody = !!step.detail || !!step.output;
   const expanded = hasBody && (open ?? step.status !== "done");
 
@@ -184,64 +224,51 @@ const ToolStepView = ({ step }: { step: ToolStep }) => {
   }, [step.detail, step.status]);
 
   return (
-    <div className="border bg-background">
-      <button
+    <Box className="overflow-hidden rounded-xl border border-border bg-surface">
+      <Button
         type="button"
+        variant="ghost"
+        block
         disabled={!hasBody}
         onClick={() => setOpen(!expanded)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs disabled:cursor-default"
+        aria-expanded={expanded}
+        className="h-auto justify-start gap-2.5 rounded-none px-3 py-2 text-left text-foreground disabled:opacity-100"
       >
-        <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="min-w-0 flex-1 truncate font-mono">{step.title}</span>
+        <Icon icon={ToolIcon} size="sm" tone="muted" />
+        <Text as="span" size="xs" mono truncate className="flex-1">
+          {step.title}
+        </Text>
         <StatusIcon status={step.status} />
-        {hasBody && <ChevronDown className={cn("size-3.5 text-muted-foreground transition-transform", expanded && "rotate-180")} />}
-      </button>
+        {hasBody && <Icon icon={ChevronDown} size="sm" tone="muted" className={cn("transition-transform", expanded && "rotate-180")} />}
+      </Button>
       {expanded && (
-        <div className="border-t">
+        <Stack gap={2} className="border-t border-border p-2">
           {step.detail && (
-            <pre ref={detailRef} className="max-h-64 overflow-auto bg-zinc-950 p-3 font-mono text-[11px] leading-5 text-zinc-100">
-              {step.detail}
-            </pre>
+            <Box ref={detailRef} className="scrollbar-thin max-h-64 overflow-auto rounded-lg">
+              <Pre tone="terminal" className="rounded-lg p-3 text-[11px] leading-5">
+                {step.detail}
+              </Pre>
+            </Box>
           )}
           {step.output && (
-            <pre
-              className={cn(
-                "max-h-48 overflow-auto p-3 font-mono text-[11px] leading-5 whitespace-pre-wrap",
-                step.status === "error" && "text-destructive",
-              )}
-            >
+            <Pre wrap className={cn("max-h-48 overflow-auto rounded-lg p-3 text-[11px] leading-5", step.status === "error" && "text-destructive")}>
               {step.output}
-            </pre>
+            </Pre>
           )}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Box>
   );
 };
 
-const MARKDOWN_CLASSES = [
-  "min-w-0 space-y-2 text-sm leading-relaxed break-words",
-  "[&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5",
-  "[&_li>ul]:mt-1 [&_li>ol]:mt-1 [&_strong]:font-semibold [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold",
-  "[&_a]:text-primary [&_a]:underline [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_code]:text-xs",
-  "[&_pre]:overflow-x-auto [&_pre]:bg-zinc-950 [&_pre]:p-3 [&_pre]:text-zinc-100 [&_pre_code]:bg-transparent [&_pre_code]:p-0",
-  "[&_table]:w-full [&_th]:border [&_th]:px-2 [&_th]:text-left [&_td]:border [&_td]:px-2",
-].join(" ");
-
-const Markdown = ({ text }: { text: string }) => (
-  <div className={MARKDOWN_CLASSES}>
-    <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
-  </div>
-);
-
-const CardShell = ({ icon: Icon, title, children }: { icon: typeof FileCode2; title: string; children: React.ReactNode }) => (
-  <div className="space-y-3 border bg-background p-3">
-    <p className="flex items-center gap-2 text-sm font-medium">
-      <Icon className="size-4 text-primary" />
-      {title}
-    </p>
+const CardShell = ({ icon, title, children }: { icon: typeof FileCode2; title: string; children: React.ReactNode }) => (
+  <Card className="gap-4 rounded-2xl p-4">
+    <HStack gap={3}>
+      <IconBadge icon={icon} tone="success" size="sm" />
+      <Text weight="medium">{title}</Text>
+    </HStack>
     {children}
-  </div>
+  </Card>
 );
 
 const QuestionsCard = ({ step, respond, pending }: { step: QuestionsStep } & CardProps) => {
@@ -250,113 +277,135 @@ const QuestionsCard = ({ step, respond, pending }: { step: QuestionsStep } & Car
     const given = step.answers;
     return (
       <CardShell icon={CircleHelp} title="Questions">
-        <ul className="space-y-1 text-sm">
+        <List variant="divided">
           {step.questions.map((question) => (
-            <li key={question.id}>
-              <span className="text-muted-foreground">{question.text}</span> {given[question.id]}
-            </li>
+            <ListItem key={question.id} className="py-2 first:pt-0 last:pb-0">
+              <Text size="sm" tone="muted">
+                {question.text}
+              </Text>
+              <Text weight="medium">{given[question.id]}</Text>
+            </ListItem>
           ))}
-        </ul>
+        </List>
       </CardShell>
     );
   }
   return (
     <CardShell icon={CircleHelp} title="A few questions first">
-      <div className="space-y-4">
+      <Stack gap={5}>
         {step.questions.map((question) => (
-          <div key={question.id} className="space-y-2">
-            <p className="text-sm">{question.text}</p>
-            <div className="flex flex-wrap gap-2">
-              {question.options.map((option) => (
-                <Button
-                  key={option}
-                  type="button"
-                  size="sm"
-                  variant={answers[question.id] === option ? "default" : "outline"}
-                  disabled={!respond || pending}
-                  onClick={() => setAnswers((current) => ({ ...current, [question.id]: option }))}
-                >
-                  {option}
-                </Button>
-              ))}
-            </div>
+          <Stack key={question.id} gap={2}>
+            <Text>{question.text}</Text>
+            <HStack wrap gap={2}>
+              {question.options.map((option) => {
+                let variant: "default" | "secondary" = "secondary";
+                if (answers[question.id] === option) {
+                  variant = "default";
+                }
+                return (
+                  <Button
+                    key={option}
+                    type="button"
+                    size="xs"
+                    variant={variant}
+                    disabled={!respond || pending}
+                    onClick={() => setAnswers((current) => ({ ...current, [question.id]: option }))}
+                  >
+                    {option}
+                  </Button>
+                );
+              })}
+            </HStack>
             <Input
               placeholder="Or type your own answer"
               disabled={!respond || pending}
               value={question.options.includes(answers[question.id] ?? "") ? "" : (answers[question.id] ?? "")}
               onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))}
+              className="h-9"
             />
-          </div>
+          </Stack>
         ))}
-      </div>
-      <Button
-        size="sm"
-        disabled={!respond || pending || !step.questions.every((question) => answers[question.id]?.trim())}
-        onClick={() => respond?.({ stepId: step.id, answers })}
-      >
-        Submit answers
-      </Button>
+      </Stack>
+      <HStack>
+        <Button
+          size="sm"
+          loading={pending && !!respond}
+          disabled={!respond || pending || !step.questions.every((question) => answers[question.id]?.trim())}
+          onClick={() => respond?.({ stepId: step.id, answers })}
+        >
+          Submit answers
+        </Button>
+      </HStack>
     </CardShell>
   );
 };
 
 const PlanCard = ({ step, respond, pending, onChange }: { step: PlanStep; onChange: () => void } & CardProps) => (
   <CardShell icon={ListChecks} title="Plan">
-    <p className="text-sm">{step.summary}</p>
-    <ul className="space-y-1.5">
+    <Text>{step.summary}</Text>
+    <List variant="check" gap={2}>
       {step.items.map((item) => (
-        <li key={item} className="flex items-start gap-2 text-sm">
-          <Check className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+        <ListItem key={item} icon={Check}>
           {item}
-        </li>
+        </ListItem>
       ))}
-    </ul>
+    </List>
     {step.status === "approved" && (
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Check className="size-3.5 text-emerald-600" />
-        Approved
-      </p>
+      <HStack>
+        <Pill tone="success" size="sm" icon={Check}>
+          Approved
+        </Pill>
+      </HStack>
     )}
     {step.status === "pending" && respond && (
-      <div className="flex gap-2">
+      <HStack gap={2}>
         <Button size="sm" disabled={pending} onClick={() => respond({ stepId: step.id, approve: true })}>
           Approve
         </Button>
-        <Button size="sm" variant="outline" disabled={pending} onClick={onChange}>
+        <Button size="sm" variant="secondary" disabled={pending} onClick={onChange}>
           Change something
         </Button>
-      </div>
+      </HStack>
     )}
   </CardShell>
 );
 
 const ThemePreview = ({ theme, selected, disabled, onPick }: { theme: Theme; selected: boolean; disabled: boolean; onPick: () => void }) => (
-  <button
+  <Button
     type="button"
+    variant="secondary"
     disabled={disabled}
     onClick={onPick}
-    className={cn("flex flex-col border text-left disabled:cursor-default", selected && "border-primary ring-2 ring-primary/30")}
+    aria-pressed={selected}
+    className={cn(
+      "h-auto flex-col items-stretch gap-0 overflow-hidden rounded-xl p-0 text-left font-normal whitespace-normal disabled:opacity-100",
+      selected && "border-accent-green ring-2 ring-accent-green/30",
+    )}
   >
-    <p className="truncate border-b px-2.5 py-1.5 text-xs font-medium">{theme.name}</p>
-    <div
-      className="flex-1 space-y-2 p-2.5"
-      style={{ background: theme.colors.background, color: theme.colors.foreground, fontFamily: `"${theme.font}", sans-serif` }}
-    >
-      <div className="flex gap-1">
+    <Text as="span" size="xs" weight="medium" truncate className="border-b border-border px-2.5 py-1.5">
+      {theme.name}
+    </Text>
+    <Stack gap={2} className="flex-1 p-2.5" style={{ background: theme.colors.background, color: theme.colors.foreground, fontFamily: `"${theme.font}", sans-serif` }}>
+      <HStack gap={1}>
         {[theme.colors.primary, theme.colors.surface, theme.colors.muted, theme.colors.border].map((color) => (
-          <span key={color} className="size-3 border border-black/10" style={{ background: color, borderRadius: theme.radius }} />
+          <Box key={color} as="span" className="size-3 border border-black/10" style={{ background: color, borderRadius: theme.radius }} />
         ))}
-      </div>
-      <p className="text-lg leading-none font-semibold">Aa</p>
-      <span
-        className="inline-block px-2 py-0.5 text-[10px] font-medium"
+      </HStack>
+      <Text as="span" size="inherit" tone="inherit" weight="semibold" className="text-lg leading-none">
+        Aa
+      </Text>
+      <Box
+        as="span"
+        className="self-start px-2 py-0.5 text-[10px] font-medium"
         style={{ background: theme.colors.primary, color: theme.colors.primaryForeground, borderRadius: theme.radius }}
       >
         Button
-      </span>
-    </div>
-    <p className="truncate border-t px-2.5 py-1.5 text-[11px] text-muted-foreground">{theme.font}</p>
-  </button>
+      </Box>
+    </Stack>
+    <Text as="span" size="2xs" tone="muted" truncate className="border-t border-border px-2.5 py-1.5">
+      {theme.font}
+    </Text>
+  </Button>
 );
 
 const ThemeCard = ({ step, themes, respond, pending }: { step: ThemeStep; themes: Theme[] } & CardProps) => {
@@ -373,9 +422,14 @@ const ThemeCard = ({ step, themes, respond, pending }: { step: ThemeStep; themes
     document.head.appendChild(link);
   }, [themes]);
 
+  let title = "Pick a theme";
+  if (step.chosen) {
+    title = "Theme";
+  }
+
   return (
-    <CardShell icon={Palette} title={step.chosen ? "Theme" : "Pick a theme"}>
-      <div className="grid grid-cols-3 gap-2">
+    <CardShell icon={Palette} title={title}>
+      <Grid cols="3-fixed" gap={2}>
         {themes.map((theme) => (
           <ThemePreview
             key={theme.id}
@@ -385,7 +439,7 @@ const ThemeCard = ({ step, themes, respond, pending }: { step: ThemeStep; themes
             onPick={() => respond?.({ stepId: step.id, theme: theme.id })}
           />
         ))}
-      </div>
+      </Grid>
     </CardShell>
   );
 };
@@ -403,10 +457,10 @@ const StepsView = ({
   pending?: boolean;
   onChangePlan?: () => void;
 }) => (
-  <div className="space-y-2">
+  <Stack gap={2}>
     {steps.map((step) => {
       if (step.type === "text") {
-        return <Markdown key={step.id} text={step.text} />;
+        return <Markdown key={step.id}>{step.text}</Markdown>;
       }
       if (step.type === "questions") {
         return <QuestionsCard key={step.id} step={step} respond={respond} pending={pending} />;
@@ -419,7 +473,7 @@ const StepsView = ({
       }
       return <ToolStepView key={step.id} step={step} />;
     })}
-  </div>
+  </Stack>
 );
 
 const MonacoEditor = lazy(() => import("@/components/monaco-editor").then((module) => ({ default: module.MonacoEditor })));
@@ -485,31 +539,48 @@ const CodeEditor = ({
   };
 
   return (
-    <div className="flex h-full min-h-0">
-      <nav className="w-56 shrink-0 overflow-y-auto border-r bg-background py-2">
+    <Stack direction="row" gap={0} className="h-full min-h-0">
+      <Stack as="nav" gap={1} aria-label="Files" className="scrollbar-thin w-56 shrink-0 overflow-y-auto border-r border-border p-2">
         {files.map((item) => (
-          <button
+          <Button
             key={item.path}
             type="button"
+            variant="ghost"
+            size="xs"
+            block
             onClick={() => setPath(item.path)}
-            className={cn(
-              "flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs hover:bg-muted",
-              item.path === path && "bg-muted font-medium",
-            )}
+            aria-current={item.path === path || undefined}
+            className={cn("justify-start rounded-lg px-2.5 font-mono font-normal", item.path === path && "bg-accent font-medium text-foreground")}
           >
-            <span className="min-w-0 flex-1 truncate">{item.path}</span>
-            {isDirty(item.path) && <span className="size-1.5 shrink-0 rounded-full bg-primary" aria-label="Unsaved changes" />}
-          </button>
+            <Text as="span" size="inherit" tone="inherit" truncate className="flex-1 text-left">
+              {item.path}
+            </Text>
+            {isDirty(item.path) && <StatusDot tone="success" label="Unsaved changes" />}
+          </Button>
         ))}
-        {!files.length && <p className="px-3 py-1.5 text-xs text-muted-foreground">No files yet.</p>}
-      </nav>
-      <div className="flex min-w-0 flex-1 flex-col bg-background">
-        <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b px-3">
-          <span className="truncate font-mono text-xs text-muted-foreground">{path}</span>
-          {asset && <span className="shrink-0 text-xs text-muted-foreground">Uploaded image, read only</span>}
+        {!files.length && (
+          <Text size="xs" tone="muted" className="px-2.5 py-1.5">
+            No files yet.
+          </Text>
+        )}
+      </Stack>
+      <Stack gap={0} className="min-w-0 flex-1">
+        <HStack justify="between" gap={2} className="h-12 shrink-0 border-b border-border px-3">
+          <Text as="span" size="xs" tone="muted" mono truncate>
+            {path}
+          </Text>
+          {asset && (
+            <Pill tone="muted" size="sm" className="shrink-0">
+              Uploaded image, read only
+            </Pill>
+          )}
           {!asset && (
-            <div className="flex items-center gap-2">
-              {readOnly && <span className="text-xs text-muted-foreground">Read only while the AI is working</span>}
+            <HStack gap={2} className="shrink-0">
+              {readOnly && (
+                <Pill tone="muted" size="sm">
+                  Read only while the AI is working
+                </Pill>
+              )}
               {dirty && !readOnly && (
                 <Button
                   size="sm"
@@ -525,24 +596,30 @@ const CodeEditor = ({
                   Discard
                 </Button>
               )}
-              <Button size="sm" onClick={submit} disabled={!dirty || readOnly || save.isPending}>
-                <Save />
-                {save.isPending ? "Saving..." : "Save"}
+              <Button size="sm" onClick={submit} loading={save.isPending} disabled={!dirty || readOnly}>
+                {!save.isPending && <Save />}
+                Save
               </Button>
-            </div>
+            </HStack>
           )}
-        </div>
+        </HStack>
         {asset && (
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-auto bg-muted/30 p-6">
-            <img src={assetSrc(appId, path)} alt={path} className="max-h-[70%] max-w-full border bg-background object-contain" />
-            <p className="font-mono text-xs text-muted-foreground">/uploads/{path.slice(ASSET_DIR.length)}</p>
-          </div>
+          <Stack align="center" justify="center" gap={3} className="min-h-0 flex-1 overflow-auto bg-surface-2 p-6">
+            <Image src={assetSrc(appId, path)} alt={path} rounded="lg" fit="contain" className="max-h-[70%] border border-border bg-surface" />
+            <Text size="xs" tone="muted" mono>
+              /uploads/{path.slice(ASSET_DIR.length)}
+            </Text>
+          </Stack>
         )}
-        {file.isLoading && <Skeleton className="m-3 flex-1" />}
-        {file.error && <p className="p-3 text-sm text-destructive">{file.error.message}</p>}
+        {file.isLoading && <Skeleton className="m-3 flex-1 rounded-xl" />}
+        {file.error && (
+          <Alert variant="danger" className="m-3 w-auto">
+            {file.error.message}
+          </Alert>
+        )}
         {file.data && (
-          <div className="min-h-0 flex-1">
-            <Suspense fallback={<div className="h-full w-full bg-[#1e1e1e]" />}>
+          <Box className="min-h-0 flex-1">
+            <Suspense fallback={<Skeleton className="h-full w-full rounded-none" />}>
               <MonacoEditor
                 path={path}
                 value={value}
@@ -551,10 +628,10 @@ const CodeEditor = ({
                 onSave={submit}
               />
             </Suspense>
-          </div>
+          </Box>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 };
 
@@ -566,6 +643,7 @@ export const BuilderAppPage = () => {
   const [previewKey, setPreviewKey] = useState(0);
   const [selecting, setSelecting] = useState(false);
   const [showCode, setShowCode] = useState(false);
+  const [device, setDevice] = useState<Device>("desktop");
   const [inspectorReady, setInspectorReady] = useState(false);
   const [elements, setElements] = useState<SelectedElement[]>([]);
   const [attachments, setAttachments] = useState<string[]>([]);
@@ -576,7 +654,7 @@ export const BuilderAppPage = () => {
   const [lastEventAt, setLastEventAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
   const wasGenerating = useRef(false);
-  const chatEnd = useRef<HTMLDivElement>(null);
+  const chatEnd = useRef<HTMLElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
   const tokens = useQuery(tokensQuery().summary());
 
@@ -733,11 +811,19 @@ export const BuilderAppPage = () => {
   });
 
   if (error) {
-    return <p role="alert" className="p-6 text-destructive">{error.message}</p>;
+    return (
+      <Box className="p-6">
+        <Alert variant="danger">{error.message}</Alert>
+      </Box>
+    );
   }
 
   if (isLoading || !data) {
-    return <Skeleton className="m-6 h-96" />;
+    return (
+      <Box className="h-full p-3">
+        <Skeleton className="h-full rounded-3xl" />
+      </Box>
+    );
   }
 
   const { app, messages, themes, files } = data;
@@ -758,6 +844,20 @@ export const BuilderAppPage = () => {
   let currentSteps = liveSteps;
   if (!currentSteps.length && app.aiStatus === "FAILED") {
     currentSteps = app.steps;
+  }
+  let view: View = "preview";
+  if (showCode) {
+    view = "code";
+  }
+  let urlTone: "success" | "muted" = "muted";
+  if (previewUrl) {
+    urlTone = "success";
+  }
+  let selectVariant: "default" | "secondary" = "secondary";
+  let selectLabel = "Select element";
+  if (selecting) {
+    selectVariant = "default";
+    selectLabel = "Click an element";
   }
 
   const attachImages = async (list: File[]) => {
@@ -794,38 +894,54 @@ export const BuilderAppPage = () => {
     send.mutate(undefined);
   };
 
+  const toggleSelecting = () => {
+    if (!selecting && !inspectorReady) {
+      toast.error("This app runs on an older runtime. Stop and start the app, then try again.");
+      return;
+    }
+    setSelecting(!selecting);
+  };
+
+  const changeView = (next: View) => {
+    setSelecting(false);
+    setShowCode(next === "code");
+  };
+
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b px-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Button variant="ghost" size="icon-sm" asChild>
-            <Link to="/builder" aria-label="Back to Builder">
-              <ChevronLeft />
-            </Link>
-          </Button>
-          <span className="truncate font-semibold">{app.name}</span>
+    <Stack gap={3} className="h-full bg-background p-2 md:p-3">
+      <HStack as="header" justify="between" gap={3} className="h-14 shrink-0 rounded-md border border-border bg-surface px-2">
+        <HStack gap={2} className="min-w-0">
+          <Tooltip content="Back to Builder">
+            <Button variant="secondary" size="icon-sm" asChild>
+              <Link to="/builder" variant="plain" inline={false} aria-label="Back to Builder">
+                <ChevronLeft />
+              </Link>
+            </Button>
+          </Tooltip>
+          <Text weight="medium" truncate className="tracking-[-0.01em]">
+            {app.name}
+          </Text>
           <StatusBadge status={displayStatus(app.aiStatus, app.status)} />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={selecting ? "default" : "outline"}
+        </HStack>
+        <HStack gap={2} className="shrink-0">
+          <SegmentedControl<View>
             size="sm"
-            disabled={!previewUrl || generating || showCode}
-            onClick={() => {
-              if (!selecting && !inspectorReady) {
-                toast.error("This app runs on an older runtime. Stop and start the app, then try again.");
-                return;
-              }
-              setSelecting(!selecting);
-            }}
-            aria-pressed={selecting}
-          >
+            aria-label="View"
+            value={view}
+            onValueChange={changeView}
+            options={[
+              { value: "preview", label: "Preview", icon: Eye },
+              { value: "code", label: "Code", icon: Code },
+            ]}
+            className="hidden sm:inline-flex"
+          />
+          <Button variant={selectVariant} size="sm" disabled={!previewUrl || generating || showCode} onClick={toggleSelecting} aria-pressed={selecting}>
             <MousePointerClick />
-            {selecting ? "Click an element" : "Select element"}
+            {selectLabel}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon-sm" aria-label="More actions">
+              <Button variant="secondary" size="icon-sm" aria-label="More actions">
                 <Ellipsis />
               </Button>
             </DropdownMenuTrigger>
@@ -841,10 +957,10 @@ export const BuilderAppPage = () => {
                 {showCode ? "Preview" : "Code"}
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <a href={exportUrl} download={`${app.slug}.zip`}>
+                <Link href={exportUrl} download={`${app.slug}.zip`} external={false} variant="plain" inline={false}>
                   <Download />
                   Export
-                </a>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => setPreviewKey((key) => key + 1)}>
@@ -852,44 +968,51 @@ export const BuilderAppPage = () => {
                 Reload
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <a href={previewUrl ?? app.url} target="_blank" rel="noreferrer">
+                <Link href={previewUrl ?? app.url} external variant="plain" inline={false}>
                   <ExternalLink />
                   Open
-                </a>
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </header>
+        </HStack>
+      </HStack>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[420px_1fr]">
-        <aside className="flex min-h-0 flex-col border-r">
-          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      <Grid cols="sidebar-left" gap={3} className="min-h-0 flex-1 lg:grid-cols-[420px_minmax(0,1fr)]">
+        <Stack as="aside" gap={0} className="min-h-0 overflow-hidden rounded-3xl border border-border bg-surface">
+          <Stack gap={4} className="scrollbar-thin flex-1 overflow-y-auto p-4">
             {!messages.length && !generating && (
-              <p className="text-sm text-muted-foreground">Describe what to build. Your app can use a database, file storage and sign up.</p>
+              <EmptyState
+                icon={Sparkles}
+                size="sm"
+                title="Describe what to build"
+                description="Your app can use a database, file storage and sign up."
+              />
             )}
             {messages.map((message) => {
               if (message.role === "user") {
                 const tagged = message.elements as SelectedElement[];
                 const images = message.attachments as string[];
                 return (
-                  <div key={message.id} className="ml-auto flex max-w-[90%] flex-col items-end gap-1">
+                  <Stack key={message.id} align="end" gap={1} className="ml-auto max-w-[90%]">
                     {images.length > 0 && (
-                      <div className="flex flex-wrap justify-end gap-1">
+                      <HStack wrap justify="end" gap={1}>
                         {images.map((path) => (
                           <AttachmentChip key={path} appId={app.id} path={path} />
                         ))}
-                      </div>
+                      </HStack>
                     )}
                     {tagged.length > 0 && (
-                      <div className="flex flex-wrap justify-end gap-1">
+                      <HStack wrap justify="end" gap={1}>
                         {tagged.map((element) => (
                           <ElementChip key={`${element.page}${element.selector}`} element={element} />
                         ))}
-                      </div>
+                      </HStack>
                     )}
-                    <div className="bg-primary px-3 py-2 text-sm whitespace-pre-wrap text-primary-foreground">{message.content}</div>
-                  </div>
+                    <Text wrap="pre" tone="inverse" className="rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5">
+                      {message.content}
+                    </Text>
+                  </Stack>
                 );
               }
               if (message.steps.length) {
@@ -908,28 +1031,28 @@ export const BuilderAppPage = () => {
                   />
                 );
               }
-              return <Markdown key={message.id} text={message.content} />;
+              return <Markdown key={message.id}>{message.content}</Markdown>;
             })}
             {(generating || app.aiStatus === "FAILED") && <StepsView steps={currentSteps} themes={themes} />}
             {generating && (
-              <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" />
-                {activity}
-                {idleSeconds >= 3 && <span className="tabular-nums">{idleSeconds}s</span>}
-              </p>
+              <HStack gap={2}>
+                <Spinner size="sm" tone="accent" />
+                <Text as="span" size="xs" tone="muted" truncate>
+                  {activity}
+                </Text>
+                {idleSeconds >= 3 && (
+                  <Text as="span" size="xs" tone="subtle" tabular>
+                    {idleSeconds}s
+                  </Text>
+                )}
+              </HStack>
             )}
-            {app.aiStatus === "FAILED" && app.aiError && <p className="text-sm text-destructive">{app.aiError}</p>}
-            <div ref={chatEnd} />
-          </div>
-          <form
-            className="space-y-2 border-t p-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit();
-            }}
-          >
+            {app.aiStatus === "FAILED" && app.aiError && <Alert variant="danger">{app.aiError}</Alert>}
+            <Box ref={chatEnd} />
+          </Stack>
+          <Form gap="sm" onSubmit={submit} className="shrink-0 border-t border-border p-3">
             {(attachments.length > 0 || uploading > 0) && (
-              <div className="flex flex-wrap gap-1">
+              <HStack wrap gap={1}>
                 {attachments.map((path) => (
                   <AttachmentChip
                     key={path}
@@ -939,15 +1062,14 @@ export const BuilderAppPage = () => {
                   />
                 ))}
                 {uploading > 0 && (
-                  <span className="inline-flex items-center gap-1.5 border px-2 py-1 text-xs text-muted-foreground">
-                    <Loader2 className="size-3 animate-spin" />
+                  <Pill tone="muted" size="sm" icon={Spinner}>
                     Uploading
-                  </span>
+                  </Pill>
                 )}
-              </div>
+              </HStack>
             )}
             {elements.length > 0 && (
-              <div className="flex flex-wrap gap-1">
+              <HStack wrap gap={1}>
                 {elements.map((element) => (
                   <ElementChip
                     key={`${element.page}${element.selector}`}
@@ -955,70 +1077,81 @@ export const BuilderAppPage = () => {
                     onRemove={() => setElements((current) => current.filter((item) => item !== element))}
                   />
                 ))}
-              </div>
+              </HStack>
             )}
-            <Textarea
-              ref={composer}
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              onPaste={(event) => {
-                const pasted = [...event.clipboardData.files].filter((item) => item.type.startsWith("image/"));
-                if (pasted.length) {
-                  event.preventDefault();
-                  attachImages(pasted);
-                }
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  submit();
-                }
-              }}
-              placeholder="Describe what to build or change"
-              rows={3}
-              disabled={generating}
-            />
-            <input
-              ref={imageInput}
-              type="file"
-              accept={IMAGE_ACCEPT}
-              multiple
-              className="hidden"
-              onChange={(event) => {
-                const chosen = [...(event.target.files ?? [])];
-                event.target.value = "";
-                if (chosen.length) {
-                  attachImages(chosen);
-                }
-              }}
-            />
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="Attach images"
-                title="Attach images to use as assets"
-                disabled={generating || attachments.length >= MAX_ATTACHMENTS}
-                onClick={() => imageInput.current?.click()}
-              >
-                <ImagePlus />
-              </Button>
-              <Button type="submit" className="flex-1" disabled={!prompt.trim() || generating || send.isPending || uploading > 0}>
-                Send
-              </Button>
-            </div>
+            <Stack gap={2} className="rounded-2xl border border-input bg-surface-2 p-2 focus-within:border-accent-green/60 focus-within:ring-[3px] focus-within:ring-ring/40">
+              <Textarea
+                ref={composer}
+                value={prompt}
+                onChange={(event) => setPrompt(event.target.value)}
+                onPaste={(event) => {
+                  const pasted = [...event.clipboardData.files].filter((item) => item.type.startsWith("image/"));
+                  if (pasted.length) {
+                    event.preventDefault();
+                    attachImages(pasted);
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    submit();
+                  }
+                }}
+                aria-label="Message"
+                placeholder="Describe what to build or change"
+                rows={3}
+                disabled={generating}
+                className="max-h-60 min-h-16 resize-none border-0 bg-transparent px-1.5 shadow-none focus-visible:ring-0 dark:bg-transparent"
+              />
+              <Input
+                ref={imageInput}
+                type="file"
+                accept={IMAGE_ACCEPT}
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  const chosen = [...(event.target.files ?? [])];
+                  event.target.value = "";
+                  if (chosen.length) {
+                    attachImages(chosen);
+                  }
+                }}
+              />
+              <HStack justify="between" gap={2}>
+                <IconButton
+                  type="button"
+                  icon={ImagePlus}
+                  label="Attach images to use as assets"
+                  disabled={generating || attachments.length >= MAX_ATTACHMENTS}
+                  onClick={() => imageInput.current?.click()}
+                />
+                <Button type="submit" size="sm" disabled={!prompt.trim() || generating || send.isPending || uploading > 0}>
+                  Send
+                  <SendHorizontal />
+                </Button>
+              </HStack>
+            </Stack>
             {tokens.data && (
-              <p className="flex items-center justify-between text-xs text-muted-foreground">
-                {tokens.data.freeBuildAvailable && <span>Your first build is free</span>}
-                {!tokens.data.freeBuildAvailable && <span className="tabular-nums">{tokens.data.balance.toLocaleString("en-US")} tokens left</span>}
-                <Link to="/subscription" className="underline-offset-4 hover:underline">Get more tokens</Link>
-              </p>
+              <HStack justify="between" gap={2}>
+                {tokens.data.freeBuildAvailable && (
+                  <Text as="span" size="xs" tone="muted">
+                    Your first build is free
+                  </Text>
+                )}
+                {!tokens.data.freeBuildAvailable && (
+                  <Text as="span" size="xs" tone="muted" tabular>
+                    {tokens.data.balance.toLocaleString("en-US")} tokens left
+                  </Text>
+                )}
+                <Link to="/subscription" variant="muted" className="text-xs">
+                  Get more tokens
+                </Link>
+              </HStack>
             )}
-          </form>
-        </aside>
+          </Form>
+        </Stack>
 
-        <section className="min-h-0 bg-muted/30">
+        <Box as="section" className="min-h-[60vh] overflow-hidden rounded-3xl border border-border bg-surface lg:min-h-0">
           {showCode && (
             <CodeEditor
               key={app.id}
@@ -1028,20 +1161,67 @@ export const BuilderAppPage = () => {
               onSaved={() => setPreviewKey((key) => key + 1)}
             />
           )}
-          <div className={cn("h-full", showCode && "hidden")}>
-            {previewUrl && <iframe ref={preview} key={previewKey} src={previewUrl} title={`${app.name} preview`} className="h-full w-full border-0 bg-white" />}
-            {!previewUrl && (
-              <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
-                <p>The app is not running.</p>
-                <Button onClick={() => start.mutate(undefined)} disabled={start.isPending}>
-                  <Play />
-                  Start app
-                </Button>
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
-    </div>
+          <Stack gap={0} className={cn("h-full", showCode && "hidden")}>
+            <HStack justify="between" gap={2} className="h-14 shrink-0 border-b border-border px-3">
+              <SegmentedControl<Device>
+                size="sm"
+                aria-label="Device"
+                value={device}
+                onValueChange={setDevice}
+                options={[
+                  { value: "desktop", label: "Desktop", icon: Monitor },
+                  { value: "tablet", label: "Tablet", icon: Tablet },
+                  { value: "mobile", label: "Mobile", icon: Smartphone },
+                ]}
+              />
+              <HStack gap={2} className="hidden min-w-0 flex-1 justify-center md:flex">
+                <HStack gap={2} className="h-[38px] max-w-md min-w-0 flex-1 rounded-lg border border-border bg-surface-2 px-3">
+                  <StatusDot tone={urlTone} />
+                  <Text as="span" size="xs" tone="muted" mono truncate>
+                    {previewUrl ?? app.url}
+                  </Text>
+                </HStack>
+              </HStack>
+              <HStack gap={1} className="shrink-0">
+                <IconButton icon={RefreshCw} label="Reload" onClick={() => setPreviewKey((key) => key + 1)} />
+                <Tooltip content="Open">
+                  <Button variant="ghost" size="icon-sm" asChild>
+                    <Link href={previewUrl ?? app.url} external variant="plain" inline={false} aria-label="Open">
+                      <ExternalLink />
+                    </Link>
+                  </Button>
+                </Tooltip>
+              </HStack>
+            </HStack>
+            <Box className={cn("min-h-0 flex-1 bg-surface-2", device !== "desktop" && "p-4")}>
+              {previewUrl && (
+                <Box
+                  className={cn(
+                    "mx-auto h-full w-full overflow-hidden transition-[max-width] duration-300",
+                    DEVICE_WIDTHS[device],
+                    device !== "desktop" && "rounded-2xl border border-border",
+                  )}
+                >
+                  <Embed ref={preview} key={previewKey} src={previewUrl} title={`${app.name} preview`} className="bg-white" />
+                </Box>
+              )}
+              {!previewUrl && (
+                <EmptyState
+                  icon={Play}
+                  title="The app is not running."
+                  className="h-full"
+                  action={
+                    <Button onClick={() => start.mutate(undefined)} loading={start.isPending}>
+                      {!start.isPending && <Play />}
+                      Start app
+                    </Button>
+                  }
+                />
+              )}
+            </Box>
+          </Stack>
+        </Box>
+      </Grid>
+    </Stack>
   );
 };

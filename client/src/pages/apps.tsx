@@ -1,14 +1,35 @@
 import { useState } from "react";
-import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Boxes, Plus } from "lucide-react";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  EmptyState,
+  Field,
+  Form,
+  HStack,
+  Input,
+  Link,
+  Skeleton,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Text,
+  UsageMeter,
+} from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { api, unwrap } from "@/lib/api";
@@ -24,72 +45,119 @@ export const AppsPage = () => {
     mutationFn: () => unwrap(api.apps.$post({ json: { name: name.trim() } })),
     invalidate: [appsQuery().all, projectsQuery().all],
     success: "App created",
-    onSuccess: () => { setOpen(false); setName(""); },
+    onSuccess: () => {
+      setOpen(false);
+      setName("");
+    },
   });
 
   if (isLoading) {
-    return <Skeleton className="h-64 w-full" />;
+    return (
+      <Stack gap={6}>
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </Stack>
+    );
   }
   if (error) {
-    return <p role="alert" className="text-destructive">{error.message}</p>;
+    return <Alert variant="danger">{error.message}</Alert>;
   }
   if (!data) {
     return null;
   }
 
+  const atLimit = data.apps.length >= data.limit;
+
   return (
     <>
-      <PageHeader title="Apps" description="Deploy Node.js services with their own builds, environment, and domains." action={
-        <Button disabled={data.apps.length >= data.limit} onClick={() => setOpen(true)}><Plus className="size-4" />Create app</Button>
-      } />
-      <div className="mb-6 flex items-center justify-between border-b pb-3 text-sm">
-        <span className="text-muted-foreground">Apps in this project</span>
-        <span className="font-mono tabular-nums">{data.apps.length} / {data.limit}</span>
-      </div>
-      <div className="border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>URL</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Updated</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {!data.apps.length && (
+      <PageHeader
+        title="Apps"
+        description="Deploy Node.js services with their own builds, environment, and domains."
+        action={
+          <Button disabled={atLimit} onClick={() => setOpen(true)}>
+            <Plus />
+            Create app
+          </Button>
+        }
+      />
+      <Stack gap={6}>
+        <Card className="py-5">
+          <CardContent className="px-5">
+            <UsageMeter label="Apps in this project" used={data.apps.length} limit={data.limit} />
+          </CardContent>
+        </Card>
+        {!data.apps.length && (
+          <Card className="py-0">
+            <EmptyState
+              icon={Boxes}
+              title="No apps yet"
+              description="Create an app to deploy your first Node.js service."
+              action={
+                <Button disabled={atLimit} onClick={() => setOpen(true)}>
+                  <Plus />
+                  Create app
+                </Button>
+              }
+            />
+          </Card>
+        )}
+        {!!data.apps.length && (
+          <Table framed>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
-                  No apps yet. Create an app to deploy your first Node.js service.
-                </TableCell>
+                <TableHead>Name</TableHead>
+                <TableHead>URL</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Updated</TableHead>
               </TableRow>
-            )}
-            {data.apps.map((app) => (
-              <TableRow key={app.id}>
-                <TableCell className="font-medium">
-                  <Link to={`/apps/${app.id}`} className="hover:underline focus-visible:outline-2 focus-visible:outline-ring">
-                    {app.name}
-                  </Link>
-                  {app.kind === "AI" && <Badge variant="secondary" className="ml-2">AI</Badge>}
-                </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">{app.url}</TableCell>
-                <TableCell>
-                  <StatusBadge status={app.status} />
-                  {app.suspended && <Badge variant="destructive" className="ml-2">Paused</Badge>}
-                </TableCell>
-                <TableCell className="text-right text-sm text-muted-foreground">{formatDate(app.updatedAt)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {data.apps.map((app) => (
+                <TableRow key={app.id}>
+                  <TableCell>
+                    <HStack gap={2}>
+                      <Link to={`/apps/${app.id}`}>{app.name}</Link>
+                      {app.kind === "AI" && <Badge variant="secondary">AI</Badge>}
+                    </HStack>
+                  </TableCell>
+                  <TableCell>
+                    <Text as="span" size="xs" tone="muted" mono>
+                      {app.url}
+                    </Text>
+                  </TableCell>
+                  <TableCell>
+                    <HStack gap={2}>
+                      <StatusBadge status={app.status} />
+                      {app.suspended && <Badge variant="destructive">Paused</Badge>}
+                    </HStack>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Text as="span" size="sm" tone="muted">
+                      {formatDate(app.updatedAt)}
+                    </Text>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Stack>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <form className="space-y-5" onSubmit={(event) => { event.preventDefault(); create.mutate(undefined); }}>
-            <DialogHeader><DialogTitle>New app</DialogTitle><DialogDescription>Create a Node.js app in this project. You can deploy its source with the CLI.</DialogDescription></DialogHeader>
-            <div className="space-y-2"><Label htmlFor="app-name">App name</Label><Input id="app-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="My API" minLength={2} maxLength={40} required autoFocus /></div>
-            <DialogFooter><Button type="submit" disabled={create.isPending || name.trim().length < 2}>{create.isPending ? "Creating..." : "Create app"}</Button></DialogFooter>
-          </form>
+          <Form onSubmit={() => create.mutate(undefined)}>
+            <DialogHeader>
+              <DialogTitle>New app</DialogTitle>
+              <DialogDescription>Create a Node.js app in this project. You can deploy its source with the CLI.</DialogDescription>
+            </DialogHeader>
+            <Field label="App name" htmlFor="app-name">
+              <Input id="app-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="My API" minLength={2} maxLength={40} required autoFocus />
+            </Field>
+            <DialogFooter>
+              <Button type="submit" loading={create.isPending} disabled={name.trim().length < 2}>
+                {create.isPending ? "Creating..." : "Create app"}
+              </Button>
+            </DialogFooter>
+          </Form>
         </DialogContent>
       </Dialog>
     </>

@@ -1,26 +1,36 @@
 ---
+import Logo from "./ui/Logo.astro";
+import Button from "./ui/Button.astro";
+import Icon from "./ui/Icon.astro";
+
 interface Props {
   docs?: boolean;
   login?: boolean;
 }
 
 const { docs = false, login = true } = Astro.props;
+const links = await Astro.slots.render("default");
 ---
 
 <header class="nav">
-  <div class="container nav-inner">
-    <a href="/" class="logo">
-      <img src="/logo.svg" alt="" width="18" height="24" />
-      Reverhost
-      <span class="beta">Beta</span>
-      {docs && <small>docs</small>}
-    </a>
-    <nav class="nav-links" aria-label="Main">
-      <slot />
-    </nav>
-    <div class="nav-actions">
-      {login && <a href="https://app.reverhost.com/login" class="btn btn-ghost">Log in</a>}
-      <a href="https://app.reverhost.com/register" class="btn btn-primary">Sign up</a>
+  <div class="container container-xl">
+    <div class="nav-bar">
+      <Logo beta docs={docs} />
+      <nav class="nav-links" aria-label="Main" set:html={links} />
+      <div class="nav-actions">
+        {login && <Button href="https://app.reverhost.com/login" variant="ghost" size="sm" class="nav-login">Log in</Button>}
+        <Button href="https://app.reverhost.com/register" variant="primary" size="sm">Sign up</Button>
+        <details class="nav-menu">
+          <summary class="nav-menu-toggle" aria-label="Menu">
+            <Icon name="menu" size={18} class="nav-menu-open" />
+            <Icon name="x" size={18} class="nav-menu-close" />
+          </summary>
+          <div class="nav-menu-panel">
+            <nav class="nav-menu-links" aria-label="Mobile" set:html={links} />
+            {login && <Button href="https://app.reverhost.com/login" variant="secondary" block>Log in</Button>}
+          </div>
+        </details>
+      </div>
     </div>
   </div>
 </header>

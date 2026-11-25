@@ -2,7 +2,53 @@
 import Base from "../layouts/Base.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
-import CopyCode from "../components/CopyCode.astro";
+import StartCta from "../components/ui/StartCta.astro";
+import NavLink from "../components/ui/NavLink.astro";
+import Section from "../components/ui/Section.astro";
+import Frame from "../components/ui/Frame.astro";
+import Stack from "../components/ui/Stack.astro";
+import Grid from "../components/ui/Grid.astro";
+import Box from "../components/ui/Box.astro";
+import Breadcrumbs from "../components/ui/Breadcrumbs.astro";
+import Heading from "../components/ui/Heading.astro";
+import Accent from "../components/ui/Accent.astro";
+import Text from "../components/ui/Text.astro";
+import Link from "../components/ui/Link.astro";
+import InlineCode from "../components/ui/InlineCode.astro";
+import Button from "../components/ui/Button.astro";
+import DocLayout from "../components/ui/DocLayout.astro";
+import Toc from "../components/ui/Toc.astro";
+import Table from "../components/ui/Table.astro";
+import Row from "../components/ui/Row.astro";
+import Cell from "../components/ui/Cell.astro";
+import FeatureCard from "../components/ui/FeatureCard.astro";
+import CodeBlock from "../components/ui/CodeBlock.astro";
+import List from "../components/ui/List.astro";
+import ListItem from "../components/ui/ListItem.astro";
+import NumberedList from "../components/ui/NumberedList.astro";
+import NumberedItem from "../components/ui/NumberedItem.astro";
+import Accordion from "../components/ui/Accordion.astro";
+import AccordionItem from "../components/ui/AccordionItem.astro";
+
+const crumbs = [
+  { name: "Reverhost", path: "/" },
+  { name: "Vercel alternative", path: "/vercel-alternative" },
+];
+
+const toc = [
+  { href: "#summary", label: "Summary" },
+  { href: "#table", label: "Side by side" },
+  { href: "#easyhost-fits", label: "When Reverhost fits" },
+  { href: "#vercel-fits", label: "When Vercel fits" },
+  { href: "#migrate", label: "Moving from Vercel" },
+  { href: "#faq", label: "FAQ" },
+];
+
+const migrateCode = `vercel env pull .env.production
+npx ezhst projects create my-app --link
+npx ezhst env import .env.production
+npx ezhst deploy
+npx ezhst domains add www.example.com`;
 ---
 
 <Base>
@@ -97,134 +143,147 @@ import CopyCode from "../components/CopyCode.astro";
       }
     </script>
   </Fragment>
-    <Nav>
-          <a href="/">Home</a>
-          <a href="/free-nextjs-hosting">Free hosting</a>
-          <a href="/vercel-alternative">vs Vercel</a>
-          <a href="/docs" class="keep">Docs</a>
-    </Nav>
 
-    <div class="container docs">
-      <aside class="toc">
-        <p class="toc-title">On this page</p>
-        <ol>
-          <li><a href="#summary">Summary</a></li>
-          <li><a href="#table">Side by side</a></li>
-          <li><a href="#easyhost-fits">When Reverhost fits</a></li>
-          <li><a href="#vercel-fits">When Vercel fits</a></li>
-          <li><a href="#migrate">Moving from Vercel</a></li>
-          <li><a href="#faq">FAQ</a></li>
-        </ol>
-      </aside>
+  <Nav>
+    <NavLink href="/">Home</NavLink>
+    <NavLink href="/free-nextjs-hosting">Free hosting</NavLink>
+    <NavLink href="/vercel-alternative">vs Vercel</NavLink>
+    <NavLink href="/docs" keep>Docs</NavLink>
+  </Nav>
 
-      <main class="doc">
-        <div class="doc-head">
-          <ol class="crumbs" aria-label="Breadcrumb">
-            <li><a href="/">Reverhost</a></li><li aria-current="page">Vercel alternative</li>
-          </ol>
-          <h1>A free Vercel alternative for Next.js apps</h1>
-          <p class="lead">Reverhost is a free place to run a Next.js app when you want a plain always-on server with a database and file storage already attached. Vercel is the better choice when you need a global CDN, preview deployments or Git-based workflows. This page lays out the differences so you can pick.</p>
-          <p class="doc-meta">Last updated November 9, 2026</p>
-        </div>
+  <Section size="full" space="none">
+    <Frame padding="md">
+      <Stack gap="md" align="center">
+        <Breadcrumbs items={crumbs} />
+        <Heading level={1} size="xl" align="center" maxWidth="820px" reveal={0}>A free <Accent>Vercel alternative</Accent> for Next.js apps</Heading>
+        <Text size="lg" tone="muted" align="center" maxWidth="720px" balance reveal={1}>Reverhost is a free place to run a Next.js app when you want a plain always-on server with a database and file storage already attached. Vercel is the better choice when you need a global CDN, preview deployments or Git-based workflows. This page lays out the differences so you can pick.</Text>
+        <Stack direction="row" gap="sm" wrap justify="center" reveal={2}>
+          <Button href="#table" size="lg" icon="layers">Compare side by side</Button>
+          <Button href="#migrate" variant="secondary" size="lg">Moving from Vercel</Button>
+        </Stack>
+        <Text size="sm" tone="subtle" align="center">Last updated November 9, 2026</Text>
+      </Stack>
+    </Frame>
+  </Section>
 
-        <section id="summary">
-          <h2>The summary</h2>
-          <ul>
-            <li><strong>Runtime.</strong> Vercel splits your app into serverless functions behind a CDN. Reverhost runs <code>next start</code> in one container that stays up.</li>
-            <li><strong>Backend.</strong> Reverhost includes Postgres and S3 compatible storage in the free account. On Vercel Hobby, a database comes from another provider.</li>
-            <li><strong>Workflow.</strong> Vercel deploys from Git and gives every branch a preview URL. Reverhost deploys from a CLI that coding agents can drive end to end.</li>
-            <li><strong>Reach.</strong> Vercel serves from a global edge network. Reverhost serves from one region.</li>
-          </ul>
-        </section>
+  <DocLayout>
+    <Toc slot="aside" items={toc} />
 
-        <section id="table">
-          <h2>Reverhost and Vercel Hobby side by side</h2>
-          <p>Vercel details are from the <a href="https://vercel.com/docs/plans/hobby" rel="noopener">Vercel Hobby plan docs</a> as of September 2026. Those docs also state that the Hobby plan is restricted to non-commercial, personal use.</p>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th></th><th>Reverhost</th><th>Vercel Hobby</th></tr></thead>
-              <tbody>
-                <tr><td>Price</td><td>$0, no credit card</td><td>$0</td></tr>
-                <tr><td>How the app runs</td><td>One always-on container, 512 MB RAM, 1 CPU</td><td>Serverless functions, up to 300 seconds each</td></tr>
-                <tr><td>Monthly usage</td><td>Not metered</td><td>100 GB data transfer, 1,000,000 function invocations, 4 CPU-hours</td></tr>
-                <tr><td>Over the limit</td><td>Fixed resources, nothing to exceed</td><td>The feature is paused until 30 days have passed</td></tr>
-                <tr><td>Projects</td><td>3</td><td>200</td></tr>
-                <tr><td>Postgres</td><td>Included, 1 per project</td><td>Through integrations</td></tr>
-                <tr><td>File storage</td><td>S3 compatible bucket, 1 per project</td><td>Vercel Blob</td></tr>
-                <tr><td>Git deploys and previews</td><td>No</td><td>Yes</td></tr>
-                <tr><td>Global CDN</td><td>No</td><td>Yes</td></tr>
-                <tr><td>Frameworks</td><td>Node.js apps, including Next.js</td><td>Many</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+    <Box as="section" id="summary" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">The summary</Heading>
+        <Grid cols={2} gap="sm">
+          <FeatureCard title="Runtime" icon="server" variant="frosted">
+            <Text size="sm" tone="muted">Vercel splits your app into serverless functions behind a CDN. Reverhost runs <InlineCode>next start</InlineCode> in one container that stays up.</Text>
+          </FeatureCard>
+          <FeatureCard title="Backend" icon="database" iconTone="green" variant="frosted">
+            <Text size="sm" tone="muted">Reverhost includes Postgres and S3 compatible storage in the free account. On Vercel Hobby, a database comes from another provider.</Text>
+          </FeatureCard>
+          <FeatureCard title="Workflow" icon="terminal" variant="frosted">
+            <Text size="sm" tone="muted">Vercel deploys from Git and gives every branch a preview URL. Reverhost deploys from a CLI that coding agents can drive end to end.</Text>
+          </FeatureCard>
+          <FeatureCard title="Reach" icon="globe" variant="frosted">
+            <Text size="sm" tone="muted">Vercel serves from a global edge network. Reverhost serves from one region.</Text>
+          </FeatureCard>
+        </Grid>
+      </Stack>
+    </Box>
 
-        <section id="easyhost-fits">
-          <h2>When Reverhost is the better fit</h2>
-          <h3>You want a server, not functions</h3>
-          <p>Your app is a single Node.js process that stays running. In-memory caches survive between requests, there are no cold starts, and you do not need to think about function size or invocation counts.</p>
-          <h3>You want the backend in the same place</h3>
-          <p>A side project usually needs a database and somewhere to put uploads. On Reverhost those are two commands in the same CLI: <code>ezhst db create</code> and <code>ezhst storage create</code>. See <a href="/free-postgres-hosting">free Postgres hosting</a> for the database details.</p>
-          <h3>Your coding agent does the deploying</h3>
-          <p>Every <code>ezhst</code> command takes <code>--json</code>, never prompts without a terminal, and returns errors an agent can act on. Sign-up works from the command line too: after you give the agent the 6-digit code from your inbox, it can go from an empty account to a live URL without a browser. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> shows how.</p>
-          <h3>You want limits you can predict</h3>
-          <p>There is no usage meter. An app gets 512 MB of RAM and 1 CPU, and that is what it has at any traffic level.</p>
-        </section>
+    <Box as="section" id="table" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">Reverhost and Vercel Hobby side by side</Heading>
+        <Text tone="muted">Vercel details are from the <Link href="https://vercel.com/docs/plans/hobby" rel="noopener">Vercel Hobby plan docs</Link> as of September 2026. Those docs also state that the Hobby plan is restricted to non-commercial, personal use.</Text>
+        <Table columns={["", "Reverhost", "Vercel Hobby"]} highlight={1}>
+          <Row><Cell head>Price</Cell><Cell>$0, no credit card</Cell><Cell>$0</Cell></Row>
+          <Row><Cell head>How the app runs</Cell><Cell>One always-on container, 512 MB RAM, 1 CPU</Cell><Cell>Serverless functions, up to 300 seconds each</Cell></Row>
+          <Row><Cell head>Monthly usage</Cell><Cell>Not metered</Cell><Cell>100 GB data transfer, 1,000,000 function invocations, 4 CPU-hours</Cell></Row>
+          <Row><Cell head>Over the limit</Cell><Cell>Fixed resources, nothing to exceed</Cell><Cell>The feature is paused until 30 days have passed</Cell></Row>
+          <Row><Cell head>Projects</Cell><Cell>3</Cell><Cell>200</Cell></Row>
+          <Row><Cell head>Postgres</Cell><Cell status="yes">Included, 1 per project</Cell><Cell status="partial">Through integrations</Cell></Row>
+          <Row><Cell head>File storage</Cell><Cell status="yes">S3 compatible bucket, 1 per project</Cell><Cell status="yes">Vercel Blob</Cell></Row>
+          <Row><Cell head>Git deploys and previews</Cell><Cell status="no">No</Cell><Cell status="yes">Yes</Cell></Row>
+          <Row><Cell head>Global CDN</Cell><Cell status="no">No</Cell><Cell status="yes">Yes</Cell></Row>
+          <Row><Cell head>Frameworks</Cell><Cell>Node.js apps, including Next.js</Cell><Cell>Many</Cell></Row>
+        </Table>
+      </Stack>
+    </Box>
 
-        <section id="vercel-fits">
-          <h2>When Vercel is the better fit</h2>
-          <p>Reverhost is young and deliberately small. Choose Vercel if any of these matter to you:</p>
-          <ul>
-            <li>Visitors all over the world and you need pages served from an edge location near them.</li>
-            <li>Preview deployments for every pull request, or deploys triggered by a Git push.</li>
-            <li>Traffic beyond what one 512 MB container can serve.</li>
-            <li>Team features, analytics, firewall rules and the rest of a mature platform.</li>
-            <li>Applications that cannot run as a Node.js service.</li>
-          </ul>
-        </section>
+    <Box as="section" id="easyhost-fits" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">When Reverhost is the better fit</Heading>
+        <Grid cols={2} gap="sm">
+          <FeatureCard title="You want a server, not functions" icon="server" iconTone="green">
+            <Text size="sm" tone="muted">Your app is a single Node.js process that stays running. In-memory caches survive between requests, there are no cold starts, and you do not need to think about function size or invocation counts.</Text>
+          </FeatureCard>
+          <FeatureCard title="You want the backend in the same place" icon="database" iconTone="green">
+            <Text size="sm" tone="muted">A side project usually needs a database and somewhere to put uploads. On Reverhost those are two commands in the same CLI: <InlineCode>ezhst db create</InlineCode> and <InlineCode>ezhst storage create</InlineCode>. See <Link href="/free-postgres-hosting">free Postgres hosting</Link> for the database details.</Text>
+          </FeatureCard>
+          <FeatureCard title="Your coding agent does the deploying" icon="bot" iconTone="green">
+            <Text size="sm" tone="muted">Every <InlineCode>ezhst</InlineCode> command takes <InlineCode>--json</InlineCode>, never prompts without a terminal, and returns errors an agent can act on. Sign-up works from the command line too: after you give the agent the 6-digit code from your inbox, it can go from an empty account to a live URL without a browser. The <Link href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</Link> shows how.</Text>
+          </FeatureCard>
+          <FeatureCard title="You want limits you can predict" icon="gauge" iconTone="green">
+            <Text size="sm" tone="muted">There is no usage meter. An app gets 512 MB of RAM and 1 CPU, and that is what it has at any traffic level.</Text>
+          </FeatureCard>
+        </Grid>
+      </Stack>
+    </Box>
 
-        <section id="migrate">
-          <h2>Moving a Next.js app from Vercel to Reverhost</h2>
-          <ol>
-            <li>Pull your environment variables from Vercel into a local file, then import them.</li>
-            <li>Create a project, link the folder and deploy.</li>
-            <li>Add your domain and point DNS at Reverhost.</li>
-          </ol>
-          <div class="code"><pre>vercel env pull .env.production
-npx ezhst projects create my-app --link
-npx ezhst env import .env.production
-npx ezhst deploy
-npx ezhst domains add www.example.com</pre></div>
-          <h3>Things to check first</h3>
-          <ul>
-            <li><strong>Vercel-only packages.</strong> Replace <code>@vercel/blob</code> with any S3 client pointed at your Reverhost bucket, and point your Postgres client at the Reverhost connection string.</li>
-            <li><strong>Cron jobs in <code>vercel.json</code>.</strong> Reverhost does not read <code>vercel.json</code>, so scheduled routes will not be called.</li>
-            <li><strong>Edge runtime.</strong> Everything runs in the one Node.js container in a single region.</li>
-            <li><strong>Image optimization.</strong> <code>next/image</code> is handled by the Next.js server inside your container.</li>
-          </ul>
-        </section>
+    <Box as="section" id="vercel-fits" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">When Vercel is the better fit</Heading>
+        <Text tone="muted">Reverhost is young and deliberately small. Choose Vercel if any of these matter to you:</Text>
+        <Box tone="white" border shadow radius="lg" padding="md">
+          <List marker="dot" gap="md" divided>
+            <ListItem icon="globe" tone="orange">Visitors all over the world and you need pages served from an edge location near them.</ListItem>
+            <ListItem icon="git-branch" tone="orange">Preview deployments for every pull request, or deploys triggered by a Git push.</ListItem>
+            <ListItem icon="activity" tone="orange">Traffic beyond what one 512 MB container can serve.</ListItem>
+            <ListItem icon="users" tone="orange">Team features, analytics, firewall rules and the rest of a mature platform.</ListItem>
+            <ListItem icon="code" tone="orange">Applications that cannot run as a Node.js service.</ListItem>
+          </List>
+        </Box>
+      </Stack>
+    </Box>
 
-        <section id="faq">
-          <h2>Frequently asked questions</h2>
-          <h3>Is Reverhost a drop-in replacement for Vercel?</h3>
-          <p>For a standard Next.js app, mostly yes: it builds with <code>next build</code> and runs with <code>next start</code> without changes. Vercel-specific services such as Vercel Blob, <code>vercel.json</code> cron jobs, preview deployments and the edge network do not carry over.</p>
-          <h3>Is Reverhost faster than Vercel?</h3>
-          <p>It depends on where your visitors are. Reverhost has no cold starts because the container is always on, but it serves from one region. Vercel serves static assets from a global CDN.</p>
-          <h3>Can I keep my custom domain when I move?</h3>
-          <p>Yes. Add it with <code>ezhst domains add</code>, set the DNS record that <code>ezhst domains list</code> shows, then run <code>ezhst domains verify</code> to issue HTTPS. Details in the <a href="/docs#domains">domains docs</a>.</p>
-        </section>
+    <Box as="section" id="migrate" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">Moving a Next.js app from Vercel to Reverhost</Heading>
+        <NumberedList layout="stack">
+          <NumberedItem text="Pull your environment variables from Vercel into a local file, then import them." />
+          <NumberedItem text="Create a project, link the folder and deploy." />
+          <NumberedItem text="Add your domain and point DNS at Reverhost." />
+        </NumberedList>
+        <CodeBlock code={migrateCode} />
+        <Heading level={3} size="sm">Things to check first</Heading>
+        <Box tone="white" border shadow radius="lg" padding="md">
+          <List marker="dot" gap="md" divided>
+            <ListItem icon="package" tone="muted"><Text as="strong" weight="semibold">Vercel-only packages.</Text> Replace <InlineCode>@vercel/blob</InlineCode> with any S3 client pointed at your Reverhost bucket, and point your Postgres client at the Reverhost connection string.</ListItem>
+            <ListItem icon="clock" tone="muted"><Text as="strong" weight="semibold">Cron jobs in <InlineCode>vercel.json</InlineCode>.</Text> Reverhost does not read <InlineCode>vercel.json</InlineCode>, so scheduled routes will not be called.</ListItem>
+            <ListItem icon="globe" tone="muted"><Text as="strong" weight="semibold">Edge runtime.</Text> Everything runs in the one Node.js container in a single region.</ListItem>
+            <ListItem icon="monitor" tone="muted"><Text as="strong" weight="semibold">Image optimization.</Text> <InlineCode>next/image</InlineCode> is handled by the Next.js server inside your container.</ListItem>
+          </List>
+        </Box>
+      </Stack>
+    </Box>
 
-        <section id="start">
-          <h2>Start for free</h2>
-          <p>Install the skill, choose Global or Local, then tell your agent to deploy. No credit card, no config files.</p>
-          <div class="code"><pre>npx ezhst skill install</pre></div>
-          <div class="doc-cta">
-            <a href="https://app.reverhost.com/register" class="btn btn-primary">Sign up free</a>
-            <a href="/docs" class="btn btn-outline">Read the docs</a>
-          </div>
-        </section>
-      </main>
-    </div>
-    <Footer />
-    <CopyCode />
+    <Box as="section" id="faq" class="doc-section">
+      <Stack gap="md">
+        <Heading level={2} size="lg">Frequently asked questions</Heading>
+        <Accordion>
+          <AccordionItem question="Is Reverhost a drop-in replacement for Vercel?">
+            <Text tone="muted">For a standard Next.js app, mostly yes: it builds with <InlineCode>next build</InlineCode> and runs with <InlineCode>next start</InlineCode> without changes. Vercel-specific services such as Vercel Blob, <InlineCode>vercel.json</InlineCode> cron jobs, preview deployments and the edge network do not carry over.</Text>
+          </AccordionItem>
+          <AccordionItem question="Is Reverhost faster than Vercel?">
+            <Text tone="muted">It depends on where your visitors are. Reverhost has no cold starts because the container is always on, but it serves from one region. Vercel serves static assets from a global CDN.</Text>
+          </AccordionItem>
+          <AccordionItem question="Can I keep my custom domain when I move?">
+            <Text tone="muted">Yes. Add it with <InlineCode>ezhst domains add</InlineCode>, set the DNS record that <InlineCode>ezhst domains list</InlineCode> shows, then run <InlineCode>ezhst domains verify</InlineCode> to issue HTTPS. Details in the <Link href="/docs#domains">domains docs</Link>.</Text>
+          </AccordionItem>
+        </Accordion>
+      </Stack>
+    </Box>
+
+    <StartCta />
+  </DocLayout>
+
+  <Footer cta={false} />
 </Base>

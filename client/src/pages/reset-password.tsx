@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button, Card, CardContent, CardDescription, CardHeader, Field, Form, Heading, Input } from "@/components/ui";
 import { api, unwrap } from "@/lib/api";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 
@@ -19,28 +16,27 @@ export const ResetPasswordPage = () => {
     onSuccess: () => navigate("/login"),
   });
 
+  let submitLabel = "Reset password";
+  if (reset.isPending) {
+    submitLabel = "Saving...";
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Choose a new password</CardTitle>
+    <Card variant="frosted">
+      <CardHeader className="gap-2">
+        <Heading level={1}>Choose a new password</Heading>
         <CardDescription>Use at least 6 characters.</CardDescription>
       </CardHeader>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          reset.mutate(undefined);
-        }}
-      >
-        <CardContent className="space-y-2">
-          <Label htmlFor="password">New password</Label>
-          <Input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} required />
-        </CardContent>
-        <CardFooter className="mt-6">
-          <Button type="submit" className="w-full" disabled={reset.isPending || !token}>
-            {reset.isPending ? "Saving..." : "Reset password"}
+      <CardContent>
+        <Form onSubmit={() => reset.mutate(undefined)}>
+          <Field label="New password" htmlFor="password">
+            <Input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} required />
+          </Field>
+          <Button type="submit" block loading={reset.isPending} disabled={!token} className="mt-1">
+            {submitLabel}
           </Button>
-        </CardFooter>
-      </form>
+        </Form>
+      </CardContent>
     </Card>
   );
 };

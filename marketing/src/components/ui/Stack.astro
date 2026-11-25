@@ -1,0 +1,63 @@
+---
+type Gap = "none" | "2xs" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+
+interface Props {
+  as?: string;
+  direction?: "column" | "row";
+  gap?: Gap;
+  align?: "start" | "center" | "end" | "stretch" | "baseline";
+  justify?: "start" | "center" | "end" | "between";
+  wrap?: boolean;
+  collapse?: "none" | "sm" | "md";
+  maxWidth?: string;
+  reveal?: 0 | 1 | 2 | 3;
+  id?: string;
+  class?: string;
+  style?: string;
+  [key: string]: unknown;
+}
+
+const {
+  as: Tag = "div",
+  direction = "column",
+  gap = "md",
+  align,
+  justify,
+  wrap = false,
+  collapse = "none",
+  maxWidth,
+  reveal,
+  id,
+  class: className,
+  style,
+  ...rest
+} = Astro.props;
+
+const styles = [style];
+if (maxWidth) {
+  styles.push(`max-width:${maxWidth}`);
+}
+let revealClass: string | undefined;
+if (reveal !== undefined) {
+  revealClass = `reveal reveal-${reveal}`;
+}
+---
+
+<Tag
+  id={id}
+  class:list={[
+    "stack",
+    `stack-${direction}`,
+    `gap-${gap}`,
+    align && `align-${align}`,
+    justify && `justify-${justify}`,
+    wrap && "stack-wrap",
+    collapse !== "none" && `collapse-${collapse}`,
+    revealClass,
+    className,
+  ]}
+  style={styles.filter(Boolean).join(";") || undefined}
+  {...rest}
+>
+  <slot />
+</Tag>

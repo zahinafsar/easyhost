@@ -1,0 +1,23 @@
+---
+interface Props {
+  title?: string;
+  items: { href: string; label?: string; html?: string }[];
+  class?: string;
+}
+
+const { title = "On this page", items, class: className } = Astro.props;
+---
+
+<nav class:list={["toc", className]} aria-label={title}>
+  <p class="toc-title">{title}</p>
+  <ol>
+    {
+      items.map((item) => (
+        <li>
+          {item.html !== undefined && <a href={item.href} set:html={item.html} />}
+          {item.html === undefined && <a href={item.href}>{item.label}</a>}
+        </li>
+      ))
+    }
+  </ol>
+</nav>

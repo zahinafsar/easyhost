@@ -1,0 +1,35 @@
+---
+interface Props {
+  label?: string;
+  items: { name: string; src?: string; href?: string }[];
+  class?: string;
+}
+
+const { label, items, class: className } = Astro.props;
+---
+
+<div class:list={["logo-strip", className]}>
+  {label && <p class="logo-strip-label">{label}</p>}
+  <ul class="logo-strip-list" aria-label={label}>
+    {
+      items.map((item) => {
+        if (item.href) {
+          return (
+            <li>
+              <a class="logo-strip-item" href={item.href} target="_blank" rel="noreferrer">
+                {item.src && <img src={item.src} alt="" width="22" height="22" loading="lazy" decoding="async" />}
+                <span>{item.name}</span>
+              </a>
+            </li>
+          );
+        }
+        return (
+          <li class="logo-strip-item">
+            {item.src && <img src={item.src} alt="" width="22" height="22" loading="lazy" decoding="async" />}
+            <span>{item.name}</span>
+          </li>
+        );
+      })
+    }
+  </ul>
+</div>

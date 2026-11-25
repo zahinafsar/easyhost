@@ -1,0 +1,60 @@
+---
+interface Props {
+  as?: "p" | "span" | "strong" | "em" | "small" | "div" | "label" | "figcaption";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
+  tone?: "default" | "muted" | "subtle" | "inverse" | "inverse-muted" | "accent" | "warning" | "danger" | "inherit";
+  weight?: "regular" | "medium" | "semibold";
+  align?: "left" | "center" | "right";
+  mono?: boolean;
+  balance?: boolean;
+  uppercase?: boolean;
+  maxWidth?: string;
+  html?: string;
+  reveal?: 0 | 1 | 2 | 3;
+  id?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  as: Tag = "p",
+  size = "md",
+  tone = "default",
+  weight,
+  align,
+  mono = false,
+  balance = false,
+  uppercase = false,
+  maxWidth,
+  html,
+  reveal,
+  id,
+  class: className,
+  ...rest
+} = Astro.props;
+
+let style: string | undefined;
+if (maxWidth) {
+  style = `max-width:${maxWidth}`;
+}
+let revealClass: string | undefined;
+if (reveal !== undefined) {
+  revealClass = `reveal reveal-${reveal}`;
+}
+const classes = [
+  "text",
+  `text-${size}`,
+  `tone-text-${tone}`,
+  weight && `weight-${weight}`,
+  align && `text-${align}`,
+  mono && "is-mono",
+  balance && "is-balanced",
+  uppercase && "is-upper",
+  align === "center" && maxWidth && "is-centered",
+  revealClass,
+  className,
+];
+---
+
+{html !== undefined && <Tag id={id} class:list={classes} style={style} set:html={html} {...rest} />}
+{html === undefined && <Tag id={id} class:list={classes} style={style} {...rest}><slot /></Tag>}

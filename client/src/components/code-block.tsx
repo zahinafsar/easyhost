@@ -1,22 +1,19 @@
-import { Check, Copy } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Box } from "@/components/ui/box";
+import { CopyButton } from "@/components/ui/copy-button";
+import { Pre } from "@/components/ui/code";
 
-export const CodeBlock = ({ code, className }: { code: string; className?: string }) => {
-  const [copied, setCopied] = useState(false);
-
-  const copy = async () => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
+export const CodeBlock = ({ code, className, tone = "default" }: { code: string; className?: string; tone?: "default" | "terminal" }) => {
   return (
-    <div className={`relative border bg-muted/40 ${className ?? ""}`}>
-      <Button variant="ghost" size="icon" className="absolute right-1 top-1 size-7" onClick={copy}>
-        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-      </Button>
-      <pre className="overflow-x-auto p-4 pr-10 font-mono text-xs leading-relaxed">{code}</pre>
-    </div>
+    <Box className={cn("group/code relative min-w-0", className)}>
+      <CopyButton
+        value={code}
+        variant="ghost"
+        className={cn("absolute top-2 right-2 z-10 bg-surface", tone === "terminal" && "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white")}
+      />
+      <Pre tone={tone} className="pr-12">
+        {code}
+      </Pre>
+    </Box>
   );
 };
