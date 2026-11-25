@@ -93,7 +93,16 @@ type QuestionsStep = {
   questions: { id: string; text: string; options: string[] }[];
   answers: Record<string, string> | null;
 };
-type PlanStep = { id: string; type: "plan"; summary: string; items: string[]; status: "pending" | "approved" | "changes" };
+type PlanStep = {
+  id: string;
+  type: "plan";
+  summary: string;
+  items: string[];
+  frontend: boolean;
+  database: boolean;
+  storage: boolean;
+  status: "pending" | "approved" | "changes";
+};
 type ThemeStep = { id: string; type: "theme"; chosen: string | null };
 type Step = TextStep | ToolStep | QuestionsStep | PlanStep | ThemeStep;
 type Theme = {
@@ -350,6 +359,28 @@ const PlanCard = ({ step, respond, pending, onChange }: { step: PlanStep; onChan
         </ListItem>
       ))}
     </List>
+    <HStack gap={2} wrap>
+      {step.frontend && (
+        <Pill tone="muted" size="sm" icon={Monitor}>
+          Frontend
+        </Pill>
+      )}
+      {!step.frontend && (
+        <Pill tone="muted" size="sm" icon={Terminal}>
+          Backend only
+        </Pill>
+      )}
+      {step.database && (
+        <Pill tone="muted" size="sm" icon={Database}>
+          Database
+        </Pill>
+      )}
+      {step.storage && (
+        <Pill tone="muted" size="sm" icon={HardDrive}>
+          Storage
+        </Pill>
+      )}
+    </HStack>
     {step.status === "approved" && (
       <HStack>
         <Pill tone="success" size="sm" icon={Check}>

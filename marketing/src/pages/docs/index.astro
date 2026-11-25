@@ -419,7 +419,7 @@ const prismaCode = `datasource db {
         <Text tone="muted">The menu next to <Text as="strong" weight="semibold" tone="default">Select element</Text> opens the <Text as="strong" weight="semibold" tone="default">Code</Text> view, where you can edit any file and save it straight into the running app, and <Text as="strong" weight="semibold" tone="default">Export</Text>, which downloads all of the app's code as a zip.</Text>
         <Text tone="muted">AI apps are plain JavaScript Hono servers. They use the project's Postgres database and storage when they need them, and work with environment variables, logs and custom domains like any other app. The AI Builder is not part of the CLI.</Text>
         <Callout tone="info" icon="sparkles">
-          <Text size="sm">Each account gets its first AI app and its first build free. After that, AI requests use AI tokens, and Pro ($10 a month) tops your balance up to 1,000 tokens every month. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. AI apps count toward the 2 apps per project.</Text>
+          <Text size="sm">Each account gets its first AI app and its first build free. After that, AI requests use AI tokens, and Pro ($10 a month) tops your balance up to 500 tokens every month. Each request is charged by how much work it takes, and a typical full build is a few hundred tokens. AI apps count toward the 2 apps per project.</Text>
         </Callout>
       </Stack>
     </Box>
@@ -427,7 +427,7 @@ const prismaCode = `datasource db {
     <Box as="section" id="limits" class="doc-section">
       <Stack gap="md">
         <Heading level={2} size="lg">Limits</Heading>
-        <Text tone="muted">Reverhost hosting is free within these limits. Pro costs $10 a month for 10 projects and 1,000 AI tokens a month; see <Link href="/pricing">pricing</Link>. Run <InlineCode>ezhst billing</InlineCode> to see your plan and usage, and <InlineCode>ezhst billing upgrade</InlineCode> for a Pro checkout link. Apps in any language are supported, including Next.js and HTTP APIs. The <Link href="/free-nextjs-hosting">free Next.js hosting</Link> page explains what each limit means in practice.</Text>
+        <Text tone="muted">Reverhost hosting is free within these limits. Pro costs $10 a month for 10 projects and 500 AI tokens a month; see <Link href="/pricing">pricing</Link>. Run <InlineCode>ezhst billing</InlineCode> to see your plan and usage, and <InlineCode>ezhst billing upgrade</InlineCode> for a Pro checkout link. Apps in any language are supported, including Next.js and HTTP APIs. The <Link href="/free-nextjs-hosting">free Next.js hosting</Link> page explains what each limit means in practice.</Text>
         <Table columns={["Resource", "Limit"]}>
           <Row><Cell head>Projects</Cell><Cell>3 (10 on Pro)</Cell></Row>
           <Row><Cell head>Apps</Cell><Cell>2 per project</Cell></Row>

@@ -22,6 +22,9 @@ export type AiPlanStep = {
   type: "plan";
   summary: string;
   items: string[];
+  frontend: boolean;
+  database: boolean;
+  storage: boolean;
   status: "pending" | "approved" | "changes";
 };
 export type AiThemeStep = { id: string; type: "theme"; chosen: string | null };

@@ -329,6 +329,9 @@ export const aiAppRoutes = new Hono<UserEnv>()
       }
       updated = { ...step, status: "approved" };
       reply = "Plan approved.";
+      if (!step.frontend) {
+        reply = "Plan approved. No frontend, so skip the theme and build it now.";
+      }
     } else {
       const theme = findTheme(body.theme);
       if (step.chosen || !theme) {

@@ -52,7 +52,7 @@ export const billingForRun = async (userId: string): Promise<RunBilling | null> 
   return { userId, free: false, balance: account.tokenBalance };
 };
 
-export const OUT_OF_TOKENS = "You are out of tokens. Upgrade to Pro on the Subscription page for 1,000 tokens every month.";
+export const OUT_OF_TOKENS = "You are out of tokens. Upgrade to Pro on the Subscription page for 500 tokens every month.";
 
 export const markFreeBuildUsed = (userId: string) => {
   return prisma.user.updateMany({ where: { id: userId, freeAiBuildUsed: false }, data: { freeAiBuildUsed: true } });

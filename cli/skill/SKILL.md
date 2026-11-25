@@ -114,6 +114,6 @@ Billing:
 
 ## Limits
 
-Free: 3 projects. Pro ($10/mo): 10 projects and the AI token balance topped up to 1,000 every month. Per project on both: 2 apps, one bucket (256 MB) and one database (128 MB). One build at a time; 512 MB RAM and 1 CPU per app. A full bucket rejects uploads; a database over its size is blocked and the project's apps stop.
+Free: 3 projects. Pro ($10/mo): 10 projects and the AI token balance topped up to 500 every month. Per project on both: 2 apps, one bucket (256 MB) and one database (128 MB). One build at a time; 512 MB RAM and 1 CPU per app. A full bucket rejects uploads; a database over its size is blocked and the project's apps stop.
 
 Docs: https://reverhost.com/docs

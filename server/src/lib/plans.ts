@@ -34,7 +34,7 @@ export const PRO: Plan = {
   apps: 2,
   dbBytes: 128 * MB,
   storageBytes: 256 * MB,
-  monthlyTokens: 1000,
+  monthlyTokens: 500,
   buildsPerDay: 50,
 };
 

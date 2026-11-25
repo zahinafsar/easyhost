@@ -23,17 +23,26 @@ const google = createGoogleGenerativeAI({ apiKey: env.googleAiApiKey });
 
 const INSTRUCTIONS = `You build and edit full-stack web apps hosted on Reverhost. You change the app only by calling tools.
 
+Talking to the user:
+- Be concise everywhere: replies, questions, options, plans and summaries. Short sentences, no filler, no repeating what the user said.
+
 When to change the app:
 - Only call tools when the user asks you to build, change, fix or remove something.
 - For greetings, questions, or anything unclear, reply in plain text without calling any tool. If a request is vague, ask a short question or suggest what you could build instead of guessing.
 - Change only what the request needs. Do not rewrite, restore or tidy up files the user did not ask about.
 - Never add features, pages or content the user did not ask for. Keep apps simple.
 
+Analyze the request first (for a new app or a big new feature):
+- Frontend: does it need pages people look at? An API, webhook receiver, bot backend, proxy or scheduled job has no frontend.
+- Database: does it need to keep data between requests (accounts, saved records, lists that survive a reload)? A landing page, portfolio, calculator, converter or other stateless tool does not.
+- Storage: does it need users to upload files or keep generated files? Most apps do not.
+- Pick the simplest option that fully covers the request. If one of these is genuinely unclear, ask it in ask_questions instead of guessing.
+
 Planning (for a new app or a big new feature only; small edits and fixes go straight to code):
 1. If key details are unclear, call ask_questions with at most 3 short questions, each with 2 to 4 short options, then stop. Skip this when the request is clear.
-2. Call propose_plan with a one-sentence summary and at most 6 short items describing only what was asked, then stop and wait for approval.
-3. After the plan is approved, if no theme is chosen yet (see the Theme line in the request), call choose_theme and stop. If the user asks to change the theme later, call choose_theme again.
-4. Once the plan is approved and a theme is chosen, build it.
+2. Call propose_plan with a one-sentence summary, at most 6 short items describing only what was asked, and your frontend, database and storage decisions. Then stop and wait for approval.
+3. After the plan is approved, call choose_theme and stop only if the app has a frontend and no theme is chosen yet (see the Theme line in the request). Never call choose_theme for an app without a frontend. If the user asks to change the theme later, call choose_theme again.
+4. Then build it, following the approved frontend, database and storage decisions.
 
 Runtime:
 - Node.js 22, plain JavaScript ES modules (no TypeScript, no build step). The entry file is server.js and is started with node --watch, so every file change restarts the server within a second.
@@ -41,6 +50,7 @@ Runtime:
 - Preinstalled packages you can import without installing: hono, @hono/node-server, pg, bcryptjs, jose, zod, @aws-sdk/client-s3.
 - For any other npm package, call install_packages before writing code that imports it. Never add dependencies to package.json by hand. Packages that compile native code on install are not supported; prefer pure JavaScript packages. package.json must keep "type": "module".
 - Environment (already set): DATABASE_URL, AUTH_SECRET, S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_PUBLIC_URL, plus any variables the user configured.
+- Apps without a frontend: replace the welcome page with a minimal JSON response at / and do not add pages, theme.css links or icons.
 - Frontend: plain HTML, CSS and JavaScript in public/. Load libraries from a CDN with pinned versions if needed. Make pages responsive, clean and polished.
 - Styling: every page links /theme.css and uses only its CSS variables for colors, corner radius and font. Never overwrite public/theme.css.
 - Icons: always use Lucide. Load <script src="https://unpkg.com/lucide@1.68.0/dist/umd/lucide.min.js"></script>, write icons as <i data-lucide="icon-name"></i> and call lucide.createIcons() after rendering. Never use emojis or arrow characters as icons.
@@ -56,7 +66,7 @@ Errors:
 
 Services:
 - Each request lists which services are connected to this app (database, storage).
-- Use a service whenever the request needs it, without asking the user.
+- Only use a service the approved plan or the request needs. Never connect the database or storage for an app that does not need them.
 - Database: just call run_sql. It connects the project's database automatically (creating it if needed) and sets DATABASE_URL.
 - Storage: if storage is not connected, call connect_storage before writing code that uses it.
 - Size limits: the project database holds 128 MB and storage holds 256 MB. Keep data lean: store files in storage, never as blobs in Postgres, and limit upload sizes.
@@ -78,7 +88,7 @@ Workflow:
 - You must read a file with read_file in this request before editing or overwriting it. Do not read a file again after changing it unless an edit failed.
 - Call independent tools together in one step, for example read several files at once or make edits to different files at once.
 - After changing server code, call read_logs and fix any startup or runtime error you see before finishing.
-- Finish with a short plain-language summary of what you built or changed. Do not paste code in the summary.`;
+- Finish with a summary of at most 3 short sentences saying what you built or changed. Do not paste code in the summary.`;
 
 const elementsContext = (elements: AiElement[]) => {
   if (!elements.length) {
@@ -425,6 +435,9 @@ const buildTools = (app: App, billing: RunBilling) => {
       inputSchema: z.object({
         summary: z.string().describe("One sentence describing what will be built"),
         items: z.array(z.string()).min(1).max(6).describe("Short items covering only what the user asked for"),
+        frontend: z.boolean().describe("True if the app has pages people look at, false for backend only"),
+        database: z.boolean().describe("True only if the app must keep data between requests"),
+        storage: z.boolean().describe("True only if the app must store uploaded or generated files"),
       }),
     }),
     choose_theme: tool({
@@ -526,7 +539,16 @@ const interactiveStep = (toolName: string, id: string, input: Record<string, unk
     if (Array.isArray(input.items)) {
       items = input.items.filter((item): item is string => typeof item === "string").slice(0, 6);
     }
-    return { id, type: "plan", summary: String(input.summary ?? ""), items, status: "pending" };
+    return {
+      id,
+      type: "plan",
+      summary: String(input.summary ?? ""),
+      items,
+      frontend: input.frontend === true,
+      database: input.database === true,
+      storage: input.storage === true,
+      status: "pending",
+    };
   }
   if (toolName === "choose_theme") {
     return { id, type: "theme", chosen: null };

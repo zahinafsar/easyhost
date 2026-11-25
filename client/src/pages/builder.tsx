@@ -129,7 +129,7 @@ export const BuilderPage = () => {
               </Button>
             }
           >
-            Your free AI app is used. Upgrade to Pro for 1,000 tokens every month.
+            Your free AI app is used. Upgrade to Pro for 500 tokens every month.
           </Alert>
         )}
         <Table framed>

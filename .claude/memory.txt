@@ -199,3 +199,10 @@
 ## Build cache (removed 2026-11-26)
 - A per-app BuildKit registry cache (apps/<slug>:buildcache on the VPS registry, docker-container builder) was added and then removed at user request: on wafeed it gave no speedup (5m16s). The npm ci layer hit, but pulling it from the VPS took 41s and the cache export 25s, while --load (64s), next build (68s), npm prune (34s) and the 786 MB docker push dominate. Builds are back to the default docker driver with --load, size check, then login + push. Ideas not done: push straight from buildkit instead of --load + docker push, cache in Artifact Registry us-central1, node_modules in its own layer in the Node templates
 - Registry `registry.reverhost.com` must not be Cloudflare proxied (DNS only): Cloudflare 413s any layer over 100 MB on push
+
+## AI builder request analysis (2026-11-26)
+- INSTRUCTIONS: AI first decides frontend (pages vs backend only), database (only if data must persist) and storage (only for uploads/generated files), simplest option wins, asks via ask_questions when unclear. Concise replies everywhere, final summary max 3 sentences
+- propose_plan has required booleans frontend/database/storage, stored on the plan step (AiPlanStep) and shown as pills on the PlanCard (Frontend or Backend only, Database, Storage)
+- choose_theme only for apps with a frontend; plan approval reply for frontend false says to skip the theme. Backend-only apps replace the welcome page with a JSON response at /
+- Services: AI no longer connects database/storage unless the plan or request needs them
+- Pro monthly tokens lowered to 500 (2026-11-26): PRO.monthlyTokens, out-of-tokens message, builder banner, marketing, docs, llms.md, SKILL.md

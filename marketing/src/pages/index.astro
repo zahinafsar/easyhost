@@ -40,7 +40,7 @@ const register = "https://app.reverhost.com/register";
 const faqs = [
   {
     q: "Is Reverhost really free?",
-    a: 'Yes, for hosting. Reverhost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed <a href="#limits">limits</a>: 3 projects, and per project 2 apps, a 128 MB Postgres database and a 256 MB storage bucket. The AI Builder gives each account its first AI app and first build free. Pro ($10 a month) adds 10 projects and 1,000 AI tokens a month (see <a href="/pricing">pricing</a>).',
+    a: 'Yes, for hosting. Reverhost hosting costs $0 per month and signing up does not need a credit card. It is included within fixed <a href="#limits">limits</a>: 3 projects, and per project 2 apps, a 128 MB Postgres database and a 256 MB storage bucket. The AI Builder gives each account its first AI app and first build free. Pro ($10 a month) adds 10 projects and 500 AI tokens a month (see <a href="/pricing">pricing</a>).',
   },
   {
     q: "What can I host on Reverhost?",
@@ -419,7 +419,7 @@ if (!goTemplate) {
             tag="More projects"
             highlight
             description="For shipping more apps and building with AI."
-            features={["10 projects", "2 apps per project", "128 MB Postgres per project", "256 MB storage per project", "10 team members per project", "1,000 AI Builder tokens every month"]}
+            features={["10 projects", "2 apps per project", "128 MB Postgres per project", "256 MB storage per project", "10 team members per project", "500 AI Builder tokens every month"]}
             cta={{ label: "Get Pro", href: register }}
           />
         </Grid>
