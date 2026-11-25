@@ -59,6 +59,8 @@ npx ezhst register --name "Ada" --email ada@example.com --password "..." --json
 npx ezhst verify 123456 --json
 npx ezhst projects create my-app --link --json
 npx ezhst env import .env --json
+npx ezhst build dockerfile template node > Dockerfile
+npx ezhst build dockerfile set -f Dockerfile --json
 npx ezhst deploy --json`;
 ---
 
@@ -90,7 +92,7 @@ npx ezhst deploy --json`;
             "url": "https://reverhost.com/guides/deploy-nextjs-with-ai-agents",
             "image": "https://reverhost.com/og.png",
             "datePublished": "2026-09-30",
-            "dateModified": "2026-11-09",
+            "dateModified": "2026-11-25",
             "author": {
               "@type": "Organization",
               "name": "Reverhost",
@@ -145,7 +147,7 @@ npx ezhst deploy --json`;
                 "name": "Is it free to deploy this way?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes. Reverhost is free with fixed limits: 3 projects, 512 MB of RAM and 1 CPU per app, and no credit card."
+                  "text": "Yes. Reverhost is free with fixed limits: 3 projects, 256 MB of RAM and 0.5 CPU per app, and no credit card."
                 }
               },
               {
@@ -179,7 +181,7 @@ npx ezhst deploy --json`;
         <Box maxWidth="460px" reveal={2}>
           <CopyLine command="npx ezhst skill install" />
         </Box>
-        <Text size="sm" tone="subtle" align="center">Last updated November 9, 2026</Text>
+        <Text size="sm" tone="subtle" align="center">Last updated November 25, 2026</Text>
       </Stack>
       <Box slot="media" maxWidth="640px" class="is-centered">
         <Terminal title="your agent" lines={heroLines} />
@@ -200,7 +202,7 @@ npx ezhst deploy --json`;
             <NumberedItem><Text tone="muted">Open the URL it gives you: <InlineCode>https://&lt;name&gt;.easyhost.fun</InlineCode>.</Text></NumberedItem>
           </NumberedList>
         </Box>
-        <Text tone="muted">You need Node.js with <InlineCode>npx</InlineCode> and a Next.js project that has a <InlineCode>build</InlineCode> script. You do not need a Dockerfile, a config file or a Git remote.</Text>
+        <Text tone="muted">You need Node.js with <InlineCode>npx</InlineCode> and a Next.js project that has a <InlineCode>build</InlineCode> script. You do not need a Git remote. Every app builds from a Dockerfile stored on the app, and the agent can start from the Node.js template for you.</Text>
       </Stack>
     </Box>
 
@@ -235,7 +237,8 @@ npx ezhst deploy --json`;
           <NumberedItem title="Check who is logged in"><Text tone="muted">If nobody is, the agent asks you for an email and password and registers or logs in. After registering, it asks for the 6-digit code emailed to you and runs <InlineCode>verify</InlineCode>, which is required before any other command.</Text></NumberedItem>
           <NumberedItem title="Create and link a project"><Text tone="muted">Each app has its own subdomain within the project. A <InlineCode>.easyhost.json</InlineCode> file records the link.</Text></NumberedItem>
           <NumberedItem title="Import environment variables"><Text tone="muted"><InlineCode>.env</InlineCode> files are never uploaded, so the agent imports them explicitly.</Text></NumberedItem>
-          <NumberedItem title="Deploy"><Text tone="muted">The CLI packages the source (without <InlineCode>node_modules</InlineCode>, <InlineCode>.next</InlineCode>, <InlineCode>.git</InlineCode> and <InlineCode>.env*</InlineCode>), uploads it, and Reverhost installs, builds and starts the app.</Text></NumberedItem>
+          <NumberedItem title="Set a Dockerfile"><Text tone="muted">The agent prints the Node.js template, changes the last line to <InlineCode>next start -H 0.0.0.0 -p $PORT</InlineCode> and saves it to the app. A Dockerfile in your repository is only used once it is uploaded this way.</Text></NumberedItem>
+          <NumberedItem title="Deploy"><Text tone="muted">The CLI packages the source (without <InlineCode>node_modules</InlineCode>, <InlineCode>.next</InlineCode>, <InlineCode>.git</InlineCode> and <InlineCode>.env*</InlineCode>), uploads it, and Reverhost builds the stored Dockerfile and starts the app.</Text></NumberedItem>
         </NumberedList>
         <Text tone="muted">A successful deploy returns the deployment id, the status <InlineCode>RUNNING</InlineCode> and the URL.</Text>
       </Stack>
@@ -263,8 +266,9 @@ npx ezhst deploy --json`;
         <Table columns={["Symptom", "Fix"]}>
           <Row><Cell>An environment variable is missing at build time</Cell><Cell><InlineCode>ezhst env set KEY=VALUE</InlineCode>, then <InlineCode>ezhst redeploy</InlineCode></Cell></Row>
           <Row><Cell><InlineCode>npm ci</InlineCode> says the lockfile is out of sync</Cell><Cell>Delete <InlineCode>node_modules</InlineCode> and <InlineCode>package-lock.json</InlineCode>, run <InlineCode>npm install</InlineCode>, deploy again</Cell></Row>
+          <Row><Cell>The app has no Dockerfile</Cell><Cell><InlineCode>ezhst build dockerfile template node --apply</InlineCode>, then adjust it and <InlineCode>ezhst redeploy</InlineCode></Cell></Row>
           <Row><Cell>The app lives in a monorepo subfolder</Cell><Cell><InlineCode>ezhst build set --root-dir apps/web</InlineCode></Cell></Row>
-          <Row><Cell>The project needs a different Node version</Cell><Cell><InlineCode>ezhst build set --node 22</InlineCode> (20, 22 or 24)</Cell></Row>
+          <Row><Cell>The project needs a different Node version</Cell><Cell>Change the <InlineCode>FROM</InlineCode> line, upload it with <InlineCode>ezhst build dockerfile set -f Dockerfile</InlineCode>, then <InlineCode>ezhst redeploy</InlineCode></Cell></Row>
         </Table>
       </Stack>
     </Box>
@@ -302,7 +306,7 @@ npx ezhst deploy --json`;
             <Text tone="muted">Yes. Run <InlineCode>npx ezhst skill install</InlineCode> and choose Global or Local. Both install into <InlineCode>.agents/skills</InlineCode>. If the agent does not discover the skill, ask it to read the installed <InlineCode>SKILL.md</InlineCode> or <Link href="/skill.md">skill.md</Link>.</Text>
           </AccordionItem>
           <AccordionItem question="Is it free to deploy this way?">
-            <Text tone="muted">Yes. Reverhost is free with fixed <Link href="/free-nextjs-hosting">limits</Link>: 3 projects, 512 MB of RAM and 1 CPU per app, and no credit card.</Text>
+            <Text tone="muted">Yes. Reverhost is free with fixed <Link href="/free-nextjs-hosting">limits</Link>: 3 projects, 256 MB of RAM and 0.5 CPU per app, and no credit card.</Text>
           </AccordionItem>
           <AccordionItem question="Do I need an MCP server?">
             <Text tone="muted">No. The agent uses a normal command line tool through its shell. There is nothing to run in the background.</Text>

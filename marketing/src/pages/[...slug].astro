@@ -14,6 +14,8 @@ import Stack from "../components/ui/Stack.astro";
 import Accordion from "../components/ui/Accordion.astro";
 import AccordionItem from "../components/ui/AccordionItem.astro";
 import NavLink from "../components/ui/NavLink.astro";
+import Grid from "../components/ui/Grid.astro";
+import LogoTile from "../components/ui/LogoTile.astro";
 import { inline, renderMarkdown } from "../seo/markdown.mjs";
 import { absolute, HELD_BACK_FAMILIES, jsonLd, SITE, sitePages, UPDATED_LABEL } from "../seo/site.mjs";
 
@@ -70,11 +72,21 @@ if (page.faq.length > 0) {
     <Box class="doc-head">
       <Stack gap="md">
         <Breadcrumbs items={page.crumbs} />
+        {page.icon && <img src={page.icon} alt="" width="48" height="48" decoding="async" />}
         <Heading level={1} size="xl" html={inline(page.h1)} />
         <Text size="lg" tone="muted" html={inline(page.lead)} />
         <Text size="sm" tone="subtle">Last updated {UPDATED_LABEL}</Text>
       </Stack>
     </Box>
+    {
+      page.tiles && (
+        <Grid cols={4} tablet={4} mobile={2} gap="sm">
+          {page.tiles.map((tile) => (
+            <LogoTile name={tile.name} src={tile.src} href={tile.href} meta={tile.meta} external={false} />
+          ))}
+        </Grid>
+      )
+    }
     <Prose html={html} />
     {
       page.faq.length > 0 && (

@@ -18,6 +18,7 @@ RUN npm ci
 COPY marketing/ ./
 COPY server/src/lib/limits.ts /repo/server/src/lib/limits.ts
 COPY server/src/lib/plans.ts /repo/server/src/lib/plans.ts
+COPY server/src/lib/dockerfile-templates.ts /repo/server/src/lib/dockerfile-templates.ts
 COPY --from=dashboard /repo/client/dist/index.html /tmp/after-dashboard
 RUN npm run build
 

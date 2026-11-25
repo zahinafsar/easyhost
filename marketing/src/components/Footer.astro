@@ -1,5 +1,5 @@
 ---
-import { FOOTER_COLUMNS } from "../seo/site.mjs";
+import { FOOTER_COLUMNS, FOOTER_LEGAL } from "../seo/site.mjs";
 import Logo from "./ui/Logo.astro";
 import Button from "./ui/Button.astro";
 import CopyLine from "./ui/CopyLine.astro";
@@ -60,12 +60,15 @@ const hasTitle = Astro.slots.has("title");
       <div class="footer-bottom">
         <div class="footer-brand">
           <Logo tone="light" />
-          <span class="footer-tagline">Free Node.js hosting with Postgres and S3 storage, built for AI coding agents. No credit card.</span>
+          <span class="footer-tagline">Free app hosting in any language with Postgres and S3 storage, built for AI coding agents. No credit card.</span>
         </div>
         <span class="footer-copy">&copy; 2026 Reverhost</span>
         <CopyLine command="npx ezhst skill install" tone="dark" />
         <a class="footer-credit" href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Photos from Pexels</a>
       </div>
+      <nav class="footer-legal" aria-label="Legal">
+        {FOOTER_LEGAL.map(([href, label]) => <a href={href}>{label}</a>)}
+      </nav>
     </div>
   </div>
 </footer>

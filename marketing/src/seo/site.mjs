@@ -1,10 +1,11 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
+import { stripTypeScriptTypes } from "node:module";
 import path from "node:path";
 import { inline, renderMarkdown } from "./markdown.mjs";
 import { buildPages } from "./pages.mjs";
 
 export const SITE = "https://reverhost.com";
-export const UPDATED = "2026-11-10";
+export const UPDATED = "2026-11-25";
 export const UPDATED_LABEL = new Date(UPDATED).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 export const HELD_BACK_FAMILIES = new Set([
@@ -21,10 +22,11 @@ export const FOOTER_COLUMNS = [
   {
     title: "Products",
     links: [
-      ["/products/app-hosting", "Node.js hosting"],
+      ["/products/app-hosting", "App hosting"],
       ["/products/postgres", "Postgres database"],
       ["/products/storage", "S3 storage"],
       ["/products/custom-domains", "Custom domains"],
+      ["/languages", "Dockerfile templates"],
       ["/products/cli", "ezhst CLI"],
       ["/products/agent-skill", "Agent skill"],
       ["/products/ai-builder", "AI Builder"],
@@ -33,21 +35,32 @@ export const FOOTER_COLUMNS = [
     ],
   },
   {
-    title: "Free hosting",
+    title: "Languages",
+    links: [
+      ["/languages/nodejs", "Node.js"],
+      ["/languages/bun", "Bun"],
+      ["/languages/python", "Python"],
+      ["/languages/go", "Go"],
+      ["/languages/ruby", "Ruby"],
+      ["/languages/php", "PHP"],
+      ["/languages/rust", "Rust"],
+      ["/languages/zig", "Zig"],
+      ["/languages", "All languages"],
+    ],
+  },
+  {
+    title: "Frameworks",
     links: [
       ["/free-nextjs-hosting", "Next.js"],
       ["/free-nuxt-hosting", "Nuxt"],
       ["/free-express-hosting", "Express"],
       ["/free-nestjs-hosting", "NestJS"],
-      ["/free-fastify-hosting", "Fastify"],
-      ["/free-hono-hosting", "Hono"],
-      ["/free-koa-hosting", "Koa"],
-      ["/free-adonisjs-hosting", "AdonisJS"],
-      ["/free-remix-hosting", "Remix"],
-      ["/free-sveltekit-hosting", "SvelteKit"],
-      ["/free-astro-hosting", "Astro"],
-      ["/free-strapi-hosting", "Strapi"],
-      ["/free-postgres-hosting", "Postgres"],
+      ["/free-fastapi-hosting", "FastAPI"],
+      ["/free-django-hosting", "Django"],
+      ["/free-laravel-hosting", "Laravel"],
+      ["/free-rails-hosting", "Rails"],
+      ["/free-gin-hosting", "Gin"],
+      ["/free-axum-hosting", "Axum"],
       ["/frameworks", "All frameworks"],
     ],
   },
@@ -55,42 +68,26 @@ export const FOOTER_COLUMNS = [
     title: "Guides",
     links: [
       ["/guides/deploy-nextjs-with-ai-agents", "Deploy with AI agents"],
-      ["/guides/deploy-nextjs-with-claude-code", "Next.js with Claude Code"],
-      ["/guides/deploy-nextjs-with-cursor", "Next.js with Cursor"],
-      ["/guides/deploy-nextjs-with-codex", "Next.js with Codex"],
+      ["/guides/write-a-dockerfile", "Write a Dockerfile"],
+      ["/guides/build-time-environment-variables", "Build-time env vars"],
+      ["/guides/deploy-python-with-postgres", "Python with Postgres"],
+      ["/guides/deploy-rust-or-go-binary", "Rust or Go binary"],
       ["/guides/nextjs-prisma-postgres", "Next.js with Prisma"],
-      ["/guides/nestjs-typeorm-postgres", "NestJS with TypeORM"],
-      ["/guides/express-file-uploads-aws-sdk", "Express file uploads"],
+      ["/migrate/postgres", "Move a Postgres database"],
+      ["/migrate/storage", "Move S3 files"],
       ["/guides/custom-domain-cloudflare", "Cloudflare custom domain"],
       ["/guides", "All guides"],
     ],
   },
   {
-    title: "Compare",
+    title: "Switch from",
     links: [
-      ["/vercel-alternative", "Vercel alternative"],
-      ["/render-alternative", "Render alternative"],
-      ["/railway-alternative", "Railway alternative"],
-      ["/netlify-alternative", "Netlify alternative"],
-      ["/fly-alternative", "Fly.io alternative"],
-      ["/heroku-alternative", "Heroku alternative"],
-      ["/koyeb-alternative", "Koyeb alternative"],
+      ["/vercel-alternative", "Vercel"],
+      ["/render-alternative", "Render"],
+      ["/railway-alternative", "Railway"],
+      ["/heroku-alternative", "Heroku"],
+      ["/fly-alternative", "Fly.io"],
       ["/alternatives", "All comparisons"],
-    ],
-  },
-  {
-    title: "Migrate",
-    links: [
-      ["/migrate/vercel", "From Vercel"],
-      ["/migrate/render", "From Render"],
-      ["/migrate/railway", "From Railway"],
-      ["/migrate/netlify", "From Netlify"],
-      ["/migrate/fly", "From Fly.io"],
-      ["/migrate/heroku", "From Heroku"],
-      ["/migrate/koyeb", "From Koyeb"],
-      ["/migrate/postgres", "Move a Postgres database"],
-      ["/migrate/storage", "Move S3 files"],
-      ["/migrate", "All migrations"],
     ],
   },
   {
@@ -102,14 +99,14 @@ export const FOOTER_COLUMNS = [
       ["/learn", "Learn hosting"],
       ["/skill.md", "skill.md"],
       ["/llms.txt", "llms.txt"],
-      ["/sitemap.xml", "Sitemap"],
-      ["https://app.reverhost.com/login", "Log in"],
-      ["https://app.reverhost.com/register", "Sign up"],
-      ["mailto:hello@reverhost.com", "Contact"],
-      ["/privacy", "Privacy policy"],
-      ["/terms", "Terms and conditions"],
     ],
   },
+];
+
+export const FOOTER_LEGAL = [
+  ["mailto:hello@reverhost.com", "Contact"],
+  ["/privacy", "Privacy policy"],
+  ["/terms", "Terms and conditions"],
 ];
 
 export const absolute = (path) => {
@@ -161,6 +158,8 @@ const SITEMAP_RULES = {
   hosting: { changefreq: "monthly", priority: 0.8 },
   frameworks: { changefreq: "monthly", priority: 0.8 },
   alternatives: { changefreq: "monthly", priority: 0.8 },
+  languages: { changefreq: "monthly", priority: 0.8 },
+  "dockerfile-guides": { changefreq: "monthly", priority: 0.7 },
   "cli-reference": { changefreq: "monthly", priority: 0.7 },
   "migration-guides": { changefreq: "yearly", priority: 0.7 },
   "domain-guides": { changefreq: "yearly", priority: 0.7 },
@@ -178,6 +177,16 @@ const BANNED_CHARACTERS = new RegExp("[\\u2014\\u2190-\\u21ff]");
 const root = process.cwd();
 const limitsFile = path.join(root, "..", "server", "src", "lib", "limits.ts");
 const plansFile = path.join(root, "..", "server", "src", "lib", "plans.ts");
+const templatesFile = path.join(root, "..", "server", "src", "lib", "dockerfile-templates.ts");
+
+export const readTemplates = () => {
+  const code = stripTypeScriptTypes(readFileSync(templatesFile, "utf8")).replace(/^export /gm, "");
+  const templates = new Function(`${code}\nreturn DOCKERFILE_TEMPLATES;`)();
+  if (!Array.isArray(templates) || templates.length === 0) {
+    throw new Error(`${templatesFile} does not define DOCKERFILE_TEMPLATES`);
+  }
+  return templates;
+};
 
 const readLimits = () => {
   const source = readFileSync(limitsFile, "utf8");
@@ -190,6 +199,17 @@ const readLimits = () => {
       throw new Error(`${limitsFile} does not define ${key}`);
     }
   }
+  const product = (key) => {
+    const match = new RegExp(`${key}:\\s*([\\d_\\s*]+),`).exec(source);
+    if (!match) {
+      throw new Error(`${limitsFile} does not define ${key}`);
+    }
+    return match[1].split("*").reduce((total, part) => total * Number(part.trim().replaceAll("_", "")), 1);
+  };
+  const MB = 1024 * 1024;
+  limits.appMemoryMb = product("appMemoryBytes") / MB;
+  limits.appCpus = product("appNanoCpus") / 1e9;
+  limits.maxImageGb = product("maxImageBytes") / (MB * 1024);
   const plans = readFileSync(plansFile, "utf8");
   const block = (name) => {
     const match = new RegExp(`export const ${name}: Plan = \\{([^}]*)\\}`).exec(plans);
@@ -214,6 +234,8 @@ const readLimits = () => {
   limits.proProjects = pick(pro, /projects:\s*(\d+)/, "PRO.projects");
   limits.proPrice = pick(pro, /price:\s*(\d+)/, "PRO.price");
   limits.proTokens = pick(pro, /monthlyTokens:\s*(\d+)/, "PRO.monthlyTokens");
+  limits.buildsPerDay = pick(free, /buildsPerDay:\s*(\d+)/, "FREE.buildsPerDay");
+  limits.proBuildsPerDay = pick(pro, /buildsPerDay:\s*(\d+)/, "PRO.buildsPerDay");
   return limits;
 };
 
@@ -230,7 +252,8 @@ const walk = (dir) => {
 const pageHtml = (page) => {
   const faq = page.faq.map((item) => inline(item.a)).join("\n");
   const crumbs = page.crumbs.map((crumb) => `<a href="${crumb.path}">`).join("");
-  return `${inline(page.lead)}\n${renderMarkdown(page.body).html}\n${faq}\n${crumbs}`;
+  const tiles = (page.tiles ?? []).map((tile) => `<a href="${tile.href}">`).join("");
+  return `${inline(page.lead)}\n${renderMarkdown(page.body).html}\n${faq}\n${crumbs}\n${tiles}`;
 };
 
 const validate = (pages) => {
@@ -251,7 +274,7 @@ const validate = (pages) => {
   const publicDir = path.join(root, "public");
   const assets = new Set(walk(publicDir).map((file) => `/${path.relative(publicDir, file).split(path.sep).join("/")}`));
   const known = new Set([...STATIC_PAGES, ...GENERATED_FILES, ...pages.map((page) => page.path)]);
-  const footerLinks = FOOTER_COLUMNS.flatMap((column) => column.links.map(([href]) => href)).filter((href) => href.startsWith("/"));
+  const footerLinks = [...FOOTER_COLUMNS.flatMap((column) => column.links), ...FOOTER_LEGAL].map(([href]) => href).filter((href) => href.startsWith("/"));
   const inbound = new Map();
 
   for (const page of pages) {
@@ -271,6 +294,12 @@ const validate = (pages) => {
     }
     if (BANNED_CHARACTERS.test(renderPageMarkdown(page)) || BANNED_CHARACTERS.test(page.title + page.description)) {
       problems.push(`${page.path} contains an em dash or arrow`);
+    }
+    const icons = [page.icon, ...(page.tiles ?? []).map((tile) => tile.src)].filter(Boolean);
+    for (const icon of icons) {
+      if (!assets.has(icon)) {
+        problems.push(`${page.path} uses missing icon ${icon}`);
+      }
     }
     if (page.description.length > 180) {
       problems.push(`${page.path} description is ${page.description.length} characters`);
@@ -301,7 +330,7 @@ let cached;
 
 export const sitePages = () => {
   if (!cached) {
-    cached = buildPages(readLimits());
+    cached = buildPages(readLimits(), readTemplates());
     validate(cached);
   }
   return cached;
@@ -352,7 +381,9 @@ export const llmsTxt = () => {
 
 Every generated page has a Markdown copy at the same path with \`.md\` appended. The full list is at ${SITE}/llms-index.json.
 
+- [Languages](${SITE}/languages): Starter Dockerfiles and hosting notes for Node.js, Bun, Python, Go, Ruby, PHP, Rust and Zig
 - [Frameworks](${SITE}/frameworks): Guides for each framework
+- [Guides](${SITE}/guides): Dockerfiles, build-time env vars, databases, storage and domains
 - [Products](${SITE}/products): What is included
 - [Pricing and limits](${SITE}/pricing): Every limit and AI Token prices
 - [CLI reference](${SITE}/docs/cli): One page per command

@@ -32,6 +32,8 @@ import PlanCard from "../components/ui/PlanCard.astro";
 import FaqGrid from "../components/ui/FaqGrid.astro";
 import AccordionItem from "../components/ui/AccordionItem.astro";
 import IconTile from "../components/ui/IconTile.astro";
+import CodeBlock from "../components/ui/CodeBlock.astro";
+import { readTemplates } from "../seo/site.mjs";
 
 const register = "https://app.reverhost.com/register";
 
@@ -42,11 +44,11 @@ const faqs = [
   },
   {
     q: "What can I host on Reverhost?",
-    a: "Any framework that builds and runs as a Node.js service, including Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. SvelteKit and Astro need their Node adapters. HTTP apps must listen on <code>0.0.0.0</code> and the assigned <code>PORT</code>.",
+    a: "Anything that runs in a container. Every app builds from a Dockerfile you keep on Reverhost, with ready templates for Node.js, Bun, Python, Go, Ruby, PHP, Rust and Zig. That covers Next.js, Nuxt, Express, NestJS, FastAPI, Django, Flask, Gin, Rails, Laravel, Axum and more. HTTP apps must listen on <code>0.0.0.0</code> and the assigned <code>PORT</code>.",
   },
   {
     q: "Do free apps go to sleep?",
-    a: "No. Each app runs in its own always-on container with 512 MB of RAM and 1 CPU. It is not stopped when idle, so there is no cold start on the first request.",
+    a: "No. Each app runs in its own always-on container with 256 MB of RAM and half a CPU. It is not stopped when idle, so there is no cold start on the first request.",
   },
   {
     q: "Which AI coding agents can deploy to Reverhost?",
@@ -54,7 +56,7 @@ const faqs = [
   },
   {
     q: "Do I need to connect GitHub or change my project?",
-    a: "No. <code>ezhst deploy</code> packages the project folder and uploads it. There is no Git integration, no config file to write and no adapter to install.",
+    a: "No. <code>ezhst deploy</code> packages the project folder and uploads it, and there is no Git integration. The only thing an app needs is a Dockerfile, which you or your agent start from a template with <code>ezhst build dockerfile template</code>.",
   },
   {
     q: "Can I use my own domain?",
@@ -102,7 +104,7 @@ const jsonLd = JSON.stringify({
       "@id": "https://reverhost.com/#software",
       name: "Reverhost",
       url: "https://reverhost.com/",
-      description: "Free hosting for Node.js apps with managed Postgres, S3 compatible storage and custom domains, operated through the ezhst CLI by AI coding agents.",
+      description: "Free hosting for apps in any language, built from a Dockerfile, with managed Postgres, S3 compatible storage and custom domains, operated through the ezhst CLI by AI coding agents.",
       applicationCategory: "DeveloperApplication",
       operatingSystem: "Web, macOS, Linux, Windows",
       offers: { "@type": "Offer", price: 0, priceCurrency: "USD" },
@@ -141,48 +143,50 @@ const agents = [
   { name: "Automatic HTTPS" },
 ];
 
-const frameworks = [
-  { name: "Next.js", src: "/frameworks/nextjs.svg", href: "https://nextjs.org/", meta: "Auto-detected" },
-  { name: "Nuxt", src: "/frameworks/nuxt.svg", href: "https://nuxt.com/", meta: "Auto-detected" },
-  { name: "Express", src: "/frameworks/express.svg", href: "https://expressjs.com/", meta: "Start script" },
-  { name: "NestJS", src: "/frameworks/nestjs.svg", href: "https://nestjs.com/", meta: "Start script" },
-  { name: "Fastify", src: "/frameworks/fastify.svg", href: "https://fastify.dev/", meta: "Start script" },
-  { name: "Hono", src: "/frameworks/hono.svg", href: "https://hono.dev/", meta: "Node server" },
-  { name: "Koa", src: "/frameworks/koa.svg", href: "https://koajs.com/", meta: "Start script" },
-  { name: "AdonisJS", src: "/frameworks/adonisjs.svg", href: "https://adonisjs.com/", meta: "Start script" },
-  { name: "Remix", src: "/frameworks/remix.svg", href: "https://remix.run/", meta: "Start script" },
-  { name: "SvelteKit", src: "/frameworks/sveltekit.svg", href: "https://svelte.dev/docs/kit", meta: "Node adapter" },
-  { name: "Astro", src: "/frameworks/astro.svg", href: "https://astro.build/", meta: "Node adapter" },
-  { name: "Strapi", src: "/frameworks/strapi.svg", href: "https://strapi.io/", meta: "Start script" },
+const languages = [
+  { id: "nodejs", name: "Node.js", meta: "Next.js, Express, NestJS" },
+  { id: "bun", name: "Bun", meta: "Hono, Elysia" },
+  { id: "python", name: "Python", meta: "FastAPI, Django, Flask" },
+  { id: "go", name: "Go", meta: "Gin, Echo, Fiber" },
+  { id: "ruby", name: "Ruby", meta: "Rails, Sinatra" },
+  { id: "php", name: "PHP", meta: "Laravel, Symfony" },
+  { id: "rust", name: "Rust", meta: "Axum, Actix Web" },
+  { id: "zig", name: "Zig", meta: "std.http, Zap" },
 ];
+
+const goTemplate = readTemplates().find((template) => template.id === "go");
+if (!goTemplate) {
+  throw new Error("The go Dockerfile template is missing");
+}
+
 ---
 
 <Base>
   <Fragment slot="head">
-    <title>Reverhost: Free Node.js Hosting Your AI Agent Can Deploy To</title>
-    <meta name="description" content="Free Node.js hosting for Next.js, Nuxt, Express, NestJS and more, with Postgres, S3 storage and custom domains. No credit card." />
+    <title>Reverhost: Free App Hosting Your AI Agent Can Deploy To</title>
+    <meta name="description" content="Free hosting for Node.js, Bun, Python, Go, Ruby, PHP, Rust and Zig apps, with Postgres, S3 storage and custom domains. No credit card." />
     <link rel="canonical" href="https://reverhost.com/" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Reverhost" />
     <meta property="og:url" content="https://reverhost.com/" />
-    <meta property="og:title" content="Reverhost: Free Node.js Hosting Your AI Agent Can Deploy To" />
-    <meta property="og:description" content="Deploy Next.js, Nuxt, Express, NestJS and other Node.js frameworks with Postgres and S3 storage included." />
+    <meta property="og:title" content="Reverhost: Free App Hosting Your AI Agent Can Deploy To" />
+    <meta property="og:description" content="Deploy apps in Node.js, Python, Go, Rust and more from a Dockerfile, with Postgres and S3 storage included." />
     <meta property="og:image" content="https://reverhost.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Reverhost: free Node.js hosting your AI agent can deploy to" />
+    <meta property="og:image:alt" content="Reverhost: free app hosting your AI agent can deploy to" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Reverhost: Free Node.js Hosting Your AI Agent Can Deploy To" />
-    <meta name="twitter:description" content="Deploy Next.js, Nuxt, Express, NestJS and other Node.js frameworks with Postgres and S3 storage included." />
+    <meta name="twitter:title" content="Reverhost: Free App Hosting Your AI Agent Can Deploy To" />
+    <meta name="twitter:description" content="Deploy apps in Node.js, Python, Go, Rust and more from a Dockerfile, with Postgres and S3 storage included." />
     <meta name="twitter:image" content="https://reverhost.com/og.png" />
     <script is:inline type="application/ld+json" set:html={jsonLd} />
   </Fragment>
 
   <Nav>
     <NavLink href="#agents">For agents</NavLink>
-    <NavLink href="#frameworks">Frameworks</NavLink>
+    <NavLink href="#languages">Languages</NavLink>
     <NavLink href="#limits">Limits</NavLink>
     <NavLink href="#faq">FAQ</NavLink>
     <NavLink href="/docs" keep>Docs</NavLink>
@@ -193,17 +197,14 @@ const frameworks = [
       <Frame tone="tint">
         <Stack gap="lg" align="center" maxWidth="860px">
           <Badge tone="outline" size="md" icon="sparkles">Agent-first hosting. Free.</Badge>
-          <Heading level={1} align="center">Free Node.js hosting your AI agent can <Accent>deploy&nbsp;to</Accent>.</Heading>
-          <Text size="lg" tone="muted" align="center" maxWidth="640px" balance>
-            Tell your agent to ship it. It will. Reverhost is the first agent-first free hosting platform: Claude Code, Cursor, Codex and friends can create the account, deploy your Node.js app and wire up Postgres, S3 storage and domains through one CLI.
+          <Heading level={1} align="center">Free app hosting your AI agent can <Accent>deploy&nbsp;to</Accent>.</Heading>
+          <Text size="lg" tone="muted" align="center" maxWidth="520px" balance>
+            Your agent deploys the app, Postgres and storage. Any language, one CLI.
           </Text>
           <Stack direction="row" gap="sm" justify="center" wrap>
             <Button href="#agents" size="lg">Install the skill</Button>
             <Button href="/docs" variant="secondary" size="lg">Read the docs</Button>
           </Stack>
-          <Text size="sm" tone="muted" align="center">
-            Prefer clicking? <Link href={register} underline="always">Sign up for the dashboard</Link>.
-          </Text>
         </Stack>
 
         <AgentSession slot="media" title="claude ~/my-app" agent="Claude Code" cwd="~/my-app" steps={sessionSteps} />
@@ -250,29 +251,42 @@ const frameworks = [
       </Grid>
     </Section>
 
-    <Section id="frameworks">
-      <Grid cols={2} tablet={1} gap="2xl" align="center">
-        <Stack gap="md">
-          <Heading level={2}>If it runs on Node.js, it runs <Accent>here</Accent>.</Heading>
-          <Text size="md" tone="muted">
-            Reverhost installs from your lockfile, runs the build script when you have one, and starts a production server on <InlineCode>$PORT</InlineCode>. No platform-specific runtime.
-          </Text>
-          <Flow steps={["package.json", "install", "build", "start"]} label="Reverhost deployment flow" />
-          <Text size="sm" tone="muted">
-            Using something else? Add a production <InlineCode>start</InlineCode> script that listens on <InlineCode>0.0.0.0:$PORT</InlineCode>. Frameworks that generate provider-specific output need their Node adapter.
-          </Text>
-          <Stack direction="row" gap="sm" wrap>
-            <Button href="/docs">Read the docs</Button>
+    <Section id="languages">
+      <Stack gap="2xl">
+        <SectionHead layout="split">
+          <Fragment slot="title">Bring any <Accent>language</Accent>.</Fragment>
+          <Fragment slot="text">Every app builds from its own Dockerfile. Start from a template, change what you need, deploy.</Fragment>
+          <Fragment slot="actions">
+            <Button href="/languages" variant="secondary">All languages</Button>
+          </Fragment>
+        </SectionHead>
+        <Grid cols={4} tablet={2} mobile={1} gap="sm">
+          {languages.map((language) => (
+            <LogoTile name={language.name} src={`/languages/${language.id}.svg`} href={`/languages/${language.id}`} external={false} meta={language.meta} />
+          ))}
+        </Grid>
+        <Grid cols={2} tablet={1} gap="2xl" align="center">
+          <Stack gap="xl">
+            <NumberedList>
+              <NumberedItem title="Pick a template">
+                <Text size="sm" tone="muted"><InlineCode>ezhst build dockerfile template go --apply</InlineCode></Text>
+              </NumberedItem>
+              <NumberedItem title="Make it yours">
+                <Text size="sm" tone="muted">Change the base image, build and start command. Listen on <InlineCode>0.0.0.0:$PORT</InlineCode>.</Text>
+              </NumberedItem>
+              <NumberedItem title="Deploy">
+                <Text size="sm" tone="muted"><InlineCode>ezhst deploy</InlineCode> uploads the folder, builds the image and runs it.</Text>
+              </NumberedItem>
+            </NumberedList>
+            <Text size="sm" tone="muted">
+              Environment variables reach the build as a secret and the container as plain env, never baked into the image. See the <Link href="/guides/write-a-dockerfile">Dockerfile guide</Link>.
+            </Text>
           </Stack>
-        </Stack>
-        <Box radius="xl" padding="md" tone="muted" border>
-          <Grid cols={3} tablet={3} mobile={2} gap="xs">
-            {frameworks.map((framework) => (
-              <LogoTile name={framework.name} src={framework.src} href={framework.href} meta={framework.meta} />
-            ))}
-          </Grid>
-        </Box>
-      </Grid>
+          <MockWindow title="Dockerfile" padding="none">
+            <CodeBlock code={goTemplate.content.trim()} copy={false} />
+          </MockWindow>
+        </Grid>
+      </Stack>
     </Section>
 
     <Section id="capabilities" tone="muted">
@@ -282,7 +296,7 @@ const frameworks = [
           <Fragment slot="text">Every command takes <InlineCode>--json</InlineCode> and never prompts without a terminal, so agents get clean output and clear errors.</Fragment>
         </SectionHead>
         <Grid cols={3} gap="md">
-          <FeatureCard title="Deploy Node.js" text="Package the folder, upload, build and go live on its own subdomain." span={2}>
+          <FeatureCard title="Deploy anything" text="Package the folder, upload, build your Dockerfile and go live on its own subdomain." span={2}>
             <Box slot="visual" maxWidth="520px" style="width:100%">
               <Terminal
                 title="ezhst deploy"
@@ -303,8 +317,8 @@ const frameworks = [
           <FeatureCard title="Environment variables" text="Set, unset or import a whole .env file. Applied on the next deploy." icon="braces">
             <InlineCode>ezhst env set KEY=VALUE</InlineCode>
           </FeatureCard>
-          <FeatureCard title="Build settings" text="Auto-detected by default. Override Node version, root dir or commands." icon="settings">
-            <InlineCode>ezhst build set --node 22</InlineCode>
+          <FeatureCard title="Dockerfile" text="Start from a language template or upload your own. Stored on the app and used for every deploy." icon="settings">
+            <InlineCode>ezhst build dockerfile template rust --apply</InlineCode>
           </FeatureCard>
           <FeatureCard title="Logs and build logs" text="Read runtime logs and the full build log, so the agent can fix what broke." icon="terminal">
             <InlineCode>ezhst deployments log</InlineCode>
@@ -365,7 +379,7 @@ const frameworks = [
                 <Text size="sm" tone="muted">"Deploy this to Reverhost." It signs you up if needed, creates a project and sets the env vars your app uses.</Text>
               </NumberedItem>
               <NumberedItem title="It goes live">
-                <Text size="sm" tone="muted">We install, build and start your app. If a build fails, the agent reads the log, fixes it and redeploys.</Text>
+                <Text size="sm" tone="muted">We build your Dockerfile and start the container. If a build fails, the agent reads the log, fixes the Dockerfile and redeploys.</Text>
               </NumberedItem>
             </NumberedList>
             <Card variant="frosted" padding="md">
@@ -412,10 +426,10 @@ const frameworks = [
         <Card variant="muted" padding="md">
           <Stack gap="xs">
             <Text size="sm" tone="muted">
-              <Text as="strong" tone="default" weight="medium">Every plan</Text>: 512 MB RAM and 1 CPU per app, one build per app at a time, HTTPS and custom domains.
+              <Text as="strong" tone="default" weight="medium">Every plan</Text>: 256 MB RAM and half a CPU per app, images up to 1 GB, 10 builds a day on Free and 50 on Pro, HTTPS and custom domains.
             </Text>
             <Text size="sm" tone="muted">
-              Runs Next.js, Express, Fastify and other Node.js apps. See <Link href="/free-nextjs-hosting">free Next.js hosting</Link>, the <Link href="/vercel-alternative">Vercel alternative</Link> or <Link href="/pricing">full pricing</Link>.
+              Runs Node.js, Bun, Python, Go, Ruby, PHP, Rust and Zig apps. See <Link href="/free-nextjs-hosting">free Next.js hosting</Link>, the <Link href="/vercel-alternative">Vercel alternative</Link> or <Link href="/pricing">full pricing</Link>.
             </Text>
           </Stack>
         </Card>

@@ -3192,6 +3192,23 @@ a.logo-strip-item:hover img {
   color: #ffffff;
 }
 
+.footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 18px;
+  font-size: 12px;
+}
+
+.footer-legal a {
+  color: var(--dark-subtle);
+  transition: color 0.15s ease;
+}
+
+.footer-legal a:hover {
+  color: #ffffff;
+}
+
 .docs {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);

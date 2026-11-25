@@ -47,6 +47,8 @@ const toc = [
 const migrateCode = `vercel env pull .env.production
 npx ezhst projects create my-app --link
 npx ezhst env import .env.production
+npx ezhst build dockerfile template node > Dockerfile
+npx ezhst build dockerfile set -f Dockerfile
 npx ezhst deploy
 npx ezhst domains add www.example.com`;
 ---
@@ -79,7 +81,7 @@ npx ezhst domains add www.example.com`;
             "url": "https://reverhost.com/vercel-alternative",
             "image": "https://reverhost.com/og.png",
             "datePublished": "2026-09-30",
-            "dateModified": "2026-11-09",
+            "dateModified": "2026-11-25",
             "author": {
               "@type": "Organization",
               "name": "Reverhost",
@@ -161,7 +163,7 @@ npx ezhst domains add www.example.com`;
           <Button href="#table" size="lg" icon="layers">Compare side by side</Button>
           <Button href="#migrate" variant="secondary" size="lg">Moving from Vercel</Button>
         </Stack>
-        <Text size="sm" tone="subtle" align="center">Last updated November 9, 2026</Text>
+        <Text size="sm" tone="subtle" align="center">Last updated November 25, 2026</Text>
       </Stack>
     </Frame>
   </Section>
@@ -195,7 +197,7 @@ npx ezhst domains add www.example.com`;
         <Text tone="muted">Vercel details are from the <Link href="https://vercel.com/docs/plans/hobby" rel="noopener">Vercel Hobby plan docs</Link> as of September 2026. Those docs also state that the Hobby plan is restricted to non-commercial, personal use.</Text>
         <Table columns={["", "Reverhost", "Vercel Hobby"]} highlight={1}>
           <Row><Cell head>Price</Cell><Cell>$0, no credit card</Cell><Cell>$0</Cell></Row>
-          <Row><Cell head>How the app runs</Cell><Cell>One always-on container, 512 MB RAM, 1 CPU</Cell><Cell>Serverless functions, up to 300 seconds each</Cell></Row>
+          <Row><Cell head>How the app runs</Cell><Cell>One always-on container, 256 MB RAM, 0.5 CPU</Cell><Cell>Serverless functions, up to 300 seconds each</Cell></Row>
           <Row><Cell head>Monthly usage</Cell><Cell>Not metered</Cell><Cell>100 GB data transfer, 1,000,000 function invocations, 4 CPU-hours</Cell></Row>
           <Row><Cell head>Over the limit</Cell><Cell>Fixed resources, nothing to exceed</Cell><Cell>The feature is paused until 30 days have passed</Cell></Row>
           <Row><Cell head>Projects</Cell><Cell>3</Cell><Cell>200</Cell></Row>
@@ -203,7 +205,7 @@ npx ezhst domains add www.example.com`;
           <Row><Cell head>File storage</Cell><Cell status="yes">S3 compatible bucket, 1 per project</Cell><Cell status="yes">Vercel Blob</Cell></Row>
           <Row><Cell head>Git deploys and previews</Cell><Cell status="no">No</Cell><Cell status="yes">Yes</Cell></Row>
           <Row><Cell head>Global CDN</Cell><Cell status="no">No</Cell><Cell status="yes">Yes</Cell></Row>
-          <Row><Cell head>Frameworks</Cell><Cell>Node.js apps, including Next.js</Cell><Cell>Many</Cell></Row>
+          <Row><Cell head>Frameworks</Cell><Cell>Any language with a Dockerfile, including Next.js</Cell><Cell>Many</Cell></Row>
         </Table>
       </Stack>
     </Box>
@@ -213,7 +215,7 @@ npx ezhst domains add www.example.com`;
         <Heading level={2} size="lg">When Reverhost is the better fit</Heading>
         <Grid cols={2} gap="sm">
           <FeatureCard title="You want a server, not functions" icon="server" iconTone="green">
-            <Text size="sm" tone="muted">Your app is a single Node.js process that stays running. In-memory caches survive between requests, there are no cold starts, and you do not need to think about function size or invocation counts.</Text>
+            <Text size="sm" tone="muted">Your app is a single process that stays running. In-memory caches survive between requests, there are no cold starts, and you do not need to think about function size or invocation counts.</Text>
           </FeatureCard>
           <FeatureCard title="You want the backend in the same place" icon="database" iconTone="green">
             <Text size="sm" tone="muted">A side project usually needs a database and somewhere to put uploads. On Reverhost those are two commands in the same CLI: <InlineCode>ezhst db create</InlineCode> and <InlineCode>ezhst storage create</InlineCode>. See <Link href="/free-postgres-hosting">free Postgres hosting</Link> for the database details.</Text>
@@ -222,7 +224,7 @@ npx ezhst domains add www.example.com`;
             <Text size="sm" tone="muted">Every <InlineCode>ezhst</InlineCode> command takes <InlineCode>--json</InlineCode>, never prompts without a terminal, and returns errors an agent can act on. Sign-up works from the command line too: after you give the agent the 6-digit code from your inbox, it can go from an empty account to a live URL without a browser. The <Link href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</Link> shows how.</Text>
           </FeatureCard>
           <FeatureCard title="You want limits you can predict" icon="gauge" iconTone="green">
-            <Text size="sm" tone="muted">There is no usage meter. An app gets 512 MB of RAM and 1 CPU, and that is what it has at any traffic level.</Text>
+            <Text size="sm" tone="muted">There is no usage meter. An app gets 256 MB of RAM and 0.5 CPU, and that is what it has at any traffic level.</Text>
           </FeatureCard>
         </Grid>
       </Stack>
@@ -236,9 +238,9 @@ npx ezhst domains add www.example.com`;
           <List marker="dot" gap="md" divided>
             <ListItem icon="globe" tone="orange">Visitors all over the world and you need pages served from an edge location near them.</ListItem>
             <ListItem icon="git-branch" tone="orange">Preview deployments for every pull request, or deploys triggered by a Git push.</ListItem>
-            <ListItem icon="activity" tone="orange">Traffic beyond what one 512 MB container can serve.</ListItem>
+            <ListItem icon="activity" tone="orange">Traffic beyond what one 256 MB container can serve.</ListItem>
             <ListItem icon="users" tone="orange">Team features, analytics, firewall rules and the rest of a mature platform.</ListItem>
-            <ListItem icon="code" tone="orange">Applications that cannot run as a Node.js service.</ListItem>
+            <ListItem icon="code" tone="orange">Applications that cannot run as a single container from a Dockerfile.</ListItem>
           </List>
         </Box>
       </Stack>
@@ -249,7 +251,7 @@ npx ezhst domains add www.example.com`;
         <Heading level={2} size="lg">Moving a Next.js app from Vercel to Reverhost</Heading>
         <NumberedList layout="stack">
           <NumberedItem text="Pull your environment variables from Vercel into a local file, then import them." />
-          <NumberedItem text="Create a project, link the folder and deploy." />
+          <NumberedItem text="Create a project, link the folder, save a Dockerfile to the app and deploy. Change the template start command to next start -H 0.0.0.0 -p $PORT." />
           <NumberedItem text="Add your domain and point DNS at Reverhost." />
         </NumberedList>
         <CodeBlock code={migrateCode} />
@@ -258,7 +260,7 @@ npx ezhst domains add www.example.com`;
           <List marker="dot" gap="md" divided>
             <ListItem icon="package" tone="muted"><Text as="strong" weight="semibold">Vercel-only packages.</Text> Replace <InlineCode>@vercel/blob</InlineCode> with any S3 client pointed at your Reverhost bucket, and point your Postgres client at the Reverhost connection string.</ListItem>
             <ListItem icon="clock" tone="muted"><Text as="strong" weight="semibold">Cron jobs in <InlineCode>vercel.json</InlineCode>.</Text> Reverhost does not read <InlineCode>vercel.json</InlineCode>, so scheduled routes will not be called.</ListItem>
-            <ListItem icon="globe" tone="muted"><Text as="strong" weight="semibold">Edge runtime.</Text> Everything runs in the one Node.js container in a single region.</ListItem>
+            <ListItem icon="globe" tone="muted"><Text as="strong" weight="semibold">Edge runtime.</Text> Everything runs in the one container in a single region.</ListItem>
             <ListItem icon="monitor" tone="muted"><Text as="strong" weight="semibold">Image optimization.</Text> <InlineCode>next/image</InlineCode> is handled by the Next.js server inside your container.</ListItem>
           </List>
         </Box>

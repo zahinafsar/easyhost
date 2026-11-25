@@ -61,9 +61,13 @@ const envCode = `ezhst env set NEXT_PUBLIC_SITE_URL=https://my-app.easyhost.fun
 ezhst env import .env.production
 ezhst redeploy`;
 
-const buildCode = `ezhst build set --node 22 --root-dir apps/web
-ezhst build set --install ""
+const buildCode = `ezhst build dockerfile template
+ezhst build dockerfile template node > Dockerfile
+ezhst build dockerfile set -f Dockerfile
+ezhst build set --root-dir apps/web
 ezhst redeploy`;
+
+const buildSecretCode = `RUN --mount=type=secret,id=appenv,target=/run/secrets/appenv sh -c 'set -a; . /run/secrets/appenv; set +a; npm run build'`;
 
 const logsCode = `ezhst deployments log --json
 ezhst logs --tail 200`;
@@ -108,16 +112,16 @@ const prismaCode = `datasource db {
 
 <Base>
   <Fragment slot="head">
-    <title>Reverhost Docs: ezhst CLI Reference for Deploying Node.js</title>
-    <meta name="description" content="Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage and Postgres." />
+    <title>Reverhost Docs: ezhst CLI Reference for Deploying Apps</title>
+    <meta name="description" content="Every ezhst command: deploy apps in any language from a Dockerfile, set environment variables, read logs, add custom domains, and use S3 storage and Postgres." />
     <link rel="canonical" href="https://reverhost.com/docs" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="Reverhost" />
     <meta property="og:url" content="https://reverhost.com/docs" />
-    <meta property="og:title" content="Reverhost Docs: ezhst CLI Reference for Deploying Node.js" />
-    <meta property="og:description" content="Every ezhst command: deploy Node.js apps, manage env vars, domains, S3 storage and Postgres." />
+    <meta property="og:title" content="Reverhost Docs: ezhst CLI Reference for Deploying Apps" />
+    <meta property="og:description" content="Every ezhst command: deploy apps from a Dockerfile, manage env vars, domains, S3 storage and Postgres." />
     <meta property="og:image" content="https://reverhost.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -130,11 +134,11 @@ const prismaCode = `datasource db {
           {
             "@type": "TechArticle",
             "headline": "Reverhost docs: ezhst CLI reference",
-            "description": "Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage and Postgres.",
+            "description": "Every ezhst command: deploy apps in any language from a Dockerfile, set environment variables, read logs, add custom domains, and use S3 storage and Postgres.",
             "url": "https://reverhost.com/docs",
             "image": "https://reverhost.com/og.png",
             "datePublished": "2026-09-29",
-            "dateModified": "2026-11-10",
+            "dateModified": "2026-11-25",
             "author": { "@type": "Organization", "name": "Reverhost", "url": "https://reverhost.com/" },
             "publisher": { "@type": "Organization", "name": "Reverhost", "url": "https://reverhost.com/", "logo": "https://reverhost.com/icon-512.png" }
           },
@@ -195,7 +199,7 @@ const prismaCode = `datasource db {
               <Heading level={3} size="sm">For humans</Heading>
               <Text size="sm" tone="muted">Install the CLI globally or run it with <InlineCode>npx</InlineCode>.</Text>
               <CodeBlock code="npm i -g ezhst" />
-              <Text size="sm" tone="muted">Create an account (or log in), link your Node.js app folder and deploy.</Text>
+              <Text size="sm" tone="muted">Create an account (or log in), link your app folder, set a Dockerfile and deploy.</Text>
               <CodeBlock code={humanDeployCode} />
               <Text size="sm" tone="muted">Already have an account? Use <InlineCode>npx ezhst login</InlineCode> instead of <InlineCode>register</InlineCode>. You can also sign up in the <Link href="https://app.reverhost.com/register">dashboard</Link>.</Text>
             </Stack>
@@ -244,7 +248,7 @@ const prismaCode = `datasource db {
     <Box as="section" id="projects" class="doc-section">
       <Stack gap="md">
         <Heading level={2} size="lg">Projects and linking</Heading>
-        <Text tone="muted">A project contains up to 2 apps (Node.js apps and AI Builder apps count together) with a shared storage bucket and database. Each app has its own subdomain: <InlineCode>&lt;app-slug&gt;.easyhost.fun</InlineCode>.</Text>
+        <Text tone="muted">A project contains up to 2 apps (your own apps and AI Builder apps count together) with a shared storage bucket and database. Each app has its own subdomain: <InlineCode>&lt;app-slug&gt;.easyhost.fun</InlineCode>.</Text>
         <CommandList>
           <CommandRow command="ezhst projects list">List your projects.</CommandRow>
           <CommandRow command={"ezhst projects create <name>"}>Create a project.</CommandRow>
@@ -263,14 +267,14 @@ const prismaCode = `datasource db {
         <Heading level={2} size="lg">Deploying</Heading>
         <Text tone="muted">Use <InlineCode>ezhst apps list</InlineCode>, <InlineCode>ezhst apps create &lt;name&gt;</InlineCode>, and <InlineCode>ezhst apps delete --app &lt;slug&gt; --yes</InlineCode> to manage up to 2 apps per project. Deployment, environment, build, domain and runtime commands accept <InlineCode>--app &lt;slug-or-id&gt;</InlineCode>. Link an app with <InlineCode>ezhst link --project &lt;slug&gt; --app &lt;slug&gt;</InlineCode>.</Text>
         <CommandList>
-          <CommandRow command="ezhst deploy [--verbose]">Package the Node.js app in the current folder, upload, build and go live.</CommandRow>
-          <CommandRow command="ezhst redeploy [--verbose]">Rebuild the latest upload. Use after changing env vars or build settings.</CommandRow>
+          <CommandRow command="ezhst deploy [--verbose]">Package the current folder, upload it, build it with the app Dockerfile and go live. Fails fast if the app has no Dockerfile.</CommandRow>
+          <CommandRow command="ezhst redeploy [--verbose]">Rebuild the latest upload, even a failed one. Use after fixing the Dockerfile or changing env vars.</CommandRow>
           <CommandRow command="ezhst start">Start the app.</CommandRow>
           <CommandRow command="ezhst stop">Stop the app.</CommandRow>
           <CommandRow command="ezhst deployments list">List deployments.</CommandRow>
         </CommandList>
         <Heading level={3} size="sm">What gets uploaded</Heading>
-        <Text tone="muted"><InlineCode>deploy</InlineCode> uploads your project source. It skips <InlineCode>node_modules</InlineCode>, <InlineCode>.next</InlineCode>, <InlineCode>.git</InlineCode> and every <InlineCode>.env*</InlineCode> file. No changes to your project are needed.</Text>
+        <Text tone="muted"><InlineCode>deploy</InlineCode> uploads your project source. It skips <InlineCode>node_modules</InlineCode>, <InlineCode>.next</InlineCode>, <InlineCode>.git</InlineCode>, every <InlineCode>.env*</InlineCode> file, Python virtual environments, Rust <InlineCode>target</InlineCode> and Zig output. Reverhost then builds the Dockerfile stored on the app and runs the image.</Text>
         <Callout tone="warning">
           <Text size="sm">Environment variables are not read from your <InlineCode>.env</InlineCode> files. Set them with <InlineCode>ezhst env set</InlineCode> or <InlineCode>ezhst env import .env</InlineCode> before deploying.</Text>
         </Callout>
@@ -295,20 +299,24 @@ const prismaCode = `datasource db {
     <Box as="section" id="build" class="doc-section">
       <Stack gap="md">
         <Heading level={2} size="lg">Build settings</Heading>
-        <Text tone="muted">Empty settings are auto-detected, which works for most Node.js apps.</Text>
-        <Text tone="muted">Supported frameworks include Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi. SvelteKit and Astro projects need their Node adapters; any other framework works when its production start command listens on <InlineCode>0.0.0.0:$PORT</InlineCode>.</Text>
+        <Text tone="muted">Every app is built from a Dockerfile stored on the app in Reverhost, so any language works: Node.js, Bun, Python, Go, Ruby, PHP, Rust, Zig or anything else you can write a Dockerfile for. A Dockerfile in your repository is not used automatically. Edit it in the dashboard Build tab or upload it with <InlineCode>ezhst build dockerfile set -f Dockerfile</InlineCode>.</Text>
         <CommandList>
-          <CommandRow command="ezhst build show">Show the current settings.</CommandRow>
-          <CommandRow command={"ezhst build set [--node 20|22|24] [--root-dir <dir>] [--install <cmd>] [--build <cmd>] [--start <cmd>]"}>Override one or more settings. Pass <InlineCode>""</InlineCode> to reset a field to auto.</CommandRow>
-          <CommandRow command="ezhst build reset">Reset every setting to auto.</CommandRow>
+          <CommandRow command="ezhst build show">Show the root directory and the stored Dockerfile.</CommandRow>
+          <CommandRow command={"ezhst build set --root-dir <dir>"}>Set the build context folder, for example an app folder in a monorepo.</CommandRow>
+          <CommandRow command="ezhst build reset">Clear the root directory and the Dockerfile. Set a Dockerfile again before the next deploy.</CommandRow>
+          <CommandRow command="ezhst build dockerfile show">Print the stored Dockerfile.</CommandRow>
+          <CommandRow command={"ezhst build dockerfile set -f <file>"}>Upload a Dockerfile. Use <InlineCode>-f -</InlineCode> to read it from stdin.</CommandRow>
+          <CommandRow command={"ezhst build dockerfile template [id] [--apply]"}>List starter templates, print one, or save it to the app with <InlineCode>--apply</InlineCode>.</CommandRow>
         </CommandList>
-        <Heading level={3} size="sm">Auto-detection</Heading>
-        <Table columns={["Setting", "Default"]}>
-          <Row><Cell head>Node version</Cell><Cell><InlineCode>engines.node</InlineCode> in package.json, otherwise 24</Cell></Row>
-          <Row><Cell head>Package manager</Cell><Cell>From your lockfile</Cell></Row>
-          <Row><Cell head>Build command</Cell><Cell>Package build script if present; skipped otherwise</Cell></Row>
-          <Row><Cell head>Start command</Cell><Cell>Package start script, Next.js, Nuxt, or Node.js entry file; must listen on 0.0.0.0 and $PORT</Cell></Row>
+        <Text tone="muted">Template ids: <InlineCode>node</InlineCode>, <InlineCode>bun</InlineCode>, <InlineCode>python</InlineCode>, <InlineCode>go</InlineCode>, <InlineCode>ruby</InlineCode>, <InlineCode>php</InlineCode>, <InlineCode>rust</InlineCode> and <InlineCode>zig</InlineCode>. Start from one, then adjust the build and start lines for your framework.</Text>
+        <Heading level={3} size="sm">Rules for the Dockerfile</Heading>
+        <Table columns={["Rule", "Details"]}>
+          <Row><Cell head>Port</Cell><Cell>Listen on <InlineCode>0.0.0.0</InlineCode> and <InlineCode>$PORT</InlineCode>, which is 3000</Cell></Row>
+          <Row><Cell head>Environment</Cell><Cell>Your variables are runtime env in the container</Cell></Row>
+          <Row><Cell head>Build-time variables</Cell><Cell>Mount the <InlineCode>appenv</InlineCode> secret in the <InlineCode>RUN</InlineCode> step that needs them. Never pass secrets with <InlineCode>ARG</InlineCode> or <InlineCode>ENV</InlineCode></Cell></Row>
+          <Row><Cell head>Image size</Cell><Cell>Up to 1 GB, so prefer slim base images and multi-stage builds</Cell></Row>
         </Table>
+        <CodeBlock code={buildSecretCode} />
         <CodeBlock code={buildCode} />
       </Stack>
     </Box>
@@ -419,7 +427,7 @@ const prismaCode = `datasource db {
     <Box as="section" id="limits" class="doc-section">
       <Stack gap="md">
         <Heading level={2} size="lg">Limits</Heading>
-        <Text tone="muted">Reverhost hosting is free within these limits. Pro costs $10 a month for 10 projects and 1,000 AI tokens a month; see <Link href="/pricing">pricing</Link>. Run <InlineCode>ezhst billing</InlineCode> to see your plan and usage, and <InlineCode>ezhst billing upgrade</InlineCode> for a Pro checkout link. Node.js apps are supported, including Next.js and HTTP APIs. The <Link href="/free-nextjs-hosting">free Next.js hosting</Link> page explains what each limit means in practice.</Text>
+        <Text tone="muted">Reverhost hosting is free within these limits. Pro costs $10 a month for 10 projects and 1,000 AI tokens a month; see <Link href="/pricing">pricing</Link>. Run <InlineCode>ezhst billing</InlineCode> to see your plan and usage, and <InlineCode>ezhst billing upgrade</InlineCode> for a Pro checkout link. Apps in any language are supported, including Next.js and HTTP APIs. The <Link href="/free-nextjs-hosting">free Next.js hosting</Link> page explains what each limit means in practice.</Text>
         <Table columns={["Resource", "Limit"]}>
           <Row><Cell head>Projects</Cell><Cell>3 (10 on Pro)</Cell></Row>
           <Row><Cell head>Apps</Cell><Cell>2 per project</Cell></Row>
@@ -427,8 +435,10 @@ const prismaCode = `datasource db {
           <Row><Cell head>Database</Cell><Cell>1 Postgres database per project, 128 MB</Cell></Row>
           <Row><Cell head>Team members</Cell><Cell>10 per project, including pending invites</Cell></Row>
           <Row><Cell head>AI Builder prompts</Cell><Cell>30 per day, per project</Cell></Row>
-          <Row><Cell head>Concurrent builds</Cell><Cell>1</Cell></Row>
-          <Row><Cell head>App container</Cell><Cell>512 MB RAM, 1 CPU</Cell></Row>
+          <Row><Cell head>Builds per day</Cell><Cell>10 (50 on Pro), per account owner</Cell></Row>
+          <Row><Cell head>Concurrent builds</Cell><Cell>1 per app</Cell></Row>
+          <Row><Cell head>App container</Cell><Cell>256 MB RAM, 0.5 CPU</Cell></Row>
+          <Row><Cell head>Image size</Cell><Cell>1 GB</Cell></Row>
         </Table>
         <Stack direction="row" gap="sm" wrap>
           <Button href="https://app.reverhost.com/register">Sign up free</Button>

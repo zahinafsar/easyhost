@@ -46,7 +46,19 @@ const toc = [
 const deployCode = `npx ezhst register
 npx ezhst verify <code>
 npx ezhst link
+npx ezhst build dockerfile template node > Dockerfile
+npx ezhst build dockerfile set -f Dockerfile
 npx ezhst deploy`;
+
+const dockerfileCode = `FROM node:22-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN --mount=type=secret,id=appenv,target=/run/secrets/appenv sh -c 'set -a; . /run/secrets/appenv; set +a; npm run build'
+ENV NODE_ENV=production PORT=3000
+EXPOSE 3000
+CMD ["sh", "-c", "exec npx next start -H 0.0.0.0 -p $PORT"]`;
 ---
 
 <Base>
@@ -77,7 +89,7 @@ npx ezhst deploy`;
             "url": "https://reverhost.com/free-nextjs-hosting",
             "image": "https://reverhost.com/og.png",
             "datePublished": "2026-09-30",
-            "dateModified": "2026-11-09",
+            "dateModified": "2026-11-25",
             "author": {
               "@type": "Organization",
               "name": "Reverhost",
@@ -116,7 +128,7 @@ npx ezhst deploy`;
                 "name": "Is there a catch to the free plan?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "No trial and no card. The catch is the limits: 3 projects, 512 MB of RAM and 1 CPU per app, one region, and two apps per project."
+                  "text": "No trial and no card. The catch is the limits: 3 projects, 256 MB of RAM and 0.5 CPU per app, one region, and two apps per project."
                 }
               },
               {
@@ -140,7 +152,7 @@ npx ezhst deploy`;
                 "name": "Do I need to change my Next.js project to deploy it?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "No. There is no adapter, config file or output mode to set. The project needs a package.json with next and a build script."
+                  "text": "No code changes are needed, but every app builds from a Dockerfile stored on the app. Start from the Node.js template, set the start command to next start -H 0.0.0.0 -p $PORT, and upload it with ezhst build dockerfile set -f Dockerfile."
                 }
               }
             ]
@@ -162,9 +174,9 @@ npx ezhst deploy`;
       <Stack gap="md" align="center">
         <Breadcrumbs items={crumbs} />
         <Heading level={1} size="xl" align="center" maxWidth="820px" reveal={0}>Free Next.js hosting, with the backend <Accent>included</Accent></Heading>
-        <Text size="lg" tone="muted" align="center" maxWidth="720px" balance reveal={1}>Reverhost hosts Next.js apps for $0 a month. Each app runs in an always-on Node.js container with 512 MB of RAM and 1 CPU, gets HTTPS on its own subdomain, and can use a Postgres database and an S3 bucket from the same free account. Signing up does not need a credit card.</Text>
+        <Text size="lg" tone="muted" align="center" maxWidth="720px" balance reveal={1}>Reverhost hosts Next.js apps for $0 a month. Each app runs in an always-on container with 256 MB of RAM and 0.5 CPU, gets HTTPS on its own subdomain, and can use a Postgres database and an S3 bucket from the same free account. Signing up does not need a credit card.</Text>
         <Stack direction="row" gap="xs" wrap justify="center" reveal={2}>
-          <Badge tone="white" icon="cpu">512 MB RAM, 1 CPU</Badge>
+          <Badge tone="white" icon="cpu">256 MB RAM, 0.5 CPU</Badge>
           <Badge tone="white" icon="zap">Always on</Badge>
           <Badge tone="white" icon="database">Postgres included</Badge>
           <Badge tone="green" icon="credit-card">No credit card</Badge>
@@ -173,7 +185,7 @@ npx ezhst deploy`;
           <Button href="https://app.reverhost.com/register" size="lg">Sign up free</Button>
           <Button href="/docs" variant="secondary" size="lg">Read the docs</Button>
         </Stack>
-        <Text size="sm" tone="subtle" align="center">Last updated November 9, 2026</Text>
+        <Text size="sm" tone="subtle" align="center">Last updated November 25, 2026</Text>
       </Stack>
     </Frame>
   </Section>
@@ -187,11 +199,11 @@ npx ezhst deploy`;
         <Text tone="muted">There is one plan and it is free. These are fixed limits, not a trial and not a monthly credit that runs out.</Text>
         <Table columns={["Resource", "Included"]}>
           <Row><Cell head>Projects</Cell><Cell>3 per account, 2 apps each (10 projects on Pro)</Cell></Row>
-          <Row><Cell head>App container</Cell><Cell>512 MB RAM, 1 CPU, always on</Cell></Row>
+          <Row><Cell head>App container</Cell><Cell>256 MB RAM, 0.5 CPU, always on</Cell></Row>
           <Row><Cell head>URL and HTTPS</Cell><Cell><InlineCode>https://&lt;name&gt;.easyhost.fun</InlineCode> plus custom domains with automatic certificates</Cell></Row>
           <Row><Cell head>Postgres</Cell><Cell>1 database per project (Postgres 16), with a shadow database for Prisma</Cell></Row>
           <Row><Cell head>Object storage</Cell><Cell>1 S3 compatible bucket per project, files public by URL</Cell></Row>
-          <Row><Cell head>Builds</Cell><Cell>1 at a time per account, queued in order</Cell></Row>
+          <Row><Cell head>Builds</Cell><Cell>1 at a time per app, 10 per day (50 on Pro), images up to 1 GB</Cell></Row>
           <Row tone="highlight"><Cell head>Price</Cell><Cell status="yes">$0 per month, no credit card</Cell></Row>
         </Table>
         <Text tone="muted">The same numbers are listed in the <Link href="/docs#limits">docs</Link>.</Text>
@@ -201,7 +213,7 @@ npx ezhst deploy`;
     <Box as="section" id="how-it-runs" class="doc-section">
       <Stack gap="md">
         <Heading level={2} size="lg">How your Next.js app runs</Heading>
-        <Text tone="muted">Reverhost builds your project into a container image and runs it as a normal Node.js server with <InlineCode>next start</InlineCode>. Nothing is rewritten into serverless functions, so the app behaves the way it does on your machine.</Text>
+        <Text tone="muted">Reverhost builds your project with the Dockerfile stored on the app and runs it as a normal Node.js server with <InlineCode>next start</InlineCode>. Nothing is rewritten into serverless functions, so the app behaves the way it does on your machine.</Text>
         <Grid cols={2} gap="sm">
           <FeatureCard title="Full Next.js server" icon="server" variant="frosted">
             <Text size="sm" tone="muted">Server rendering, route handlers, server actions, middleware and <InlineCode>next/image</InlineCode> all run inside your container.</Text>
@@ -209,27 +221,28 @@ npx ezhst deploy`;
           <FeatureCard title="Always on" icon="zap" iconTone="green" variant="frosted">
             <Text size="sm" tone="muted">The container is not stopped when traffic is idle, so the first request after a quiet night is as fast as any other.</Text>
           </FeatureCard>
-          <FeatureCard title="Node 20, 22 or 24" icon="cpu" variant="frosted">
-            <Text size="sm" tone="muted">Read from <InlineCode>engines.node</InlineCode> in <InlineCode>package.json</InlineCode>, otherwise Node 24.</Text>
+          <FeatureCard title="Your Node version" icon="cpu" variant="frosted">
+            <Text size="sm" tone="muted">Pick it in the <InlineCode>FROM</InlineCode> line of your Dockerfile, such as <InlineCode>node:22-alpine</InlineCode>.</Text>
           </FeatureCard>
           <FeatureCard title="npm, pnpm, yarn or bun" icon="package" variant="frosted">
-            <Text size="sm" tone="muted">Detected from your lockfile.</Text>
+            <Text size="sm" tone="muted">Your Dockerfile runs the install command you choose.</Text>
           </FeatureCard>
           <FeatureCard title="Monorepos" icon="folder" variant="frosted">
-            <Text size="sm" tone="muted">Point the build at a subfolder with <InlineCode>ezhst build set --root-dir apps/web</InlineCode>.</Text>
+            <Text size="sm" tone="muted">Set the build context folder with <InlineCode>ezhst build set --root-dir apps/web</InlineCode>.</Text>
           </FeatureCard>
           <FeatureCard title="Environment variables" icon="lock" variant="frosted">
-            <Text size="sm" tone="muted">Set with the CLI and passed to both the build and the running app, so <InlineCode>NEXT_PUBLIC_</InlineCode> values work.</Text>
+            <Text size="sm" tone="muted">Runtime env in the container. The build step mounts them as a secret, so <InlineCode>NEXT_PUBLIC_</InlineCode> values work.</Text>
           </FeatureCard>
         </Grid>
-        <Text tone="muted">Build settings are auto-detected and can be overridden. See <Link href="/docs#build">build settings</Link>.</Text>
+        <Text tone="muted">This Dockerfile is the Node.js template with the Next.js start command. For a smaller image, use <InlineCode>output: "standalone"</InlineCode> and a multi-stage build. See <Link href="/docs#build">build settings</Link>.</Text>
+        <CodeBlock code={dockerfileCode} />
       </Stack>
     </Box>
 
     <Box as="section" id="deploy" class="doc-section">
       <Stack gap="md">
         <Heading level={2} size="lg">Deploy in a few commands</Heading>
-        <Text tone="muted">Run these inside your Next.js project folder, using the 6-digit code emailed to you after <InlineCode>register</InlineCode>. The CLI uploads your source, Reverhost installs, builds and starts it.</Text>
+        <Text tone="muted">Run these inside your Next.js project folder, using the 6-digit code emailed to you after <InlineCode>register</InlineCode>. The CLI saves the Dockerfile to the app and uploads your source, then Reverhost builds the image and starts it. Edit the template so its last line is the Next.js start command shown above.</Text>
         <CodeBlock code={deployCode} />
         <Text tone="muted">Or let a coding agent do it. Run <InlineCode>npx ezhst skill install</InlineCode>, choose Global or Local, and tell Claude Code, Cursor or Codex to "deploy this to Reverhost". The <Link href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</Link> shows how to load the instructions and deploy.</Text>
         <Text tone="muted">Your <InlineCode>.env</InlineCode> files are never uploaded. Import them once with <InlineCode>ezhst env import .env</InlineCode>.</Text>
@@ -242,7 +255,7 @@ npx ezhst deploy`;
         <Text tone="muted">Free tiers differ more in shape than in size. This table uses each provider's own documentation as of September 2026: the <Link href="https://vercel.com/docs/plans/hobby" rel="noopener">Vercel Hobby plan docs</Link> and the <Link href="https://render.com/docs/free" rel="noopener">Render free tier docs</Link>.</Text>
         <Table columns={["", "Reverhost", "Vercel Hobby", "Render Free"]} highlight={1}>
           <Row><Cell head>How Next.js runs</Cell><Cell>Always-on container</Cell><Cell>Serverless functions and a global CDN</Cell><Cell>Container that spins down after 15 minutes without traffic and takes about a minute to spin back up</Cell></Row>
-          <Row><Cell head>Usage limits</Cell><Cell>512 MB RAM and 1 CPU per app, 3 projects</Cell><Cell>100 GB data transfer, 1,000,000 function invocations and 4 CPU-hours per month</Cell><Cell>750 instance hours per month</Cell></Row>
+          <Row><Cell head>Usage limits</Cell><Cell>256 MB RAM and 0.5 CPU per app, 3 projects</Cell><Cell>100 GB data transfer, 1,000,000 function invocations and 4 CPU-hours per month</Cell><Cell>750 instance hours per month</Cell></Row>
           <Row><Cell head>Postgres</Cell><Cell status="yes">Included, 1 per project</Cell><Cell status="no">Not part of the plan (added through integrations)</Cell><Cell status="partial">Free database expires 30 days after creation, 1 GB</Cell></Row>
           <Row><Cell head>Deploy from Git</Cell><Cell status="no">No, CLI upload</Cell><Cell status="yes">Yes, with preview deployments</Cell><Cell status="yes">Yes</Cell></Row>
           <Row><Cell head>Regions</Cell><Cell>One</Cell><Cell>Global edge network</Cell><Cell>One per service</Cell></Row>
@@ -257,10 +270,10 @@ npx ezhst deploy`;
         <Text tone="muted">Free hosting always has trade-offs. These are ours, stated plainly so you can decide before you deploy.</Text>
         <Box tone="white" border shadow radius="lg" padding="md">
           <List marker="dot" gap="md" divided>
-            <ListItem icon="check" tone="green">Node.js apps are supported, including Next.js and APIs.</ListItem>
+            <ListItem icon="check" tone="green">Apps in any language with a Dockerfile are supported, including Next.js and APIs.</ListItem>
             <ListItem icon="globe" tone="orange">Apps run in one region. There is no edge network or CDN in front of them.</ListItem>
             <ListItem icon="git-branch" tone="orange">There is no Git integration and there are no preview deployments. You deploy with the CLI.</ListItem>
-            <ListItem icon="cpu" tone="orange">512 MB of RAM is enough for most Next.js apps, but not for heavy in-process workloads.</ListItem>
+            <ListItem icon="cpu" tone="orange">256 MB of RAM fits small Next.js apps, but not heavy in-process workloads.</ListItem>
             <ListItem icon="link" tone="orange">Files in a storage bucket are public to anyone who has the URL.</ListItem>
           </List>
         </Box>
@@ -272,7 +285,7 @@ npx ezhst deploy`;
         <Heading level={2} size="lg">Frequently asked questions</Heading>
         <Accordion>
           <AccordionItem question="Is there a catch to the free plan?">
-            <Text tone="muted">No trial and no card. The catch is the limits: 3 projects, 512 MB of RAM and 1 CPU per app, one region, and two apps per project.</Text>
+            <Text tone="muted">No trial and no card. The catch is the limits: 3 projects, 256 MB of RAM and 0.5 CPU per app, one region, and two apps per project.</Text>
           </AccordionItem>
           <AccordionItem question="Does a free Next.js app on Reverhost sleep when nobody visits?">
             <Text tone="muted">No. The container keeps running, so there is no cold start after a period without traffic.</Text>
@@ -281,7 +294,7 @@ npx ezhst deploy`;
             <Text tone="muted">Yes. Each project can have one <Link href="/free-postgres-hosting">Postgres database</Link> and one S3 compatible bucket alongside the app, all free.</Text>
           </AccordionItem>
           <AccordionItem question="Do I need to change my Next.js project to deploy it?">
-            <Text tone="muted">No. There is no adapter, config file or output mode to set. The project needs a <InlineCode>package.json</InlineCode> with <InlineCode>next</InlineCode> and a <InlineCode>build</InlineCode> script.</Text>
+            <Text tone="muted">No code changes are needed, but every app builds from a Dockerfile stored on the app. Start from the Node.js template, set the start command to <InlineCode>next start -H 0.0.0.0 -p $PORT</InlineCode>, and upload it with <InlineCode>ezhst build dockerfile set -f Dockerfile</InlineCode>.</Text>
           </AccordionItem>
         </Accordion>
       </Stack>
