@@ -41,7 +41,7 @@ flowchart LR
 
 Nginx Proxy Manager terminates TLS with a wildcard certificate and does all HTTP routing:
 
-- `easyhost.fun`, `app.`, `api.` go to the API, which serves marketing, the dashboard or the API by Host.
+- `reverhost.com`, `app.`, `api.` go to the API, which serves marketing, the dashboard or the API by Host.
 - `storage.` goes to MinIO, `registry.` to the Docker registry.
 - `<slug>.easyhost.fun` goes to the container `eh-app-<slug>`, resolved by Docker DNS at request time, so a new app needs no routing setup.
 - Custom domains get their own certificate and proxy host, created through the NPM API after DNS is verified.

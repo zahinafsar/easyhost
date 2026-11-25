@@ -14,17 +14,17 @@ Key facts:
 - Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
 - There is no Git integration, no preview deployments and no edge network.
 - Install the agent skill with `npx ezhst skill install` and choose the agent (Claude Code, Codex or Cursor), then Global or Local. Claude Code uses `.claude/skills`, Codex uses `.agents/skills`, Cursor uses `.cursor/skills` (under `~` for Global, the current directory for Local). For noninteractive use, including `--json`, pass `--agent <claude|codex|cursor>` and exactly one of `--global` or `--local`.
-- Ask the agent to "Deploy this to EasyHost". If it does not discover the skill, ask it to read the installed `SKILL.md` or https://easyhost.fun/skill.md first.
+- Ask the agent to "Deploy this to EasyHost". If it does not discover the skill, ask it to read the installed `SKILL.md` or https://reverhost.com/skill.md first.
 
 ## Docs
 
-- [Agent skill](https://easyhost.fun/skill.md): Complete instructions for an agent using the ezhst CLI
-- [CLI reference](https://easyhost.fun/docs): Every command for accounts, deploys, env vars, build settings, logs, domains, storage, Postgres and team members
-- [Deploy with an AI agent](https://easyhost.fun/guides/deploy-nextjs-with-ai-agents): Step by step guide for Claude Code, Cursor and Codex
+- [Agent skill](https://reverhost.com/skill.md): Complete instructions for an agent using the ezhst CLI
+- [CLI reference](https://reverhost.com/docs): Every command for accounts, deploys, env vars, build settings, logs, domains, storage, Postgres and team members
+- [Deploy with an AI agent](https://reverhost.com/guides/deploy-nextjs-with-ai-agents): Step by step guide for Claude Code, Cursor and Codex
 
 ## Product
 
-- [Free Next.js hosting](https://easyhost.fun/free-nextjs-hosting): What the free plan includes and how apps run
-- [Free Postgres hosting](https://easyhost.fun/free-postgres-hosting): The included Postgres database
-- [AI Builder](https://easyhost.fun/products/ai-builder): Build an app from a description in the dashboard
-- [Vercel alternative](https://easyhost.fun/vercel-alternative): Differences between EasyHost and Vercel Hobby
+- [Free Next.js hosting](https://reverhost.com/free-nextjs-hosting): What the free plan includes and how apps run
+- [Free Postgres hosting](https://reverhost.com/free-postgres-hosting): The included Postgres database
+- [AI Builder](https://reverhost.com/products/ai-builder): Build an app from a description in the dashboard
+- [Vercel alternative](https://reverhost.com/vercel-alternative): Differences between EasyHost and Vercel Hobby

@@ -79,7 +79,7 @@ Custom domains:
 
 Storage (S3 compatible, one bucket per project, files are public by URL):
 - `storage create <name> | info | rotate-keys | ls [prefix] | upload <files...> [--prefix dir/] | download <key> [output] | rm <key> | delete --yes`
-- In app code use any S3 client with endpoint `https://storage.easyhost.fun`, region `us-east-1`, `forcePathStyle: true`, and the bucket name and keys from `storage info`. Public file URL: `https://storage.easyhost.fun/<bucket>/<key>`.
+- In app code use any S3 client with endpoint `https://storage.reverhost.com`, region `us-east-1`, `forcePathStyle: true`, and the bucket name and keys from `storage info`. Public file URL: `https://storage.reverhost.com/<bucket>/<key>`.
 - Typical setup: `storage create files`, then `env set S3_ENDPOINT=... S3_BUCKET=... S3_ACCESS_KEY_ID=... S3_SECRET_ACCESS_KEY=...` from `storage info --json`.
 
 Database (Postgres, one per project):
@@ -103,4 +103,4 @@ Billing:
 
 Free: 3 projects. Pro ($10/mo): 10 projects and the AI token balance topped up to 1,000 every month. Per project on both: 2 apps, one bucket (256 MB) and one database (128 MB). One build at a time; 512 MB RAM and 1 CPU per app. A full bucket rejects uploads; a database over its size is blocked and the project's apps stop.
 
-Docs: https://easyhost.fun/docs
+Docs: https://reverhost.com/docs

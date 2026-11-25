@@ -9,19 +9,19 @@ import CopyCode from "../../components/CopyCode.astro";
   <Fragment slot="head">
     <title>EasyHost Docs: ezhst CLI Reference for Deploying Node.js</title>
     <meta name="description" content="Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage and Postgres." />
-    <link rel="canonical" href="https://easyhost.fun/docs" />
+    <link rel="canonical" href="https://reverhost.com/docs" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="EasyHost" />
-    <meta property="og:url" content="https://easyhost.fun/docs" />
+    <meta property="og:url" content="https://reverhost.com/docs" />
     <meta property="og:title" content="EasyHost Docs: ezhst CLI Reference for Deploying Node.js" />
     <meta property="og:description" content="Every ezhst command: deploy Node.js apps, manage env vars, domains, S3 storage and Postgres." />
-    <meta property="og:image" content="https://easyhost.fun/og.png" />
+    <meta property="og:image" content="https://reverhost.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://easyhost.fun/og.png" />
+    <meta name="twitter:image" content="https://reverhost.com/og.png" />
     <script is:inline type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -30,18 +30,18 @@ import CopyCode from "../../components/CopyCode.astro";
             "@type": "TechArticle",
             "headline": "EasyHost docs: ezhst CLI reference",
             "description": "Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage and Postgres.",
-            "url": "https://easyhost.fun/docs",
-            "image": "https://easyhost.fun/og.png",
+            "url": "https://reverhost.com/docs",
+            "image": "https://reverhost.com/og.png",
             "datePublished": "2026-09-29",
             "dateModified": "2026-11-10",
-            "author": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/" },
-            "publisher": { "@type": "Organization", "name": "EasyHost", "url": "https://easyhost.fun/", "logo": "https://easyhost.fun/icon-512.png" }
+            "author": { "@type": "Organization", "name": "EasyHost", "url": "https://reverhost.com/" },
+            "publisher": { "@type": "Organization", "name": "EasyHost", "url": "https://reverhost.com/", "logo": "https://reverhost.com/icon-512.png" }
           },
           {
             "@type": "BreadcrumbList",
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "EasyHost", "item": "https://easyhost.fun/" },
-              { "@type": "ListItem", "position": 2, "name": "Docs", "item": "https://easyhost.fun/docs" }
+              { "@type": "ListItem", "position": 1, "name": "EasyHost", "item": "https://reverhost.com/" },
+              { "@type": "ListItem", "position": 2, "name": "Docs", "item": "https://reverhost.com/docs" }
             ]
           }
         ]
@@ -97,7 +97,7 @@ import CopyCode from "../../components/CopyCode.astro";
 npx ezhst verify &lt;code&gt;
 npx ezhst link
 npx ezhst deploy</pre></div>
-          <p>Already have an account? Use <code>npx ezhst login</code> instead of <code>register</code>. You can also sign up in the <a href="https://app.easyhost.fun/register">dashboard</a>.</p>
+          <p>Already have an account? Use <code>npx ezhst login</code> instead of <code>register</code>. You can also sign up in the <a href="https://app.reverhost.com/register">dashboard</a>.</p>
         </section>
 
         <section id="skill">
@@ -109,7 +109,7 @@ npx ezhst deploy</pre></div>
             <div class="cmd-row"><code>ezhst skill install --agent cursor --local</code><span>Writes <code>.cursor/skills/easyhost/SKILL.md</code> in the current project.</span></div>
           </div>
           <p>Claude Code uses <code>.claude/skills</code>, Codex uses <code>.agents/skills</code> and Cursor uses <code>.cursor/skills</code>, under your home folder for Global or the current directory for Local. Choose Local to check the skill into the repo for your team. For noninteractive use, including <code>--json</code>, pass <code>--agent &lt;claude|codex|cursor&gt;</code> and exactly one of <code>--global</code> or <code>--local</code>.</p>
-          <p>For other agents, ask them to read the raw file at <a href="/skill.md">https://easyhost.fun/skill.md</a> before deploying.</p>
+          <p>For other agents, ask them to read the raw file at <a href="/skill.md">https://reverhost.com/skill.md</a> before deploying.</p>
         </section>
 
         <section id="authentication">
@@ -257,11 +257,11 @@ ezhst domains verify www.example.com</pre></div>
             <div class="cmd-row"><code>ezhst storage delete --yes</code><span>Delete the bucket.</span></div>
           </div>
           <h3>Using it from your app</h3>
-          <p>Run <code>ezhst storage info</code>, store the credentials with <code>ezhst env set</code>, then use any S3 client. The endpoint is <code>https://storage.easyhost.fun</code>, the region is <code>us-east-1</code> and requests must use path-style URLs.</p>
+          <p>Run <code>ezhst storage info</code>, store the credentials with <code>ezhst env set</code>, then use any S3 client. The endpoint is <code>https://storage.reverhost.com</code>, the region is <code>us-east-1</code> and requests must use path-style URLs.</p>
           <div class="code"><div class="code-label">lib/storage.ts</div><pre>import &#123; S3Client, PutObjectCommand &#125; from "@aws-sdk/client-s3";
 
 export const s3 = new S3Client(&#123;
-  endpoint: "https://storage.easyhost.fun",
+  endpoint: "https://storage.reverhost.com",
   region: "us-east-1",
   forcePathStyle: true,
   credentials: &#123;
@@ -326,7 +326,7 @@ ezhst env set DATABASE_URL="postgresql://..."</pre></div>
 
         <section id="ai-builder">
           <h2>AI Builder <small>dashboard</small></h2>
-          <p>The AI Builder turns a description into a running app. Open <strong>Builder</strong> in the <a href="https://app.easyhost.fun/builder">dashboard</a>, create an app and describe it. The name becomes its address, <code>https://&lt;name&gt;.easyhost.fun</code>.</p>
+          <p>The AI Builder turns a description into a running app. Open <strong>Builder</strong> in the <a href="https://app.reverhost.com/builder">dashboard</a>, create an app and describe it. The name becomes its address, <code>https://&lt;name&gt;.easyhost.fun</code>.</p>
           <p>For a new app or a big feature, the AI asks a few questions, shows a short plan to approve and lets you pick one of 9 themes before it builds. Small changes go straight to code. Every step is shown live: files written, SQL run and packages installed.</p>
           <p>To point at part of the page, click <strong>Select element</strong> and then the element in the preview. It is tagged in your message so the AI knows exactly what to change. You can also attach up to 5 images per message (png, jpg, gif, webp, avif, svg or ico, up to 5 MB each). They are saved in the app and served at <code>/uploads/&lt;name&gt;</code>, and the AI uses them only as they are, for example as a logo or background. It cannot see, edit, describe or generate images.</p>
           <p>The menu next to <strong>Select element</strong> opens the <strong>Code</strong> view, where you can edit any file and save it straight into the running app, and <strong>Export</strong>, which downloads all of the app's code as a zip.</p>

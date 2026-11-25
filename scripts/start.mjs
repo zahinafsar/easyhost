@@ -47,11 +47,11 @@ run(upArgs);
 console.log(`
 EasyHost is running.
 
-  Marketing  https://easyhost.fun
-  Dashboard  https://app.easyhost.fun
-  API        https://api.easyhost.fun
-  Storage    https://storage.easyhost.fun
-  Registry   https://registry.easyhost.fun
+  Marketing  https://reverhost.com
+  Dashboard  https://app.reverhost.com
+  API        https://api.reverhost.com
+  Storage    https://storage.reverhost.com
+  Registry   https://registry.reverhost.com
   Apps       https://<app>.easyhost.fun
 
 Logs: npm run logs

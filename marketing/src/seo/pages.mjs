@@ -301,7 +301,7 @@ const storagePages = () => {
         method: "POST",
         path: "/api/uploads",
         body: `const key = \`uploads/\${crypto.randomUUID()}\`;\n  ${client.body}`,
-        result: `{ url, publicUrl: \`https://storage.easyhost.fun/\${process.env.S3_BUCKET}/\${key}\` }`,
+        result: `{ url, publicUrl: \`https://storage.reverhost.com/\${process.env.S3_BUCKET}/\${key}\` }`,
         imports: `${client.imports}import { s3 } from "${framework.dbImport.replace(/db(\.server)?$/, "s3$1")}";\n`,
       });
       pages.push({
@@ -729,7 +729,7 @@ secret_access_key = <secret>${endpointLine}
 [easyhost]
 type = s3
 provider = Minio
-endpoint = https://storage.easyhost.fun
+endpoint = https://storage.reverhost.com
 region = us-east-1
 force_path_style = true
 access_key_id = <key>
@@ -745,7 +745,7 @@ ${fence("npx ezhst storage create files\nnpx ezhst storage info --json\nrclone c
 
 ## Update your app
 
-${fence("npx ezhst env set S3_ENDPOINT=https://storage.easyhost.fun S3_BUCKET=<bucket>\nnpx ezhst redeploy")}
+${fence("npx ezhst env set S3_ENDPOINT=https://storage.reverhost.com S3_BUCKET=<bucket>\nnpx ezhst redeploy")}
 
 Use path-style URLs in your client. See the [storage product page](/products/storage).`,
       faq: [],
@@ -1048,7 +1048,7 @@ const indexPages = (pages) => {
 };
 
 const legalPages = () => {
-  const contact = "If you have any questions, write to us at [hello@easyhost.fun](mailto:hello@easyhost.fun). We are happy to help.";
+  const contact = "If you have any questions, write to us at [hello@reverhost.com](mailto:hello@reverhost.com). We are happy to help.";
   return [
     {
       family: "legal",

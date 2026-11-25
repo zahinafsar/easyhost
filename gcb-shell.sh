@@ -48,7 +48,7 @@ echo ""
 echo "GCP_PROJECT_ID=${PROJECT_ID}"
 echo "GCB_BUCKET=${BUCKET}"
 echo "GCP_SERVICE_ACCOUNT_KEY=$(base64 -w0 key.json)"
-echo "REGISTRY_URL=https://registry.easyhost.fun"
+echo "REGISTRY_URL=https://registry.reverhost.com"
 echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}"
 
 rm key.json

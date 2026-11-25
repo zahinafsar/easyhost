@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://easyhost.fun/sitemap.xml
+Sitemap: https://reverhost.com/sitemap.xml

@@ -3,7 +3,7 @@ import path from "node:path";
 import { inline, renderMarkdown } from "./markdown.mjs";
 import { buildPages } from "./pages.mjs";
 
-export const SITE = "https://easyhost.fun";
+export const SITE = "https://reverhost.com";
 export const UPDATED = "2026-11-10";
 export const UPDATED_LABEL = new Date(UPDATED).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
@@ -103,9 +103,9 @@ export const FOOTER_COLUMNS = [
       ["/skill.md", "skill.md"],
       ["/llms.txt", "llms.txt"],
       ["/sitemap.xml", "Sitemap"],
-      ["https://app.easyhost.fun/login", "Log in"],
-      ["https://app.easyhost.fun/register", "Sign up"],
-      ["mailto:hello@easyhost.fun", "Contact"],
+      ["https://app.reverhost.com/login", "Log in"],
+      ["https://app.reverhost.com/register", "Sign up"],
+      ["mailto:hello@reverhost.com", "Contact"],
       ["/privacy", "Privacy policy"],
       ["/terms", "Terms and conditions"],
     ],

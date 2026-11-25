@@ -10,6 +10,7 @@ const REQUIRED = [
   "USERDB_PUBLIC_HOST",
   "USERDB_PUBLIC_PORT",
   "USERDB_PUBLIC_SSLMODE",
+  "PLATFORM_DOMAIN",
   "APPS_DOMAIN",
   "APPS_PROTOCOL",
   "PUBLIC_IP",
@@ -91,7 +92,7 @@ const readServiceAccount = () => {
 
 const registryUrl = url("REGISTRY_URL");
 if (registryUrl.protocol !== "https:" || registryUrl.pathname !== "/") {
-  throw new Error("Environment variable REGISTRY_URL must be an https origin like https://registry.easyhost.fun");
+  throw new Error("Environment variable REGISTRY_URL must be an https origin like https://registry.reverhost.com");
 }
 
 const readNpm = () => {
@@ -126,6 +127,7 @@ export const env = {
     publicPort: integer("USERDB_PUBLIC_PORT"),
     publicSslMode: oneOf("USERDB_PUBLIC_SSLMODE", ["no-verify", "require", "verify-full"] as const),
   },
+  platformDomain: raw("PLATFORM_DOMAIN"),
   appsDomain: raw("APPS_DOMAIN"),
   appsProtocol: oneOf("APPS_PROTOCOL", ["http", "https"] as const),
   publicIp: raw("PUBLIC_IP"),

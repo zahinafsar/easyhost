@@ -72,15 +72,15 @@ if (process.env.NODE_ENV === "production") {
   const marketingNotFound = readFileSync(`${marketingRoot}/404.html`, "utf8");
   server.use("*", async (c, next) => {
     const host = c.req.header("host");
-    if (host === `www.${env.appsDomain}`) {
+    if (host === `www.${env.platformDomain}`) {
       const url = new URL(c.req.url);
-      return c.redirect(`https://${env.appsDomain}${url.pathname}${url.search}`, 301);
+      return c.redirect(`https://${env.platformDomain}${url.pathname}${url.search}`, 301);
     }
-    if (host === env.appsDomain) {
+    if (host === env.platformDomain) {
       const path = c.req.path;
       if (path.length > 1 && path.endsWith("/")) {
         const url = new URL(c.req.url);
-        return c.redirect(`https://${env.appsDomain}${path.replace(/\/+$/, "")}${url.search}`, 301);
+        return c.redirect(`https://${env.platformDomain}${path.replace(/\/+$/, "")}${url.search}`, 301);
       }
       if (path.startsWith("/api/")) {
         return next();

@@ -48,8 +48,10 @@ export const releaseDomain = async (domain: AppDomain) => {
   }
 };
 
+const isUnder = (hostname: string, domain: string) => hostname === domain || hostname.endsWith(`.${domain}`);
+
 export const isPlatformHostname = (hostname: string) => {
-  return hostname === env.appsDomain || hostname.endsWith(`.${env.appsDomain}`);
+  return isUnder(hostname, env.appsDomain) || isUnder(hostname, env.platformDomain);
 };
 
 export const markDomainFailed = (id: string, error: string) => {

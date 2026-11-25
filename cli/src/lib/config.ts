@@ -6,7 +6,7 @@ const CONFIG_DIR = path.join(homedir(), ".easyhost");
 const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
 const PROJECT_FILE = ".easyhost.json";
 
-const PRODUCTION_API_URL = "https://api.easyhost.fun";
+const PRODUCTION_API_URL = "https://api.reverhost.com";
 
 type GlobalConfig = { apiUrl: string; token?: string };
 type LinkedProject = { projectId: string; slug: string; appId?: string };

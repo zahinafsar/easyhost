@@ -13,7 +13,7 @@
 - NPM must be connected to docker network `easyhost` (manual one-time step) and use docker resolver (resolvers.conf) so container names resolve per request
 - Existing custom-domain proxy hosts made before this pointed at easyhost-caddy; new ones forward to `eh-app-<slug>:3000`
 - Local dev: no app routing at all; `ROUTING` deploy step enum still exists in Prisma/CLI but the server no longer sets it
-- Shared postgres publishes 5432 directly; TLS cert for db.easyhost.fun issued in NPM and mounted read-only (NPM_LETSENCRYPT_DIR, POSTGRES_CERT_NAME), reloaded every 6h
+- Shared postgres publishes 5432 directly; TLS cert for db.reverhost.com issued in NPM and mounted read-only (NPM_LETSENCRYPT_DIR, POSTGRES_CERT_NAME), reloaded every 6h
 - Custom app domains: in production, the API creates an NPM certificate then proxy host via NPM API (dedicated NPM user with "Created Items Only" recommended); local development skips NPM
 
 ## Features
@@ -116,9 +116,9 @@
 - Microsoft Clarity (project zbbols99ao) is in client/index.html only (dashboard, user chose not marketing, 2026-11-10); skipped on localhost/127.0.0.1
 
 ## Cloud builds (2026-11-12)
-- Builds moved off the VPS to Google Cloud Build (user picked GCB as cheapest: 2,500 free build-minutes/month on e2-standard-2, then $0.006/min). User rejected GitHub Actions (terms risk) and GHCR; images go to a self-hosted registry:2 at registry.easyhost.fun (prod compose services registry + registry-init that writes htpasswd for user easyhost from REGISTRY_PASSWORD, volumes registry_data/registry_auth, NPM proxy host to easyhost-registry:5000 with client_max_body_size 0)
+- Builds moved off the VPS to Google Cloud Build (user picked GCB as cheapest: 2,500 free build-minutes/month on e2-standard-2, then $0.006/min). User rejected GitHub Actions (terms risk) and GHCR; images go to a self-hosted registry:2 at registry.reverhost.com (prod compose services registry + registry-init that writes htpasswd for user easyhost from REGISTRY_PASSWORD, volumes registry_data/registry_auth, NPM proxy host to easyhost-registry:5000 with client_max_body_size 0)
 - User wants Cloud Build everywhere, including local dev (local API pushes to and pulls from the production registry)
-- Code: server/src/lib/cloud-build.ts (REST via google-auth-library, region us-central1, source + logs in GCB_BUCKET, logging GCS_ONLY, build runs as the easyhost-builder service account, secret registry-password from Secret Manager, 20 min timeout), server/src/lib/registry.ts (imageTag registry.easyhost.fun/apps/<slug>:<id>, pullImage, removeAppImage = local + registry manifest delete, startRegistryGc every 6h in prod when nothing BUILDING). Deployment.cloudBuildId (migration cloud_build_id, applied locally) lets a restarted API resume watching builds. concurrentBuilds raised to 5. App env goes to builds as BuildKit secret file appenv, not build args
+- Code: server/src/lib/cloud-build.ts (REST via google-auth-library, region us-central1, source + logs in GCB_BUCKET, logging GCS_ONLY, build runs as the easyhost-builder service account, secret registry-password from Secret Manager, 20 min timeout), server/src/lib/registry.ts (imageTag registry.reverhost.com/apps/<slug>:<id>, pullImage, removeAppImage = local + registry manifest delete, startRegistryGc every 6h in prod when nothing BUILDING). Deployment.cloudBuildId (migration cloud_build_id, applied locally) lets a restarted API resume watching builds. concurrentBuilds raised to 5. App env goes to builds as BuildKit secret file appenv, not build args
 - Env: GCP_PROJECT_ID, GCB_BUCKET, GCP_SERVICE_ACCOUNT_KEY (base64 JSON key), REGISTRY_URL, REGISTRY_PASSWORD
 - GCP setup (user runs in Cloud Shell): enable cloudbuild, secretmanager, storage APIs; bucket with 1 day lifecycle; service account easyhost-builder with cloudbuild.builds.editor, logging.logWriter, serviceAccountUser on itself, storage.admin on bucket (objectAdmin is not enough: Cloud Build needs storage.buckets.get on the logs bucket), secretAccessor on registry-password
 - Verified working end to end 2026-11-12 (Next.js app, about 5 min: build 85s, push of a 1.1 GB layer 96s, VPS pull 25s). User declined a bigger machine and removing .next/cache. Big transfers come from the 1.1 GB npm ci layer being rebuilt with a new digest on every fresh Cloud Build machine (registry push + VPS pull); dependency layer reuse was proposed, not built
@@ -148,3 +148,9 @@
 - Home pricing section (#limits, 2026-11-23) redone again as two plan cards (.plans/.plan/.plan-pro dark with lime offset shadow), "Every plan" shared line below; old .limits/.limit-table/.price CSS removed
 - server/Dockerfile marketing stage copies both limits.ts and plans.ts (site.mjs readLimits reads both); missing plans.ts broke prod build (2026-11-23)
 - server/Dockerfile chains heavy build steps (vite, then astro, then tsc) with dummy COPY --from lines (/tmp/after-dashboard, /tmp/after-marketing) so the VPS does not run all three at once; parallel builds starved the VPS and took the server down (2026-11-23)
+- Manual Pro grants: Subscription row provider "manual", providerSubscriptionId "manual_<userId>", status ACTIVE (no admin UI). Prod DB reachable from dev machine via .env.production DATABASE_URL with host swapped to db.reverhost.com:5432 (TLS, use node pg from server/, no local psql). afsarzahin@gmail.com granted Pro this way on 2026-11-23
+
+## Domain split (2026-11-25)
+- Platform moved to reverhost.com: marketing (root), www, app, api, storage, registry, db, hello@ email. User apps stay on `<slug>.easyhost.fun` (APPS_DOMAIN=easyhost.fun)
+- New required env PLATFORM_DOMAIN (reverhost.com in prod, localhost locally) drives marketing/www Host routing in server/src/index.ts; isPlatformHostname rejects custom domains under either domain
+- Marketing copy, SKILL.md, CLI PRODUCTION_API_URL (api.reverhost.com), start.mjs and env templates updated; app URL examples kept on easyhost.fun
