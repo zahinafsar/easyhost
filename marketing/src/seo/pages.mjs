@@ -2,7 +2,7 @@ import { AGENTS, COMPETITORS, DNS_PROVIDERS, FRAMEWORKS, MANAGERS, ORMS, POSTGRE
 import { CLI_COMMANDS, CONCEPTS, ERRORS } from "./reference.mjs";
 import { slugify } from "./markdown.mjs";
 
-const HOME = { name: "EasyHost", path: "/" };
+const HOME = { name: "Reverhost", path: "/" };
 const GUIDES = { name: "Guides", path: "/guides" };
 const FRAMEWORKS_HUB = { name: "Frameworks", path: "/frameworks" };
 const MIGRATE = { name: "Migrate", path: "/migrate" };
@@ -53,10 +53,10 @@ const hostingPages = (limits) => {
     return {
       family: "hosting",
       path: hostingPath(framework),
-      title: `Free ${framework.name} Hosting With Postgres and S3 | EasyHost`,
+      title: `Free ${framework.name} Hosting With Postgres and S3 | Reverhost`,
       description: `Host a ${framework.name} app for $0 on an always-on container, with Postgres, S3 storage and custom domains. No credit card. See the exact limits.`,
       h1: `Free ${framework.name} hosting`,
-      lead: `EasyHost runs ${framework.name}, a ${framework.kind}, in an always-on Node.js container for $0. No credit card is needed, and your agent can deploy it with one instruction.`,
+      lead: `Reverhost runs ${framework.name}, a ${framework.kind}, in an always-on Node.js container for $0. No credit card is needed, and your agent can deploy it with one instruction.`,
       crumbs: [HOME, FRAMEWORKS_HUB, { name: framework.name, path: hubPath(framework) }, { name: "Free hosting", path: hostingPath(framework) }],
       body: `## What you get
 
@@ -67,7 +67,7 @@ const hostingPages = (limits) => {
 
 ## How ${framework.name} builds and runs
 
-| Step | What EasyHost uses |
+| Step | What Reverhost uses |
 | --- | --- |
 | Build | ${framework.build} |
 | Start | ${framework.start} |
@@ -91,9 +91,9 @@ Apps run in one region, with no edge network, preview deployments or Git integra
 
 ${frameworkLinks(framework)} To let an agent do this for you, read [deploy ${framework.name} with Claude Code](/guides/deploy-${framework.id}-with-claude-code).`,
       faq: [
-        { q: `Is ${framework.name} hosting on EasyHost really free?`, a: "Yes. It costs $0 per month with no credit card and no trial period, within the published limits." },
-        { q: `Does my ${framework.name} app sleep when idle?`, a: "No. EasyHost apps run in an always-on container and do not sleep when idle." },
-        { q: `Do I need a Dockerfile for ${framework.name}?`, a: "No. EasyHost builds an image from your source using the commands it detects or the ones you set." },
+        { q: `Is ${framework.name} hosting on Reverhost really free?`, a: "Yes. It costs $0 per month with no credit card and no trial period, within the published limits." },
+        { q: `Does my ${framework.name} app sleep when idle?`, a: "No. Reverhost apps run in an always-on container and do not sleep when idle." },
+        { q: `Do I need a Dockerfile for ${framework.name}?`, a: "No. Reverhost builds an image from your source using the commands it detects or the ones you set." },
       ],
     };
   });
@@ -111,8 +111,8 @@ const agentPages = () => {
       pages.push({
         family: "agent-guides",
         path: `/guides/deploy-${framework.id}-with-${agent.id}`,
-        title: `Deploy ${framework.name} With ${agent.name} for Free | EasyHost`,
-        description: `Let ${agent.name} deploy your ${framework.name} app to EasyHost for free. Install the skill, give one instruction, and see each command the agent runs.`,
+        title: `Deploy ${framework.name} With ${agent.name} for Free | Reverhost`,
+        description: `Let ${agent.name} deploy your ${framework.name} app to Reverhost for free. Install the skill, give one instruction, and see each command the agent runs.`,
         h1: `Deploy ${framework.name} with ${agent.name}`,
         lead: `Install one skill, and ${agent.name} can create the project, set your variables and put your ${framework.name} app online. It costs $0, with no credit card.`,
         crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: agent.name, path: `/guides/deploy-${framework.id}-with-${agent.id}` }],
@@ -128,7 +128,7 @@ If ${agent.name} does not discover the skill, ask it to read the installed ${q("
 
 ## Tell ${agent.name} to deploy
 
-${fence(`Deploy this ${framework.name} app to EasyHost. Read the EasyHost skill first. Report the live URL when it is running.`, "Prompt")}
+${fence(`Deploy this ${framework.name} app to Reverhost. Read the Reverhost skill first. Report the live URL when it is running.`, "Prompt")}
 
 ## What the agent runs
 
@@ -150,7 +150,7 @@ ${fence("npx ezhst deployments log --json\nnpx ezhst logs --tail 200 --json")}
 
 If the build passes but nothing loads, see [why a ${framework.name} app is unreachable](/errors/${framework.id}-app-unreachable). ${frameworkLinks(framework)}`,
         faq: [
-          { q: `Can ${agent.name} create an EasyHost account for me?`, a: "Yes. The skill tells the agent to ask for your name, email and password and then register. You then give the agent the 6-digit verification code from your inbox, and it runs `ezhst verify <code>` before anything else." },
+          { q: `Can ${agent.name} create an Reverhost account for me?`, a: "Yes. The skill tells the agent to ask for your name, email and password and then register. You then give the agent the 6-digit verification code from your inbox, and it runs `ezhst verify <code>` before anything else." },
           { q: `Will ${agent.name} see my secrets?`, a: "The agent can read files and command output in its session. The skill tells it to put secrets in env vars and not to print them back unless you ask." },
         ],
       });
@@ -166,12 +166,12 @@ const managerPages = () => {
       pages.push({
         family: "package-manager-guides",
         path: `/guides/deploy-${framework.id}-with-${manager.id}`,
-        title: `Deploy a ${framework.name} App With ${manager.name} | EasyHost`,
-        description: `How EasyHost installs and builds a ${framework.name} project that uses ${manager.name}: the lockfile it looks for, the exact commands, and common failures.`,
+        title: `Deploy a ${framework.name} App With ${manager.name} | Reverhost`,
+        description: `How Reverhost installs and builds a ${framework.name} project that uses ${manager.name}: the lockfile it looks for, the exact commands, and common failures.`,
         h1: `Deploy a ${framework.name} app that uses ${manager.name}`,
-        lead: `EasyHost picks ${manager.name} when it finds ${q(manager.lockfile)}. There is nothing to configure, and these are the exact commands it runs for ${framework.name}.`,
+        lead: `Reverhost picks ${manager.name} when it finds ${q(manager.lockfile)}. There is nothing to configure, and these are the exact commands it runs for ${framework.name}.`,
         crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: manager.name, path: `/guides/deploy-${framework.id}-with-${manager.id}` }],
-        body: `## What EasyHost runs
+        body: `## What Reverhost runs
 
 | Step | Command |
 | --- | --- |
@@ -192,7 +192,7 @@ ${fence(deploySteps(framework))}
 
 ${manager.note}
 
-Commit ${q(manager.lockfile)}. Without any lockfile, EasyHost falls back to ${q("npm install")}. To replace the install step, run ${q('ezhst build set --install "<command>"')}.
+Commit ${q(manager.lockfile)}. Without any lockfile, Reverhost falls back to ${q("npm install")}. To replace the install step, run ${q('ezhst build set --install "<command>"')}.
 
 ## Next steps
 
@@ -232,10 +232,10 @@ const ormPage = (framework, orm, migrateNote) => {
   return {
     family: "database-guides",
     path,
-    title: `${framework.name} With ${orm.name} and Free Postgres | EasyHost`,
-    description: `Connect ${framework.name} to a free Postgres 16 database using ${orm.name}: install, client setup, a working route, migrations and deployment on EasyHost.`,
+    title: `${framework.name} With ${orm.name} and Free Postgres | Reverhost`,
+    description: `Connect ${framework.name} to a free Postgres 16 database using ${orm.name}: install, client setup, a working route, migrations and deployment on Reverhost.`,
     h1: `Use ${orm.name} with ${framework.name} and Postgres`,
-    lead: `Connect a ${framework.name} app to a free EasyHost Postgres database using ${orm.name}, from install to deployment.`,
+    lead: `Connect a ${framework.name} app to a free Reverhost Postgres database using ${orm.name}, from install to deployment.`,
     crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: orm.name, path }],
     body: `## Create the database
 
@@ -259,7 +259,7 @@ ${fence(route.code, route.label)}
 
 ## Run migrations
 
-Run migrations from your machine, with ${q("DATABASE_URL")} set to the EasyHost connection string.
+Run migrations from your machine, with ${q("DATABASE_URL")} set to the Reverhost connection string.
 
 ${fence(orm.migrate)}
 
@@ -271,8 +271,8 @@ ${fence("npx ezhst deploy")}${buildBlock}
 
 Each database allows 20 concurrent connections, and ${framework.name} shares them across requests. ${frameworkLinks(framework)} See also the [Postgres product page](/products/postgres).`,
     faq: [
-      { q: `Is Postgres free for my ${framework.name} app?`, a: "Yes. Each EasyHost project can have one Postgres 16 database with no expiry date." },
-      { q: `Can I use ${orm.name} locally against the same database?`, a: "Yes. The connection string works from outside EasyHost. A separate development database is safer once you have real data." },
+      { q: `Is Postgres free for my ${framework.name} app?`, a: "Yes. Each Reverhost project can have one Postgres 16 database with no expiry date." },
+      { q: `Can I use ${orm.name} locally against the same database?`, a: "Yes. The connection string works from outside Reverhost. A separate development database is safer once you have real data." },
     ],
   };
 };
@@ -307,7 +307,7 @@ const storagePages = () => {
       pages.push({
         family: "storage-guides",
         path,
-        title: `${framework.name} File Uploads With the ${client.name} | EasyHost`,
+        title: `${framework.name} File Uploads With the ${client.name} | Reverhost`,
         description: `Add file uploads to ${framework.name} using the ${client.name} and free S3 compatible storage. Includes a presigned upload route and the required settings.`,
         h1: `${framework.name} file uploads with the ${client.name}`,
         lead: `Let the browser upload straight to a free S3 compatible bucket, using a short-lived URL from your ${framework.name} server. Your 512 MB container never holds the file.`,
@@ -356,10 +356,10 @@ const envPages = () => {
     return {
       family: "env-guides",
       path,
-      title: `${framework.name} Environment Variables in Production | EasyHost`,
-      description: `How ${framework.name} reads environment variables on EasyHost: public and private values, build time and runtime, and importing your local .env file.`,
+      title: `${framework.name} Environment Variables in Production | Reverhost`,
+      description: `How ${framework.name} reads environment variables on Reverhost: public and private values, build time and runtime, and importing your local .env file.`,
       h1: `${framework.name} environment variables in production`,
-      lead: `${q(".env")} files are never uploaded to EasyHost. Here is how to set variables for ${framework.name}, and when each one takes effect.`,
+      lead: `${q(".env")} files are never uploaded to Reverhost. Here is how to set variables for ${framework.name}, and when each one takes effect.`,
       crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: "Environment variables", path }],
       body: `## How ${framework.name} reads variables
 
@@ -371,7 +371,7 @@ ${fence(`npx ezhst env set ${framework.publicExample}\nnpx ezhst env import .env
 
 Variables apply on the next ${q("deploy")} or ${q("redeploy")}.
 
-## What EasyHost provides
+## What Reverhost provides
 
 | Variable | Value | Available |
 | --- | --- | --- |
@@ -401,10 +401,10 @@ const monorepoPages = (limits) => {
     return {
       family: "monorepo-guides",
       path,
-      title: `Deploy ${framework.name} From a Monorepo | EasyHost`,
-      description: `Deploy a ${framework.name} app from a Turborepo, Nx or workspace monorepo. Set one root directory, and EasyHost installs at the lockfile and builds your app.`,
+      title: `Deploy ${framework.name} From a Monorepo | Reverhost`,
+      description: `Deploy a ${framework.name} app from a Turborepo, Nx or workspace monorepo. Set one root directory, and Reverhost installs at the lockfile and builds your app.`,
       h1: `Deploy ${framework.name} from a monorepo`,
-      lead: `Run the deploy from your repository root and tell EasyHost which folder holds your ${framework.name} app. It installs where the lockfile is and builds in your app folder.`,
+      lead: `Run the deploy from your repository root and tell Reverhost which folder holds your ${framework.name} app. It installs where the lockfile is and builds in your app folder.`,
       crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: "Monorepo", path }],
       body: `## Set the root directory
 
@@ -429,7 +429,7 @@ Nx works the same way with ${q("npx nx build <project>")}.
 
 ## Several apps, one project
 
-A project holds ${limits.apps} apps. Create one EasyHost app per deployable folder and set each root directory. They share the project's database and bucket.
+A project holds ${limits.apps} apps. Create one Reverhost app per deployable folder and set each root directory. They share the project's database and bucket.
 
 ${frameworkLinks(framework)}`,
       faq: [
@@ -445,7 +445,7 @@ const unreachablePages = () => {
     return {
       family: "errors",
       path,
-      title: `${framework.name} Build Succeeds but App Is Unreachable | EasyHost`,
+      title: `${framework.name} Build Succeeds but App Is Unreachable | Reverhost`,
       description: `Your ${framework.name} deployment finished, but the URL does not load. Check the host and port binding, runtime logs and the most common ${framework.name} cause.`,
       h1: `${framework.name} deploys, but the app is unreachable`,
       lead: `If the build passes and the URL still fails, ${framework.name} is either not listening where the platform expects or it crashed while starting.`,
@@ -484,10 +484,10 @@ const dnsPages = () => {
     return {
       family: "domain-guides",
       path,
-      title: `Connect a ${provider.name} Domain to Your App | EasyHost`,
-      description: `Point a domain managed at ${provider.name} to your EasyHost app with free HTTPS. The exact records to create, where to find them, and how to verify.`,
-      h1: `Connect a ${provider.name} domain to EasyHost`,
-      lead: `Add one DNS record at ${provider.name}, verify it, and EasyHost issues the HTTPS certificate.`,
+      title: `Connect a ${provider.name} Domain to Your App | Reverhost`,
+      description: `Point a domain managed at ${provider.name} to your Reverhost app with free HTTPS. The exact records to create, where to find them, and how to verify.`,
+      h1: `Connect a ${provider.name} domain to Reverhost`,
+      lead: `Add one DNS record at ${provider.name}, verify it, and Reverhost issues the HTTPS certificate.`,
       crumbs: [HOME, GUIDES, { name: `${provider.name} domain`, path }],
       body: `## Add the domain to your app
 
@@ -523,21 +523,21 @@ const comparisonPages = () => {
     return {
       family: "alternatives",
       path,
-      title: `A Free ${competitor.name} Alternative for Node.js Apps | EasyHost`,
-      description: `EasyHost compared with ${competitor.name} for hosting Node.js apps: free limits, runtime differences, what you lose by switching, and how to migrate.`,
+      title: `A Free ${competitor.name} Alternative for Node.js Apps | Reverhost`,
+      description: `Reverhost compared with ${competitor.name} for hosting Node.js apps: free limits, runtime differences, what you lose by switching, and how to migrate.`,
       h1: `A free ${competitor.name} alternative for Node.js`,
-      lead: `EasyHost is a smaller, free option for Node.js apps. Here are the honest differences from ${competitor.name}, including what you give up.`,
+      lead: `Reverhost is a smaller, free option for Node.js apps. Here are the honest differences from ${competitor.name}, including what you give up.`,
       crumbs: [HOME, ALTERNATIVES, { name: competitor.name, path }],
       body: `## How they compare
 
 According to [${competitor.name}'s own page](${competitor.source}) as of October 2026, ${competitor.fact}. Check it for current details.
 
-| Area | ${competitor.name} | EasyHost |
+| Area | ${competitor.name} | Reverhost |
 | --- | --- | --- |
 ${rows}
 | Included with each app | Varies by plan | Postgres and S3 bucket per project |
 
-## When EasyHost fits
+## When Reverhost fits
 
 - Side projects, prototypes and small apps written for Node.js
 - Projects where an AI agent handles deployment through a CLI
@@ -551,9 +551,9 @@ ${rows}
 
 ## How to move
 
-Read the [${competitor.name} migration guide](/migrate/${competitor.id}). If you have a database there, EasyHost's [Postgres](/products/postgres) accepts a normal ${q("pg_dump")}.`,
+Read the [${competitor.name} migration guide](/migrate/${competitor.id}). If you have a database there, Reverhost's [Postgres](/products/postgres) accepts a normal ${q("pg_dump")}.`,
       faq: [
-        { q: `Is EasyHost a full replacement for ${competitor.name}?`, a: "Not for every app. It runs Node.js only, in one region, with fixed limits. It suits small apps that fit those limits." },
+        { q: `Is Reverhost a full replacement for ${competitor.name}?`, a: "Not for every app. It runs Node.js only, in one region, with fixed limits. It suits small apps that fit those limits." },
       ],
     };
   });
@@ -575,21 +575,21 @@ const migrationHubPages = () => {
     return {
       family: "migration-guides",
       path,
-      title: `Migrate From ${competitor.name} to EasyHost | EasyHost`,
-      description: `Move a Node.js app from ${competitor.name} to EasyHost: export your variables, remove ${competitor.configFile}, deploy with the CLI, then switch DNS.`,
-      h1: `Migrate from ${competitor.name} to EasyHost`,
+      title: `Migrate From ${competitor.name} to Reverhost | Reverhost`,
+      description: `Move a Node.js app from ${competitor.name} to Reverhost: export your variables, remove ${competitor.configFile}, deploy with the CLI, then switch DNS.`,
+      h1: `Migrate from ${competitor.name} to Reverhost`,
       lead: `Your code mostly stays the same. Export your variables, deploy with the CLI, then switch your domain once the new app works.`,
       crumbs: [HOME, MIGRATE, { name: competitor.name, path }],
       body: `## Steps
 
 1. Export your variables. ${exportInstruction(competitor)}.
-2. Remove or ignore ${q(competitor.configFile)}, because EasyHost does not read it.
+2. Remove or ignore ${q(competitor.configFile)}, because Reverhost does not read it.
 3. Deploy with ${q("npx ezhst deploy")}, and test the ${q("easyhost.fun")} URL.
-4. Move your data, then point your domain at EasyHost.
+4. Move your data, then point your domain at Reverhost.
 
 ## What changes
 
-${competitor.name} runs your app on ${competitor.runtime}. EasyHost runs one always-on Node.js container with 512 MB of RAM and 1 CPU, in one region.
+${competitor.name} runs your app on ${competitor.runtime}. Reverhost runs one always-on Node.js container with 512 MB of RAM and 1 CPU, in one region.
 
 ## Choose your framework
 
@@ -616,16 +616,16 @@ const migrationPages = () => {
       pages.push({
         family: "migration-framework-guides",
         path,
-        title: `Migrate ${framework.name} From ${competitor.name} | EasyHost`,
-        description: `Move a ${framework.name} app from ${competitor.name} to EasyHost: export variables, change the adapter if needed, deploy, test and switch your domain.`,
-        h1: `Migrate ${framework.name} from ${competitor.name} to EasyHost`,
+        title: `Migrate ${framework.name} From ${competitor.name} | Reverhost`,
+        description: `Move a ${framework.name} app from ${competitor.name} to Reverhost: export variables, change the adapter if needed, deploy, test and switch your domain.`,
+        h1: `Migrate ${framework.name} from ${competitor.name} to Reverhost`,
         lead: `Move your ${framework.name} app in four steps, and keep ${competitor.name} running until the new deployment works.`,
         crumbs: [HOME, MIGRATE, { name: competitor.name, path: `/migrate/${competitor.id}` }, { name: framework.name, path }],
         body: `## Export your variables
 
 ${exportLine}
 
-Then import them into EasyHost.
+Then import them into Reverhost.
 
 ${fence("npx ezhst env import .env")}
 
@@ -633,7 +633,7 @@ ${fence("npx ezhst env import .env")}
 
 ${framework.adapterSwap}
 
-${q(competitor.configFile)} is not read by EasyHost, so its build and routing rules need moving into your app or into build settings.
+${q(competitor.configFile)} is not read by Reverhost, so its build and routing rules need moving into your app or into build settings.
 
 ${framework.setup}
 
@@ -641,7 +641,7 @@ ${framework.setup}
 
 ${fence(deploySteps(framework))}
 
-Test your ${q("easyhost.fun")} URL before changing DNS. ${competitor.name} runs your app on ${competitor.runtime}, so check anything that depends on it, such as platform functions or cron configuration. EasyHost does not run scheduled jobs.
+Test your ${q("easyhost.fun")} URL before changing DNS. ${competitor.name} runs your app on ${competitor.runtime}, so check anything that depends on it, such as platform functions or cron configuration. Reverhost does not run scheduled jobs.
 
 ## Switch your domain
 
@@ -661,10 +661,10 @@ const postgresMigrationPages = () => {
     return {
       family: "migration-guides",
       path,
-      title: `Move Postgres From ${source.name} to EasyHost | EasyHost`,
-      description: `Copy a Postgres database from ${source.name} to free EasyHost Postgres with pg_dump and psql, including the right connection string and what to check.`,
+      title: `Move Postgres From ${source.name} to Reverhost | Reverhost`,
+      description: `Copy a Postgres database from ${source.name} to free Reverhost Postgres with pg_dump and psql, including the right connection string and what to check.`,
       h1: `Move a Postgres database from ${source.name}`,
-      lead: `Use the standard ${q("pg_dump")} and ${q("psql")} tools to copy your data into a free Postgres 16 database on EasyHost.`,
+      lead: `Use the standard ${q("pg_dump")} and ${q("psql")} tools to copy your data into a free Postgres 16 database on Reverhost.`,
       crumbs: [HOME, MIGRATE, { name: "Postgres", path: "/migrate/postgres" }, { name: source.name, path }],
       body: `## Get both connection strings
 
@@ -692,10 +692,10 @@ Each database allows 20 connections and lives on a shared server, so check that 
     {
       family: "migration-guides",
       path: "/migrate/postgres",
-      title: "Migrate a Postgres Database to EasyHost | EasyHost",
-      description: "Move a Postgres database to free EasyHost Postgres with pg_dump and pg_restore. Choose your current provider for the exact connection details.",
-      h1: "Migrate a Postgres database to EasyHost",
-      lead: "EasyHost runs standard Postgres 16, so ordinary dump and restore tools work.",
+      title: "Migrate a Postgres Database to Reverhost | Reverhost",
+      description: "Move a Postgres database to free Reverhost Postgres with pg_dump and pg_restore. Choose your current provider for the exact connection details.",
+      h1: "Migrate a Postgres database to Reverhost",
+      lead: "Reverhost runs standard Postgres 16, so ordinary dump and restore tools work.",
       crumbs: [HOME, MIGRATE, { name: "Postgres", path: "/migrate/postgres" }],
       body: `## Choose your provider\n\n${links}`,
       faq: [],
@@ -713,10 +713,10 @@ const storageMigrationPages = () => {
     return {
       family: "migration-guides",
       path,
-      title: `Move Files From ${source.name} to EasyHost | EasyHost`,
-      description: `Copy files from ${source.name} to a free S3 compatible bucket on EasyHost using rclone, with the exact remote configuration and a public-files warning.`,
-      h1: `Move files from ${source.name} to EasyHost`,
-      lead: `Use rclone to copy a bucket from ${source.name} into EasyHost storage.`,
+      title: `Move Files From ${source.name} to Reverhost | Reverhost`,
+      description: `Copy files from ${source.name} to a free S3 compatible bucket on Reverhost using rclone, with the exact remote configuration and a public-files warning.`,
+      h1: `Move files from ${source.name} to Reverhost`,
+      lead: `Use rclone to copy a bucket from ${source.name} into Reverhost storage.`,
       crumbs: [HOME, MIGRATE, { name: "Storage", path: "/migrate/storage" }, { name: source.name, path }],
       body: `## Configure rclone
 
@@ -726,7 +726,7 @@ provider = ${source.provider}
 access_key_id = <key>
 secret_access_key = <secret>${endpointLine}
 
-[easyhost]
+[reverhost]
 type = s3
 provider = Minio
 endpoint = https://storage.reverhost.com
@@ -737,11 +737,11 @@ secret_access_key = <secret>`, "rclone.conf")}
 
 ${source.note}
 
-> Every file on EasyHost is public by URL. Do not copy private files.
+> Every file on Reverhost is public by URL. Do not copy private files.
 
 ## Copy
 
-${fence("npx ezhst storage create files\nnpx ezhst storage info --json\nrclone copy source:my-bucket easyhost:<bucket> --progress")}
+${fence("npx ezhst storage create files\nnpx ezhst storage info --json\nrclone copy source:my-bucket reverhost:<bucket> --progress")}
 
 ## Update your app
 
@@ -757,10 +757,10 @@ Use path-style URLs in your client. See the [storage product page](/products/sto
     {
       family: "migration-guides",
       path: "/migrate/storage",
-      title: "Migrate S3 Files to EasyHost Storage | EasyHost",
-      description: "Copy files from another S3 compatible service to free EasyHost storage with rclone. Choose your current provider for the exact configuration.",
-      h1: "Migrate S3 files to EasyHost",
-      lead: "EasyHost storage speaks the S3 API, so rclone can copy your files directly.",
+      title: "Migrate S3 Files to Reverhost Storage | Reverhost",
+      description: "Copy files from another S3 compatible service to free Reverhost storage with rclone. Choose your current provider for the exact configuration.",
+      h1: "Migrate S3 files to Reverhost",
+      lead: "Reverhost storage speaks the S3 API, so rclone can copy your files directly.",
       crumbs: [HOME, MIGRATE, { name: "Storage", path: "/migrate/storage" }],
       body: `## Choose your provider\n\n${links}`,
       faq: [],
@@ -774,7 +774,7 @@ const productPages = () => {
     return {
       family: "products",
       path,
-      title: `${product.title} | EasyHost`,
+      title: `${product.title} | Reverhost`,
       description: product.summary.replaceAll("`", ""),
       h1: product.name,
       lead: product.summary,
@@ -803,10 +803,10 @@ const pricingPage = (limits) => {
   return {
     family: "products",
     path: "/pricing",
-    title: "EasyHost Pricing: $0 With Published Limits",
-    description: `EasyHost is free for ${limits.projects} projects with ${limits.apps} apps each, Postgres and S3 storage. Pro is $${limits.proPrice} a month for ${limits.proProjects} projects and AI tokens.`,
+    title: "Reverhost Pricing: $0 With Published Limits",
+    description: `Reverhost is free for ${limits.projects} projects with ${limits.apps} apps each, Postgres and S3 storage. Pro is $${limits.proPrice} a month for ${limits.proProjects} projects and AI tokens.`,
     h1: "Pricing and limits",
-    lead: `Hosting on EasyHost starts at $0 per month, with no credit card and no trial period. Pro costs $${limits.proPrice} a month and adds more projects and monthly AI tokens.`,
+    lead: `Hosting on Reverhost starts at $0 per month, with no credit card and no trial period. Pro costs $${limits.proPrice} a month and adds more projects and monthly AI tokens.`,
     crumbs: [HOME, { name: "Pricing", path: "/pricing" }],
     body: `## Plans
 
@@ -842,7 +842,7 @@ Each account gets its first AI app and its first build free. After that, AI requ
 
 ## Compare
 
-See how EasyHost differs from [other hosts](/alternatives), or browse [products](/products).`,
+See how Reverhost differs from [other hosts](/alternatives), or browse [products](/products).`,
     faq: [
       { q: "Do I need a credit card?", a: "No. The free plan needs no card. You only pay if you upgrade to Pro." },
       { q: "What happens if a Pro payment fails?", a: "Your account goes back to the free plan until the payment goes through. Projects beyond the free limit are paused." },
@@ -866,8 +866,8 @@ const cliPages = () => {
     return {
       family: "cli-reference",
       path: commandPath(command),
-      title: `ezhst ${name} Command: CLI Reference | EasyHost`,
-      description: `${summary} Usage, notes and JSON output for the ezhst ${name} command in the EasyHost CLI.`,
+      title: `ezhst ${name} Command: CLI Reference | Reverhost`,
+      description: `${summary} Usage, notes and JSON output for the ezhst ${name} command in the Reverhost CLI.`,
       h1: `ezhst ${name}`,
       lead: summary,
       crumbs: [HOME, CLI, { name, path: commandPath(command) }],
@@ -888,11 +888,11 @@ ${fence(`npx ${usage.split(" <")[0].split(" [")[0]} --json`)}${relatedBlock}`,
 };
 
 const errorTitle = (error) => {
-  const full = `${error.title}: How to Fix It | EasyHost`;
+  const full = `${error.title}: How to Fix It | Reverhost`;
   if (full.length <= 65) {
     return full;
   }
-  return `${error.title} | EasyHost`;
+  return `${error.title} | Reverhost`;
 };
 
 const errorPages = () => {
@@ -942,7 +942,7 @@ const conceptPages = () => {
     return {
       family: "learn",
       path,
-      title: `${title} | EasyHost`,
+      title: `${title} | Reverhost`,
       description: conceptDescription(text),
       h1: title,
       lead: text.split(". ")[0] + ".",
@@ -951,7 +951,7 @@ const conceptPages = () => {
 
 ${text}
 
-## On EasyHost
+## On Reverhost
 
 ${onEasyHost} [Learn more](${link}).`,
       faq: [],
@@ -979,9 +979,9 @@ const frameworkHubPages = () => {
     return {
       family: "frameworks",
       path: hubPath(framework),
-      title: `${framework.name} on EasyHost: Guides and Hosting`,
-      description: `Everything for running ${framework.name} on EasyHost: free hosting, AI agent deploys, Postgres, file uploads and migration guides.`,
-      h1: `${framework.name} on EasyHost`,
+      title: `${framework.name} on Reverhost: Guides and Hosting`,
+      description: `Everything for running ${framework.name} on Reverhost: free hosting, AI agent deploys, Postgres, file uploads and migration guides.`,
+      h1: `${framework.name} on Reverhost`,
       lead: `${framework.name} is a ${framework.kind}. These guides cover hosting it for free and connecting it to Postgres and storage.`,
       crumbs: [HOME, FRAMEWORKS_HUB, { name: framework.name, path: hubPath(framework) }],
       body: `## Start here
@@ -1036,14 +1036,14 @@ const indexPages = (pages) => {
   const migrateLinks = COMPETITORS.map((competitor) => `- [From ${competitor.name}](/migrate/${competitor.id})`).join("\n");
   const productLinks = PRODUCTS.map((product) => `- [${product.name}](/products/${product.id})`).join("\n");
   return [
-    hub("/frameworks", "Frameworks You Can Host for Free | EasyHost", "Free hosting and deployment guides for Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi.", "Frameworks", "EasyHost runs any Node.js service. These frameworks have dedicated guides.", `## Choose a framework\n\n${guideLinks}`),
-    hub("/guides", "EasyHost Guides: Deploy, Database, Storage and Domains", "Step by step guides for deploying Node.js apps on EasyHost, connecting Postgres and S3 storage and adding custom domains.", "Guides", "Practical guides, grouped by framework.", `## By framework\n\n${guideLinks}\n\n## Custom domains\n\n${listFamily("domain-guides")}\n\n## Agents\n\n- [Deploy Next.js with AI agents](/guides/deploy-nextjs-with-ai-agents)`),
-    hub("/errors", "Node.js Deployment Errors and Fixes | EasyHost", "Fixes for common Node.js deployment errors: lockfile failures, missing modules, memory limits, database connections, S3 signatures and domain verification.", "Deployment errors", "Find your error message, why it happens and the commands that fix it.", `## All errors\n\n${listFamily("errors")}`),
-    hub("/learn", "Learn Hosting Concepts for Developers | EasyHost", "Short, plain explanations of hosting concepts for developers: object storage, connection pooling, migrations, DNS records, cold starts and more.", "Learn", "Short explanations of the hosting concepts that come up when you deploy an app.", `## Concepts\n\n${listFamily("learn")}`),
-    hub("/migrate", "Migrate to EasyHost From Other Hosts | EasyHost", "Move a Node.js app to EasyHost from Vercel, Render, Railway, Netlify, Fly.io, Heroku or Koyeb, along with your Postgres database and S3 files.", "Migrate to EasyHost", "Guides for moving your app and data.", `## Move your app\n\n${migrateLinks}\n\n## Move your data\n\n- [Postgres](/migrate/postgres)\n- [S3 files](/migrate/storage)`),
-    hub("/alternatives", "Free Alternatives to Popular Hosting Platforms | EasyHost", "Honest comparisons between EasyHost and Vercel, Render, Railway, Netlify, Fly.io, Heroku and Koyeb, including what you give up by switching.", "Alternatives", "Honest comparisons, including when the other platform is the better choice.", `## Compare\n\n${competitorLinks}`),
-    hub("/docs/cli", "ezhst CLI Reference: Every Command | EasyHost", "Reference for every ezhst command: account, deploy, env, build, domains, storage, database and members, with usage and JSON output notes.", "CLI reference", "One page per `ezhst` command. The [main docs](/docs) cover the same commands on a single page.", cliGroups),
-    hub("/products", "EasyHost Products: Hosting, Postgres, Storage, Domains", "On EasyHost: free Node.js hosting, Postgres, S3 storage, custom domains, team members, a CLI, an agent skill and an AI app builder.", "Products", "Hosting is free within the [published limits](/pricing). Pro adds more projects and monthly AI tokens.", `## All products\n\n${productLinks}`),
+    hub("/frameworks", "Frameworks You Can Host for Free | Reverhost", "Free hosting and deployment guides for Next.js, Nuxt, Express, NestJS, Fastify, Hono, Koa, AdonisJS, Remix, SvelteKit, Astro and Strapi.", "Frameworks", "Reverhost runs any Node.js service. These frameworks have dedicated guides.", `## Choose a framework\n\n${guideLinks}`),
+    hub("/guides", "Reverhost Guides: Deploy, Database, Storage and Domains", "Step by step guides for deploying Node.js apps on Reverhost, connecting Postgres and S3 storage and adding custom domains.", "Guides", "Practical guides, grouped by framework.", `## By framework\n\n${guideLinks}\n\n## Custom domains\n\n${listFamily("domain-guides")}\n\n## Agents\n\n- [Deploy Next.js with AI agents](/guides/deploy-nextjs-with-ai-agents)`),
+    hub("/errors", "Node.js Deployment Errors and Fixes | Reverhost", "Fixes for common Node.js deployment errors: lockfile failures, missing modules, memory limits, database connections, S3 signatures and domain verification.", "Deployment errors", "Find your error message, why it happens and the commands that fix it.", `## All errors\n\n${listFamily("errors")}`),
+    hub("/learn", "Learn Hosting Concepts for Developers | Reverhost", "Short, plain explanations of hosting concepts for developers: object storage, connection pooling, migrations, DNS records, cold starts and more.", "Learn", "Short explanations of the hosting concepts that come up when you deploy an app.", `## Concepts\n\n${listFamily("learn")}`),
+    hub("/migrate", "Migrate to Reverhost From Other Hosts | Reverhost", "Move a Node.js app to Reverhost from Vercel, Render, Railway, Netlify, Fly.io, Heroku or Koyeb, along with your Postgres database and S3 files.", "Migrate to Reverhost", "Guides for moving your app and data.", `## Move your app\n\n${migrateLinks}\n\n## Move your data\n\n- [Postgres](/migrate/postgres)\n- [S3 files](/migrate/storage)`),
+    hub("/alternatives", "Free Alternatives to Popular Hosting Platforms | Reverhost", "Honest comparisons between Reverhost and Vercel, Render, Railway, Netlify, Fly.io, Heroku and Koyeb, including what you give up by switching.", "Alternatives", "Honest comparisons, including when the other platform is the better choice.", `## Compare\n\n${competitorLinks}`),
+    hub("/docs/cli", "ezhst CLI Reference: Every Command | Reverhost", "Reference for every ezhst command: account, deploy, env, build, domains, storage, database and members, with usage and JSON output notes.", "CLI reference", "One page per `ezhst` command. The [main docs](/docs) cover the same commands on a single page.", cliGroups),
+    hub("/products", "Reverhost Products: Hosting, Postgres, Storage, Domains", "On Reverhost: free Node.js hosting, Postgres, S3 storage, custom domains, team members, a CLI, an agent skill and an AI app builder.", "Products", "Hosting is free within the [published limits](/pricing). Pro adds more projects and monthly AI tokens.", `## All products\n\n${productLinks}`),
   ];
 };
 
@@ -1053,23 +1053,23 @@ const legalPages = () => {
     {
       family: "legal",
       path: "/privacy",
-      title: "Privacy Policy | EasyHost",
-      description: "What EasyHost collects, how it is used, which services help us run the platform, and how to keep sensitive data private with your own encryption.",
+      title: "Privacy Policy | Reverhost",
+      description: "What Reverhost collects, how it is used, which services help us run the platform, and how to keep sensitive data private with your own encryption.",
       h1: "Privacy policy",
-      lead: "EasyHost is a small hosting platform in beta. This page explains in plain words what we collect, how we use it and how you can keep sensitive data private.",
+      lead: "Reverhost is a small hosting platform in beta. This page explains in plain words what we collect, how we use it and how you can keep sensitive data private.",
       crumbs: [HOME, { name: "Privacy policy", path: "/privacy" }],
       body: `## What we collect
 
 - Account details: your name, email address and a hashed password.
-- What you create on EasyHost: source code, build logs, environment variables, database contents, storage files and AI Builder chats and files.
+- What you create on Reverhost: source code, build logs, environment variables, database contents, storage files and AI Builder chats and files.
 - Usage data: deployments, builds, app logs, resource usage, IP addresses in server logs, and AI Token purchases and usage.
 - Dashboard analytics: the dashboard uses Microsoft Clarity to understand how pages are used, so we can improve them.
 
 ## How your data is protected
 
-Data is sent over encrypted connections (HTTPS, and TLS for Postgres). Once stored, your data is kept as you send it: EasyHost does not add its own layer of encryption on top.
+Data is sent over encrypted connections (HTTPS, and TLS for Postgres). Once stored, your data is kept as you send it: Reverhost does not add its own layer of encryption on top.
 
-For anything sensitive, we recommend encrypting it in your app before you store it and keeping the keys outside EasyHost. That way it stays private no matter where it is stored.
+For anything sensitive, we recommend encrypting it in your app before you store it and keeping the keys outside Reverhost. That way it stays private no matter where it is stored.
 
 Files in storage buckets are public to anyone who has the URL, so please keep private files encrypted or somewhere else.
 
@@ -1084,7 +1084,7 @@ We only look at your projects and data when there is a good reason, such as:
 
 We do not sell your data and we never use it for advertising.
 
-## Services that help us run EasyHost
+## Services that help us run Reverhost
 
 - Google Cloud Build and Cloud Storage build your app images from your source code.
 - Google Gemini powers the AI Builder and sees your prompts and app files.
@@ -1110,14 +1110,14 @@ ${contact}`,
     {
       family: "legal",
       path: "/terms",
-      title: "Terms and Conditions | EasyHost",
-      description: "The terms for using EasyHost: fair use, how your data is stored, when we may review projects, beta status and what we can and cannot promise.",
+      title: "Terms and Conditions | Reverhost",
+      description: "The terms for using Reverhost: fair use, how your data is stored, when we may review projects, beta status and what we can and cannot promise.",
       h1: "Terms and conditions",
-      lead: "Thanks for using EasyHost. These terms explain how the service works and what we expect from each other. By using EasyHost, you agree to them.",
+      lead: "Thanks for using Reverhost. These terms explain how the service works and what we expect from each other. By using Reverhost, you agree to them.",
       crumbs: [HOME, { name: "Terms and conditions", path: "/terms" }],
       body: `## The service
 
-EasyHost hosts Node.js apps, Postgres databases, S3 storage and AI built apps, within the [published limits](/pricing). EasyHost is in beta, so features and limits may change as the platform grows.
+Reverhost hosts Node.js apps, Postgres databases, S3 storage and AI built apps, within the [published limits](/pricing). Reverhost is in beta, so features and limits may change as the platform grows.
 
 ## Your account
 
@@ -1129,15 +1129,15 @@ Your code and data stay yours. You allow us to store, build, run and serve them 
 
 ## How your data is stored
 
-Data is sent over encrypted connections, but EasyHost does not add its own encryption to stored data. If you store anything sensitive, we recommend encrypting it yourself before storing it. The [privacy policy](/privacy) has more detail.
+Data is sent over encrypted connections, but Reverhost does not add its own encryption to stored data. If you store anything sensitive, we recommend encrypting it yourself before storing it. The [privacy policy](/privacy) has more detail.
 
 ## Keeping the platform safe
 
-To keep EasyHost secure and reliable for everyone, we may review projects, logs and account activity when needed, for example to look into a security issue, a report of abuse or a support request.
+To keep Reverhost secure and reliable for everyone, we may review projects, logs and account activity when needed, for example to look into a security issue, a report of abuse or a support request.
 
 ## Fair use
 
-Please do not use EasyHost to:
+Please do not use Reverhost to:
 
 - host phishing, malware, scams, spam or illegal content
 - attack or overload other systems, or mine cryptocurrency
@@ -1154,15 +1154,15 @@ Pro is billed monthly until you cancel. You can cancel at any time from the Subs
 
 ## Availability
 
-We work hard to keep EasyHost running well, but we cannot guarantee it will always be available or free of data loss. The service is provided as is, so please keep your own backups of anything important.
+We work hard to keep Reverhost running well, but we cannot guarantee it will always be available or free of data loss. The service is provided as is, so please keep your own backups of anything important.
 
 ## Liability
 
-As far as the law allows, EasyHost is not liable for indirect losses such as lost data or lost profits, and our total liability is limited to what you paid us in the last 12 months.
+As far as the law allows, Reverhost is not liable for indirect losses such as lost data or lost profits, and our total liability is limited to what you paid us in the last 12 months.
 
 ## Changes
 
-We may update these terms as EasyHost changes. If you keep using EasyHost after an update, the new terms apply.
+We may update these terms as Reverhost changes. If you keep using Reverhost after an update, the new terms apply.
 
 ${contact}`,
       faq: [],

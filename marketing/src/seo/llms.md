@@ -1,6 +1,6 @@
-# EasyHost
+# Reverhost
 
-> EasyHost is free hosting for Node.js apps, including Next.js with managed Postgres, S3 compatible storage and custom domains. Everything is operated through the `ezhst` CLI, which is built to be driven by AI coding agents (Claude Code, Cursor, Codex). Hosting costs $0 per month and needs no credit card. EasyHost is in beta.
+> Reverhost is free hosting for Node.js apps, including Next.js with managed Postgres, S3 compatible storage and custom domains. Everything is operated through the `ezhst` CLI, which is built to be driven by AI coding agents (Claude Code, Cursor, Codex). Hosting costs $0 per month and needs no credit card. Reverhost is in beta.
 
 Key facts:
 
@@ -14,7 +14,7 @@ Key facts:
 - Apps are served from one region at `https://<project>.easyhost.fun`, with custom domains and automatic HTTPS.
 - There is no Git integration, no preview deployments and no edge network.
 - Install the agent skill with `npx ezhst skill install` and choose the agent (Claude Code, Codex or Cursor), then Global or Local. Claude Code uses `.claude/skills`, Codex uses `.agents/skills`, Cursor uses `.cursor/skills` (under `~` for Global, the current directory for Local). For noninteractive use, including `--json`, pass `--agent <claude|codex|cursor>` and exactly one of `--global` or `--local`.
-- Ask the agent to "Deploy this to EasyHost". If it does not discover the skill, ask it to read the installed `SKILL.md` or https://reverhost.com/skill.md first.
+- Ask the agent to "Deploy this to Reverhost". If it does not discover the skill, ask it to read the installed `SKILL.md` or https://reverhost.com/skill.md first.
 
 ## Docs
 
@@ -27,4 +27,4 @@ Key facts:
 - [Free Next.js hosting](https://reverhost.com/free-nextjs-hosting): What the free plan includes and how apps run
 - [Free Postgres hosting](https://reverhost.com/free-postgres-hosting): The included Postgres database
 - [AI Builder](https://reverhost.com/products/ai-builder): Build an app from a description in the dashboard
-- [Vercel alternative](https://reverhost.com/vercel-alternative): Differences between EasyHost and Vercel Hobby
+- [Vercel alternative](https://reverhost.com/vercel-alternative): Differences between Reverhost and Vercel Hobby

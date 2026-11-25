@@ -1,6 +1,6 @@
-# EasyHost Architecture
+# Reverhost Architecture
 
-EasyHost hosts Node.js apps, AI-built apps, Postgres databases and S3 storage. Everything runs on one VPS behind Nginx Proxy Manager. Image builds run on Google Cloud Build so the VPS only pulls and runs images.
+Reverhost hosts Node.js apps, AI-built apps, Postgres databases and S3 storage. Everything runs on one VPS behind Nginx Proxy Manager. Image builds run on Google Cloud Build so the VPS only pulls and runs images.
 
 ```mermaid
 flowchart LR

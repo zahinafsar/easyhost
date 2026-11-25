@@ -7,15 +7,15 @@ import CopyCode from "../../components/CopyCode.astro";
 
 <Base>
   <Fragment slot="head">
-    <title>EasyHost Docs: ezhst CLI Reference for Deploying Node.js</title>
+    <title>Reverhost Docs: ezhst CLI Reference for Deploying Node.js</title>
     <meta name="description" content="Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage and Postgres." />
     <link rel="canonical" href="https://reverhost.com/docs" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="article" />
-    <meta property="og:site_name" content="EasyHost" />
+    <meta property="og:site_name" content="Reverhost" />
     <meta property="og:url" content="https://reverhost.com/docs" />
-    <meta property="og:title" content="EasyHost Docs: ezhst CLI Reference for Deploying Node.js" />
+    <meta property="og:title" content="Reverhost Docs: ezhst CLI Reference for Deploying Node.js" />
     <meta property="og:description" content="Every ezhst command: deploy Node.js apps, manage env vars, domains, S3 storage and Postgres." />
     <meta property="og:image" content="https://reverhost.com/og.png" />
     <meta property="og:image:width" content="1200" />
@@ -28,19 +28,19 @@ import CopyCode from "../../components/CopyCode.astro";
         "@graph": [
           {
             "@type": "TechArticle",
-            "headline": "EasyHost docs: ezhst CLI reference",
+            "headline": "Reverhost docs: ezhst CLI reference",
             "description": "Every ezhst command: deploy Node.js apps, set environment variables and build settings, read logs, add custom domains, and use S3 storage and Postgres.",
             "url": "https://reverhost.com/docs",
             "image": "https://reverhost.com/og.png",
             "datePublished": "2026-09-29",
             "dateModified": "2026-11-10",
-            "author": { "@type": "Organization", "name": "EasyHost", "url": "https://reverhost.com/" },
-            "publisher": { "@type": "Organization", "name": "EasyHost", "url": "https://reverhost.com/", "logo": "https://reverhost.com/icon-512.png" }
+            "author": { "@type": "Organization", "name": "Reverhost", "url": "https://reverhost.com/" },
+            "publisher": { "@type": "Organization", "name": "Reverhost", "url": "https://reverhost.com/", "logo": "https://reverhost.com/icon-512.png" }
           },
           {
             "@type": "BreadcrumbList",
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "EasyHost", "item": "https://reverhost.com/" },
+              { "@type": "ListItem", "position": 1, "name": "Reverhost", "item": "https://reverhost.com/" },
               { "@type": "ListItem", "position": 2, "name": "Docs", "item": "https://reverhost.com/docs" }
             ]
           }
@@ -78,8 +78,8 @@ import CopyCode from "../../components/CopyCode.astro";
       <main class="doc">
         <div class="doc-head">
           <p class="eyebrow">Documentation</p>
-          <h1>EasyHost docs: the ezhst CLI</h1>
-          <p class="lead">Everything on EasyHost runs through the <code>ezhst</code> CLI, which is built to be driven by coding agents. This page covers every command.</p>
+          <h1>Reverhost docs: the ezhst CLI</h1>
+          <p class="lead">Everything on Reverhost runs through the <code>ezhst</code> CLI, which is built to be driven by coding agents. This page covers every command.</p>
         </div>
 
         <section id="quick-start">
@@ -87,7 +87,7 @@ import CopyCode from "../../components/CopyCode.astro";
           <h3>For agents</h3>
           <p>Run the installer and choose Global for all projects or Local for the current project, then ask your agent to deploy.</p>
           <div class="code"><pre>npx ezhst skill install</pre></div>
-          <p>Then tell it: <code>Deploy this to EasyHost</code>. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> walks through it for each agent. The agent creates an account if you do not have one, creates and links a project, sets environment variables and deploys.</p>
+          <p>Then tell it: <code>Deploy this to Reverhost</code>. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> walks through it for each agent. The agent creates an account if you do not have one, creates and links a project, sets environment variables and deploys.</p>
 
           <h3>For humans</h3>
           <p>Install the CLI globally or run it with <code>npx</code>.</p>
@@ -102,7 +102,7 @@ npx ezhst deploy</pre></div>
 
         <section id="skill">
           <h2>Installing the agent skill</h2>
-          <p>The skill is a single <code>SKILL.md</code> file that teaches your agent how to use EasyHost.</p>
+          <p>The skill is a single <code>SKILL.md</code> file that teaches your agent how to use Reverhost.</p>
           <div class="cmds">
             <div class="cmd-row"><code>ezhst skill install</code><span>Asks which agent (Claude Code, Codex or Cursor), then Global or Local.</span></div>
             <div class="cmd-row"><code>ezhst skill install --agent claude --global</code><span>Writes <code>~/.claude/skills/easyhost/SKILL.md</code> for use across projects.</span></div>
@@ -336,7 +336,7 @@ ezhst env set DATABASE_URL="postgresql://..."</pre></div>
 
         <section id="limits">
           <h2>Limits</h2>
-          <p>EasyHost hosting is free within these limits. Pro costs $10 a month for 10 projects and 1,000 AI tokens a month; see <a href="/pricing">pricing</a>. Run <code>ezhst billing</code> to see your plan and usage, and <code>ezhst billing upgrade</code> for a Pro checkout link. Node.js apps are supported, including Next.js and HTTP APIs. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
+          <p>Reverhost hosting is free within these limits. Pro costs $10 a month for 10 projects and 1,000 AI tokens a month; see <a href="/pricing">pricing</a>. Run <code>ezhst billing</code> to see your plan and usage, and <code>ezhst billing upgrade</code> for a Pro checkout link. Node.js apps are supported, including Next.js and HTTP APIs. The <a href="/free-nextjs-hosting">free Next.js hosting</a> page explains what each limit means in practice.</p>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Resource</th><th>Limit</th></tr></thead>

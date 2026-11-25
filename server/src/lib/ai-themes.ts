@@ -18,7 +18,7 @@ export type AiTheme = {
 export const AI_THEMES: AiTheme[] = [
   {
     id: "easyhost",
-    name: "EasyHost",
+    name: "Reverhost",
     dark: false,
     colors: { background: "#ffffff", surface: "#f8fafc", foreground: "#0f172a", muted: "#64748b", border: "#e2e8f0", primary: "#1e3a5f", primaryForeground: "#ffffff" },
     radius: "0px",

@@ -1,7 +1,7 @@
 Read .claude/memory.txt for more context on this project.
 After work update .claude/memory.txt with new contexts.
 
-# EasyHost - Developer Hosting Platform
+# Reverhost - Developer Hosting Platform
 
 ## Project Overview
 Hosting platform: Node.js app hosting (containers routed by Nginx Proxy Manager), public object storage (MinIO), Postgres databases (one `postgres` instance for the platform and customer databases, one database + role per customer project). Resend sends platform account emails only (verification, password reset, invites, admin notices); customers have no email sending or API keys.

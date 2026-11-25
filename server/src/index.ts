@@ -106,7 +106,7 @@ if (process.env.NODE_ENV === "production") {
 server.route("/", app);
 
 serve({ fetch: server.fetch, port }, (info) => {
-  console.log(`EasyHost API listening on http://localhost:${info.port}`);
+  console.log(`Reverhost API listening on http://localhost:${info.port}`);
   resetStuckGenerations().catch((error) => console.error("Failed to reset AI generations", error));
   startBuildQueue().catch((error) => console.error("Build queue failed to start", error));
   startRegistryGc();

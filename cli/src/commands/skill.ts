@@ -55,7 +55,7 @@ export const installSkill = async (options: { agent?: string; global?: boolean; 
   mkdirSync(directory, { recursive: true });
   copyFileSync(SKILL_SOURCE, target);
   output({ agent: agentKey, scope, path: target }, () => {
-    log.success(`Installed the EasyHost skill for ${agent.name} at ${target}`);
-    log.info('Ask your agent: "Deploy this app to EasyHost."');
+    log.success(`Installed the Reverhost skill for ${agent.name} at ${target}`);
+    log.info('Ask your agent: "Deploy this app to Reverhost."');
   });
 };

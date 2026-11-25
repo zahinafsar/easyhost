@@ -33,7 +33,7 @@ const program = new Command();
 
 program
   .name("ezhst")
-  .description("EasyHost from the terminal: deploy apps and manage storage and databases")
+  .description("Reverhost from the terminal: deploy apps and manage storage and databases")
   .version(packageMetadata.version)
   .option("--json", "Print machine-readable JSON")
   .hook("preAction", (_command, action) => {
@@ -158,7 +158,7 @@ program.command("accept-invite").description("Accept a project invite").argument
 const skill = program.command("skill").description("Agent skill");
 skill
   .command("install")
-  .description("Install the EasyHost agent skill")
+  .description("Install the Reverhost agent skill")
   .option("--agent <agent>", "Target agent: claude, codex or cursor")
   .option("--global", "Install to the agent's home skills folder for all projects")
   .option("--local", "Install to the agent's skills folder in the current project")

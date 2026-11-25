@@ -18,7 +18,7 @@ const saveSession = (apiUrl: string, token: string, user: User, message: string)
   output({ user, token }, () => {
     log.success(`${message} ${user.name} <${user.email}>`);
     if (!user.verified && !isInteractive()) {
-      log.warn("Verify your email before using EasyHost: run `ezhst verify <code>` with the 6-digit code we emailed you.");
+      log.warn("Verify your email before using Reverhost: run `ezhst verify <code>` with the 6-digit code we emailed you.");
     }
   });
 };

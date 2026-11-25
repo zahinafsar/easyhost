@@ -34,7 +34,7 @@ export const LoginPage = () => {
     <Card>
       <CardHeader>
         <CardTitle>Log in</CardTitle>
-        <CardDescription>Welcome back to EasyHost.</CardDescription>
+        <CardDescription>Welcome back to Reverhost.</CardDescription>
       </CardHeader>
       <form
         onSubmit={(event) => {

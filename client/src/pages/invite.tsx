@@ -45,7 +45,7 @@ export const InvitePage = () => {
       <CardHeader>
         <CardTitle>Join {invite.projectName}</CardTitle>
         <CardDescription>
-          {invite.invitedBy} invited {invite.email} to this project on EasyHost.
+          {invite.invitedBy} invited {invite.email} to this project on Reverhost.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground">

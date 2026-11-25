@@ -1,11 +1,11 @@
 ---
 name: easyhost
-description: Deploy and manage apps on EasyHost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship a Node.js app to EasyHost, or to manage its environment variables, build settings, logs, custom domains, S3 storage or Postgres database.
+description: Deploy and manage apps on Reverhost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship a Node.js app to Reverhost, or to manage its environment variables, build settings, logs, custom domains, S3 storage or Postgres database.
 ---
 
-# EasyHost
+# Reverhost
 
-EasyHost is free hosting for Node.js apps with built-in S3 storage and Postgres. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
+Reverhost is free hosting for Node.js apps with built-in S3 storage and Postgres. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
 
 ## Rules for agents
 

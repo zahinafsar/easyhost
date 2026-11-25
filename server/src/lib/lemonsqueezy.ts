@@ -127,7 +127,7 @@ export const lemonSqueezyProvider: PaymentProvider = {
       testMode: !env.isProduction,
       productOptions: {
         redirectUrl,
-        receiptButtonText: "Back to EasyHost",
+        receiptButtonText: "Back to Reverhost",
         receiptLinkUrl: `${env.appUrl}/subscription`,
       },
       checkoutOptions: {

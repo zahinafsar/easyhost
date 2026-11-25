@@ -7,15 +7,15 @@ import CopyCode from "../components/CopyCode.astro";
 
 <Base>
   <Fragment slot="head">
-    <title>A Free Vercel Alternative for Next.js Apps | EasyHost</title>
-    <meta name="description" content="EasyHost is a free Vercel alternative for Next.js: an always-on container with Postgres and S3 storage included. See the honest differences and how to move." />
+    <title>A Free Vercel Alternative for Next.js Apps | Reverhost</title>
+    <meta name="description" content="Reverhost is a free Vercel alternative for Next.js: an always-on container with Postgres and S3 storage included. See the honest differences and how to move." />
     <link rel="canonical" href="https://reverhost.com/vercel-alternative" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="article" />
-    <meta property="og:site_name" content="EasyHost" />
+    <meta property="og:site_name" content="Reverhost" />
     <meta property="og:url" content="https://reverhost.com/vercel-alternative" />
-    <meta property="og:title" content="A Free Vercel Alternative for Next.js Apps | EasyHost" />
+    <meta property="og:title" content="A Free Vercel Alternative for Next.js Apps | Reverhost" />
     <meta property="og:description" content="A free Vercel alternative for Next.js: an always-on container with Postgres and S3 storage included." />
     <meta property="og:image" content="https://reverhost.com/og.png" />
     <meta property="og:image:width" content="1200" />
@@ -29,19 +29,19 @@ import CopyCode from "../components/CopyCode.astro";
           {
             "@type": "TechArticle",
             "headline": "A free Vercel alternative for Next.js apps",
-            "description": "EasyHost is a free Vercel alternative for Next.js: an always-on container with Postgres and S3 storage included. See the honest differences and how to move.",
+            "description": "Reverhost is a free Vercel alternative for Next.js: an always-on container with Postgres and S3 storage included. See the honest differences and how to move.",
             "url": "https://reverhost.com/vercel-alternative",
             "image": "https://reverhost.com/og.png",
             "datePublished": "2026-09-30",
             "dateModified": "2026-11-09",
             "author": {
               "@type": "Organization",
-              "name": "EasyHost",
+              "name": "Reverhost",
               "url": "https://reverhost.com/"
             },
             "publisher": {
               "@type": "Organization",
-              "name": "EasyHost",
+              "name": "Reverhost",
               "url": "https://reverhost.com/",
               "logo": "https://reverhost.com/icon-512.png"
             },
@@ -53,7 +53,7 @@ import CopyCode from "../components/CopyCode.astro";
               {
                 "@type": "ListItem",
                 "position": 1,
-                "name": "EasyHost",
+                "name": "Reverhost",
                 "item": "https://reverhost.com/"
               },
               {
@@ -69,7 +69,7 @@ import CopyCode from "../components/CopyCode.astro";
             "mainEntity": [
               {
                 "@type": "Question",
-                "name": "Is EasyHost a drop-in replacement for Vercel?",
+                "name": "Is Reverhost a drop-in replacement for Vercel?",
                 "acceptedAnswer": {
                   "@type": "Answer",
                   "text": "For a standard Next.js app, mostly yes: it builds with next build and runs with next start without changes. Vercel-specific services such as Vercel Blob, vercel.json cron jobs, preview deployments and the edge network do not carry over."
@@ -77,10 +77,10 @@ import CopyCode from "../components/CopyCode.astro";
               },
               {
                 "@type": "Question",
-                "name": "Is EasyHost faster than Vercel?",
+                "name": "Is Reverhost faster than Vercel?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "It depends on where your visitors are. EasyHost has no cold starts because the container is always on, but it serves from one region. Vercel serves static assets from a global CDN."
+                  "text": "It depends on where your visitors are. Reverhost has no cold starts because the container is always on, but it serves from one region. Vercel serves static assets from a global CDN."
                 }
               },
               {
@@ -110,7 +110,7 @@ import CopyCode from "../components/CopyCode.astro";
         <ol>
           <li><a href="#summary">Summary</a></li>
           <li><a href="#table">Side by side</a></li>
-          <li><a href="#easyhost-fits">When EasyHost fits</a></li>
+          <li><a href="#easyhost-fits">When Reverhost fits</a></li>
           <li><a href="#vercel-fits">When Vercel fits</a></li>
           <li><a href="#migrate">Moving from Vercel</a></li>
           <li><a href="#faq">FAQ</a></li>
@@ -120,29 +120,29 @@ import CopyCode from "../components/CopyCode.astro";
       <main class="doc">
         <div class="doc-head">
           <ol class="crumbs" aria-label="Breadcrumb">
-            <li><a href="/">EasyHost</a></li><li aria-current="page">Vercel alternative</li>
+            <li><a href="/">Reverhost</a></li><li aria-current="page">Vercel alternative</li>
           </ol>
           <h1>A free Vercel alternative for Next.js apps</h1>
-          <p class="lead">EasyHost is a free place to run a Next.js app when you want a plain always-on server with a database and file storage already attached. Vercel is the better choice when you need a global CDN, preview deployments or Git-based workflows. This page lays out the differences so you can pick.</p>
+          <p class="lead">Reverhost is a free place to run a Next.js app when you want a plain always-on server with a database and file storage already attached. Vercel is the better choice when you need a global CDN, preview deployments or Git-based workflows. This page lays out the differences so you can pick.</p>
           <p class="doc-meta">Last updated November 9, 2026</p>
         </div>
 
         <section id="summary">
           <h2>The summary</h2>
           <ul>
-            <li><strong>Runtime.</strong> Vercel splits your app into serverless functions behind a CDN. EasyHost runs <code>next start</code> in one container that stays up.</li>
-            <li><strong>Backend.</strong> EasyHost includes Postgres and S3 compatible storage in the free account. On Vercel Hobby, a database comes from another provider.</li>
-            <li><strong>Workflow.</strong> Vercel deploys from Git and gives every branch a preview URL. EasyHost deploys from a CLI that coding agents can drive end to end.</li>
-            <li><strong>Reach.</strong> Vercel serves from a global edge network. EasyHost serves from one region.</li>
+            <li><strong>Runtime.</strong> Vercel splits your app into serverless functions behind a CDN. Reverhost runs <code>next start</code> in one container that stays up.</li>
+            <li><strong>Backend.</strong> Reverhost includes Postgres and S3 compatible storage in the free account. On Vercel Hobby, a database comes from another provider.</li>
+            <li><strong>Workflow.</strong> Vercel deploys from Git and gives every branch a preview URL. Reverhost deploys from a CLI that coding agents can drive end to end.</li>
+            <li><strong>Reach.</strong> Vercel serves from a global edge network. Reverhost serves from one region.</li>
           </ul>
         </section>
 
         <section id="table">
-          <h2>EasyHost and Vercel Hobby side by side</h2>
+          <h2>Reverhost and Vercel Hobby side by side</h2>
           <p>Vercel details are from the <a href="https://vercel.com/docs/plans/hobby" rel="noopener">Vercel Hobby plan docs</a> as of September 2026. Those docs also state that the Hobby plan is restricted to non-commercial, personal use.</p>
           <div class="table-wrap">
             <table>
-              <thead><tr><th></th><th>EasyHost</th><th>Vercel Hobby</th></tr></thead>
+              <thead><tr><th></th><th>Reverhost</th><th>Vercel Hobby</th></tr></thead>
               <tbody>
                 <tr><td>Price</td><td>$0, no credit card</td><td>$0</td></tr>
                 <tr><td>How the app runs</td><td>One always-on container, 512 MB RAM, 1 CPU</td><td>Serverless functions, up to 300 seconds each</td></tr>
@@ -160,11 +160,11 @@ import CopyCode from "../components/CopyCode.astro";
         </section>
 
         <section id="easyhost-fits">
-          <h2>When EasyHost is the better fit</h2>
+          <h2>When Reverhost is the better fit</h2>
           <h3>You want a server, not functions</h3>
           <p>Your app is a single Node.js process that stays running. In-memory caches survive between requests, there are no cold starts, and you do not need to think about function size or invocation counts.</p>
           <h3>You want the backend in the same place</h3>
-          <p>A side project usually needs a database and somewhere to put uploads. On EasyHost those are two commands in the same CLI: <code>ezhst db create</code> and <code>ezhst storage create</code>. See <a href="/free-postgres-hosting">free Postgres hosting</a> for the database details.</p>
+          <p>A side project usually needs a database and somewhere to put uploads. On Reverhost those are two commands in the same CLI: <code>ezhst db create</code> and <code>ezhst storage create</code>. See <a href="/free-postgres-hosting">free Postgres hosting</a> for the database details.</p>
           <h3>Your coding agent does the deploying</h3>
           <p>Every <code>ezhst</code> command takes <code>--json</code>, never prompts without a terminal, and returns errors an agent can act on. Sign-up works from the command line too: after you give the agent the 6-digit code from your inbox, it can go from an empty account to a live URL without a browser. The <a href="/guides/deploy-nextjs-with-ai-agents">agent deploy guide</a> shows how.</p>
           <h3>You want limits you can predict</h3>
@@ -173,7 +173,7 @@ import CopyCode from "../components/CopyCode.astro";
 
         <section id="vercel-fits">
           <h2>When Vercel is the better fit</h2>
-          <p>EasyHost is young and deliberately small. Choose Vercel if any of these matter to you:</p>
+          <p>Reverhost is young and deliberately small. Choose Vercel if any of these matter to you:</p>
           <ul>
             <li>Visitors all over the world and you need pages served from an edge location near them.</li>
             <li>Preview deployments for every pull request, or deploys triggered by a Git push.</li>
@@ -184,11 +184,11 @@ import CopyCode from "../components/CopyCode.astro";
         </section>
 
         <section id="migrate">
-          <h2>Moving a Next.js app from Vercel to EasyHost</h2>
+          <h2>Moving a Next.js app from Vercel to Reverhost</h2>
           <ol>
             <li>Pull your environment variables from Vercel into a local file, then import them.</li>
             <li>Create a project, link the folder and deploy.</li>
-            <li>Add your domain and point DNS at EasyHost.</li>
+            <li>Add your domain and point DNS at Reverhost.</li>
           </ol>
           <div class="code"><pre>vercel env pull .env.production
 npx ezhst projects create my-app --link
@@ -197,8 +197,8 @@ npx ezhst deploy
 npx ezhst domains add www.example.com</pre></div>
           <h3>Things to check first</h3>
           <ul>
-            <li><strong>Vercel-only packages.</strong> Replace <code>@vercel/blob</code> with any S3 client pointed at your EasyHost bucket, and point your Postgres client at the EasyHost connection string.</li>
-            <li><strong>Cron jobs in <code>vercel.json</code>.</strong> EasyHost does not read <code>vercel.json</code>, so scheduled routes will not be called.</li>
+            <li><strong>Vercel-only packages.</strong> Replace <code>@vercel/blob</code> with any S3 client pointed at your Reverhost bucket, and point your Postgres client at the Reverhost connection string.</li>
+            <li><strong>Cron jobs in <code>vercel.json</code>.</strong> Reverhost does not read <code>vercel.json</code>, so scheduled routes will not be called.</li>
             <li><strong>Edge runtime.</strong> Everything runs in the one Node.js container in a single region.</li>
             <li><strong>Image optimization.</strong> <code>next/image</code> is handled by the Next.js server inside your container.</li>
           </ul>
@@ -206,10 +206,10 @@ npx ezhst domains add www.example.com</pre></div>
 
         <section id="faq">
           <h2>Frequently asked questions</h2>
-          <h3>Is EasyHost a drop-in replacement for Vercel?</h3>
+          <h3>Is Reverhost a drop-in replacement for Vercel?</h3>
           <p>For a standard Next.js app, mostly yes: it builds with <code>next build</code> and runs with <code>next start</code> without changes. Vercel-specific services such as Vercel Blob, <code>vercel.json</code> cron jobs, preview deployments and the edge network do not carry over.</p>
-          <h3>Is EasyHost faster than Vercel?</h3>
-          <p>It depends on where your visitors are. EasyHost has no cold starts because the container is always on, but it serves from one region. Vercel serves static assets from a global CDN.</p>
+          <h3>Is Reverhost faster than Vercel?</h3>
+          <p>It depends on where your visitors are. Reverhost has no cold starts because the container is always on, but it serves from one region. Vercel serves static assets from a global CDN.</p>
           <h3>Can I keep my custom domain when I move?</h3>
           <p>Yes. Add it with <code>ezhst domains add</code>, set the DNS record that <code>ezhst domains list</code> shows, then run <code>ezhst domains verify</code> to issue HTTPS. Details in the <a href="/docs#domains">domains docs</a>.</p>
         </section>

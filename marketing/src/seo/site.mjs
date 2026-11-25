@@ -123,7 +123,7 @@ export const jsonLd = (page) => {
   const breadcrumb = page.crumbs.map((crumb, position) => {
     return { "@type": "ListItem", position: position + 1, name: crumb.name, item: absolute(crumb.path) };
   });
-  const organization = { "@type": "Organization", name: "EasyHost", url: `${SITE}/` };
+  const organization = { "@type": "Organization", name: "Reverhost", url: `${SITE}/` };
   const graph = [
     {
       "@type": "TechArticle",
@@ -357,7 +357,7 @@ Every generated page has a Markdown copy at the same path with \`.md\` appended.
 - [Pricing and limits](${SITE}/pricing): Every limit and AI Token prices
 - [CLI reference](${SITE}/docs/cli): One page per command
 - [Deployment errors](${SITE}/errors): Error messages and fixes
-- [Migration guides](${SITE}/migrate): Moving apps and data to EasyHost
+- [Migration guides](${SITE}/migrate): Moving apps and data to Reverhost
 - [Concepts](${SITE}/learn): Short explanations
 `;
 };

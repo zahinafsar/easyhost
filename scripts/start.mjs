@@ -45,7 +45,7 @@ if (process.argv.includes("--force-recreate")) {
 run(upArgs);
 
 console.log(`
-EasyHost is running.
+Reverhost is running.
 
   Marketing  https://reverhost.com
   Dashboard  https://app.reverhost.com

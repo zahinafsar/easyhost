@@ -90,7 +90,7 @@ export const request = async <T>(pathname: string, init: RequestInit = {}, proje
       throw new ApiError(data.error, res.status);
     }
     if (res.status >= 500) {
-      throw new ApiError(`EasyHost is having trouble right now (status ${res.status}). Try again in a minute.`, res.status);
+      throw new ApiError(`Reverhost is having trouble right now (status ${res.status}). Try again in a minute.`, res.status);
     }
     throw new ApiError(`Request failed with status ${res.status}.`, res.status);
   }

@@ -630,7 +630,7 @@ export const AdminPage = () => {
       <header className="flex h-14 items-center justify-between gap-4 border-b px-6">
         <div className="flex items-center gap-2 font-semibold">
           <img src="/logo.svg" alt="" className="h-6 w-auto" />
-          EasyHost Admin
+          Reverhost Admin
         </div>
         <Button asChild variant="ghost" size="sm">
           <Link to="/">

@@ -21,7 +21,7 @@ const LOG_SETTLE_MS = 1500;
 
 const google = createGoogleGenerativeAI({ apiKey: env.googleAiApiKey });
 
-const INSTRUCTIONS = `You build and edit full-stack web apps hosted on EasyHost. You change the app only by calling tools.
+const INSTRUCTIONS = `You build and edit full-stack web apps hosted on Reverhost. You change the app only by calling tools.
 
 When to change the app:
 - Only call tools when the user asks you to build, change, fix or remove something.
