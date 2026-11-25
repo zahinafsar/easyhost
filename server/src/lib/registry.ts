@@ -19,6 +19,8 @@ export const APP_IMAGE_PREFIX = `${env.registry.host}/${REGISTRY_REPO_PREFIX}/`;
 
 export const imageTag = (slug: string, deploymentId: string) => `${APP_IMAGE_PREFIX}${slug}:${deploymentId.toLowerCase()}`;
 
+export const buildCacheRef = (slug: string) => `${APP_IMAGE_PREFIX}${slug}:buildcache`;
+
 const authHeader = () => {
   return `Basic ${Buffer.from(`${REGISTRY_USER}:${env.registry.password}`).toString("base64")}`;
 };
@@ -61,7 +63,11 @@ export const removeAppImage = async (tag: string) => {
   await removeFromRegistry(tag);
 };
 
-export const pullImage = async (tag: string, onLog: (line: string) => void) => {
+export const removeBuildCache = async (slug: string) => {
+  await removeFromRegistry(buildCacheRef(slug));
+};
+
+export const pullImage =async (tag: string, onLog: (line: string) => void) => {
   const stream = await docker.pull(tag, {
     authconfig: { username: REGISTRY_USER, password: env.registry.password, serveraddress: env.registry.host },
   });

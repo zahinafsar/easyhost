@@ -2,7 +2,7 @@ import type { App } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { DEPLOY_BUCKET, emptyAndRemoveBucket, minio, removeBucketCredentials } from "./minio.js";
 import { containerName, removeContainer } from "./docker.js";
-import { removeAppImage } from "./registry.js";
+import { removeAppImage, removeBuildCache } from "./registry.js";
 import { releaseDomain } from "./domains.js";
 import { dropUserDatabase } from "./userdb.js";
 import { removeAllAiFiles } from "./ai-apps.js";
@@ -23,6 +23,7 @@ const removeAppResources = async (app: Pick<App, "id" | "slug">) => {
       await removeAppImage(deployment.imageTag);
     }
   }
+  await removeBuildCache(app.slug);
   await removeAllAiFiles(app.id);
   const artifactKeys = [...new Set(deployments.map((deployment) => deployment.artifactKey))];
   if (artifactKeys.length) {
