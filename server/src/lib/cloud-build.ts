@@ -65,26 +65,18 @@ const MB = 1024 * 1024;
 export type BuildRequest = {
   tag: string;
   rootDir: string;
-  cacheRef: string;
 };
 
-const BUILDKIT_IMAGE = "moby/buildkit:v0.18.2";
-const BUILDKIT_CONFIG = "/tmp/buildkitd.toml";
-
-const buildScript = ({ tag, rootDir, cacheRef }: BuildRequest) => {
+const buildScript = ({ tag, rootDir }: BuildRequest) => {
   const source = quote(path.posix.join(SOURCE_DIR, rootDir));
   const maxMb = Math.floor(LIMITS.maxImageBytes / MB);
-  const cacheFrom = `--cache-from type=registry,ref=${cacheRef}`;
-  const cacheTo = `--cache-to type=registry,ref=${cacheRef},mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true`;
   return [
     "set -e",
-    `printf '[registry."docker.io"]\\n  mirrors = ["mirror.gcr.io"]\\n' > ${BUILDKIT_CONFIG}`,
-    `docker buildx create --name easyhost --driver docker-container --driver-opt image=${BUILDKIT_IMAGE} --config ${BUILDKIT_CONFIG} --use --bootstrap > /dev/null`,
-    `echo "$REGISTRY_PASSWORD" | docker login ${env.registry.host} -u ${REGISTRY_USER} --password-stdin`,
-    `docker buildx build --progress=plain --load --secret id=appenv,src=appenv ${cacheFrom} ${cacheTo} -f Dockerfile -t ${tag} ${source}`,
+    `docker buildx build --progress=plain --load --secret id=appenv,src=appenv -f Dockerfile -t ${tag} ${source}`,
     `SIZE=$(docker image inspect -f '{{.Size}}' ${tag})`,
     `echo "Image size: $((SIZE / ${MB})) MB"`,
     `if [ "$SIZE" -gt ${LIMITS.maxImageBytes} ]; then echo "Image is $((SIZE / ${MB})) MB, the limit is ${maxMb} MB. Use a smaller base image or a multi-stage build."; exit 1; fi`,
+    `echo "$REGISTRY_PASSWORD" | docker login ${env.registry.host} -u ${REGISTRY_USER} --password-stdin`,
     `docker push ${tag}`,
   ]
     .join("\n")

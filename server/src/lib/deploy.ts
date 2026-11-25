@@ -2,7 +2,7 @@ import type { DeploymentStep } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { minio, DEPLOY_BUCKET } from "./minio.js";
 import { buildContext, containerName, runContainer, APP_PORT } from "./docker.js";
-import { buildCacheRef, imageTag, pullImage, removeAppImage } from "./registry.js";
+import { imageTag, pullImage, removeAppImage } from "./registry.js";
 import { removeSource, sourceObjectName, submitBuild, watchBuild } from "./cloud-build.js";
 
 const readObject = async (key: string) => {
@@ -94,7 +94,7 @@ export const runDeployment = async (deploymentId: string) => {
       logger.log(`Building with the app Dockerfile in /${rootDir}`);
       logger.log("Sending source to the build server");
       const context = await buildContext(artifact, appEnv, app.dockerfile);
-      buildId = await submitBuild(deploymentId, context, { tag, rootDir, cacheRef: buildCacheRef(app.slug) });
+      buildId = await submitBuild(deploymentId, context, { tag, rootDir });
       await prisma.deployment.update({ where: { id: deploymentId }, data: { cloudBuildId: buildId } });
       logger.log(`Building ${tag}`);
     } else {
