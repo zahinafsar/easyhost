@@ -59,8 +59,11 @@ npx ezhst register --name "Ada" --email ada@example.com --password "..." --json
 npx ezhst verify 123456 --json
 npx ezhst projects create my-app --link --json
 npx ezhst env import .env --json
-npx ezhst build dockerfile template node > Dockerfile
-npx ezhst build dockerfile set -f Dockerfile --json
+npx ezhst build dockerfile template nextjs --json
+npx ezhst build dockerfile set -f - --json <<'EOF'
+FROM node:22-alpine AS build
+...
+EOF
 npx ezhst deploy --json`;
 ---
 
@@ -266,9 +269,9 @@ npx ezhst deploy --json`;
         <Table columns={["Symptom", "Fix"]}>
           <Row><Cell>An environment variable is missing at build time</Cell><Cell><InlineCode>ezhst env set KEY=VALUE</InlineCode>, then <InlineCode>ezhst redeploy</InlineCode></Cell></Row>
           <Row><Cell><InlineCode>npm ci</InlineCode> says the lockfile is out of sync</Cell><Cell>Delete <InlineCode>node_modules</InlineCode> and <InlineCode>package-lock.json</InlineCode>, run <InlineCode>npm install</InlineCode>, deploy again</Cell></Row>
-          <Row><Cell>The app has no Dockerfile</Cell><Cell><InlineCode>ezhst build dockerfile template node --apply</InlineCode>, then adjust it and <InlineCode>ezhst redeploy</InlineCode></Cell></Row>
+          <Row><Cell>The app has no Dockerfile</Cell><Cell><InlineCode>ezhst build dockerfile template nextjs --apply</InlineCode>, then adjust it and <InlineCode>ezhst redeploy</InlineCode></Cell></Row>
           <Row><Cell>The app lives in a monorepo subfolder</Cell><Cell><InlineCode>ezhst build set --root-dir apps/web</InlineCode></Cell></Row>
-          <Row><Cell>The project needs a different Node version</Cell><Cell>Change the <InlineCode>FROM</InlineCode> line, upload it with <InlineCode>ezhst build dockerfile set -f Dockerfile</InlineCode>, then <InlineCode>ezhst redeploy</InlineCode></Cell></Row>
+          <Row><Cell>The project needs a different Node version</Cell><Cell>Change the <InlineCode>FROM</InlineCode> line in the stored Dockerfile and send it back with <InlineCode>ezhst build dockerfile set -f -</InlineCode>, then <InlineCode>ezhst redeploy</InlineCode></Cell></Row>
         </Table>
       </Stack>
     </Box>

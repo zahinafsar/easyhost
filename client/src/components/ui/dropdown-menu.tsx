@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { cn } from "@/lib/utils";
 
@@ -68,4 +68,32 @@ export const DropdownMenuSeparator = ({ className, ...props }: React.ComponentPr
 
 export const DropdownMenuShortcut = ({ className, ...props }: React.ComponentProps<"span">) => {
   return <span data-slot="dropdown-menu-shortcut" className={cn("ml-auto text-xs tracking-widest text-muted-foreground", className)} {...props} />;
+};
+
+export const DropdownMenuSub = (props: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) => {
+  return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />;
+};
+
+export const DropdownMenuSubTrigger = ({ className, children, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger>) => {
+  return (
+    <DropdownMenuPrimitive.SubTrigger data-slot="dropdown-menu-sub-trigger" className={cn(itemClass, "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground", className)} {...props}>
+      {children}
+      <ChevronRightIcon className="ml-auto size-4" />
+    </DropdownMenuPrimitive.SubTrigger>
+  );
+};
+
+export const DropdownMenuSubContent = ({ className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) => {
+  return (
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.SubContent
+        data-slot="dropdown-menu-sub-content"
+        className={cn(
+          "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[12rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover p-1.5 text-popover-foreground data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+          className,
+        )}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
+  );
 };

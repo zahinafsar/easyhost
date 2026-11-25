@@ -36,19 +36,23 @@ npx ezhst link --project <slug> --json
 
 ## 3. Deploy
 
-Every app builds from a Dockerfile stored on the app (a Dockerfile in the repo is ignored, so upload it explicitly). Run inside the app folder:
+Every app builds from a Dockerfile stored on the app, not from a file in the repo. Never create, edit or upload a `Dockerfile` file in the user's project. Always write the Dockerfile straight to the app through the CLI. Run inside the app folder:
 
-1. Inspect the repo and write a `Dockerfile` (start from `npx ezhst build dockerfile template <id>`; ids: node, bun, python, go, ruby, php, rust, zig).
-2. The app must listen on `0.0.0.0` and `$PORT` (3000).
-3. Env vars are runtime env. If the build step needs them, use `RUN --mount=type=secret,id=appenv,target=/run/secrets/appenv sh -c 'set -a; . /run/secrets/appenv; set +a; <build command>'`. Never put secrets in `ARG` or `ENV`.
-4. Keep the image under 1 GB (slim bases, multi-stage builds for compiled languages). Containers get 256 MB of memory and half a CPU.
-5. Do not use `# syntax=` lines or images from the Reverhost registry; they are rejected.
+1. Inspect the repo and pick a template: `npx ezhst build dockerfile template --json` lists them, `npx ezhst build dockerfile template <id> --json` returns one. Ids include node, express, nestjs, nextjs, nuxt, sveltekit, react-router, astro, bun, elysia, fastapi, flask, django, streamlit, rails, ruby, laravel, php, go, rust, zig, vite, static. A Dockerfile already in the repo is only a reference: read it, adapt it, and send the result through the CLI like any other.
+2. Adapt the template to the repo, then save it to the app by piping it through stdin with a quoted heredoc (`<<'EOF'`, so the shell does not expand `$PORT` or `$(...)`). If the template fits unchanged, `npx ezhst build dockerfile template <id> --apply --json` saves it directly.
+3. The app must listen on `0.0.0.0` and `$PORT` (3000).
+4. Env vars are runtime env. If the build step needs them, use `RUN --mount=type=secret,id=appenv,target=/run/secrets/appenv sh -c 'set -a; . /run/secrets/appenv; set +a; <build command>'`. Never put secrets in `ARG` or `ENV`.
+5. Keep the image under 1 GB (slim bases, multi-stage builds for compiled languages). Containers get 256 MB of memory and half a CPU. Download toolchains from fast sources (package managers, official images); a slow download is billed build time and builds stop after 20 minutes.
+6. Do not use `# syntax=` lines or images from the Reverhost registry; they are rejected.
 
 ```
 npx ezhst apps create <name> --project <project-slug> --json
 npx ezhst link --project <project-slug> --app <app-slug> --json
 npx ezhst env import .env --json
-npx ezhst build dockerfile set -f Dockerfile --json
+npx ezhst build dockerfile set -f - --json <<'EOF'
+FROM node:22-alpine
+...
+EOF
 npx ezhst deploy --json
 ```
 
@@ -62,7 +66,7 @@ Common fixes:
 - Missing env var at build time: `ezhst env set KEY=VALUE`, then `ezhst redeploy`.
 - `npm ci` says the lockfile is out of sync: delete `node_modules` and `package-lock.json`, run `npm install`, deploy again.
 - Monorepo: `ezhst build set --root-dir apps/web`.
-- Build fails: fix the Dockerfile, `ezhst build dockerfile set -f Dockerfile`, then `ezhst redeploy` (rebuilds the last upload, even a failed one).
+- Build fails: read the stored Dockerfile with `ezhst build dockerfile show --json`, fix it, send it back with `ezhst build dockerfile set -f - <<'EOF'`, then `ezhst redeploy` (rebuilds the last upload, even a failed one).
 - App starts but the URL fails: it is not listening on `0.0.0.0:$PORT`.
 - Daily build limit reached (10 per day on Free, 50 on Pro): wait or upgrade; do not loop deploys.
 
@@ -80,7 +84,7 @@ Projects and runtime:
 Environment and build:
 - `env list | set KEY=VALUE... | unset KEY... | import <file>`
 - `build show`, `build set --root-dir <dir>` (build context, `""` for the project root), `build reset`
-- `build dockerfile show`, `build dockerfile set -f <file>` (`-` reads stdin), `build dockerfile template [id] [--apply]`
+- `build dockerfile show`, `build dockerfile set -f -` (reads stdin; agents always use this), `build dockerfile template [id] [--apply]`
 
 Custom domains:
 - `domains list | add <hostname> | verify <hostname> | remove <hostname>`

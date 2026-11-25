@@ -1126,7 +1126,7 @@ ${links}
 
 ## Use a template
 
-${fence("npx ezhst build dockerfile template\nnpx ezhst build dockerfile template python\nnpx ezhst build dockerfile template python --apply")}
+${fence("npx ezhst build dockerfile template\nnpx ezhst build dockerfile template fastapi\nnpx ezhst build dockerfile template fastapi --apply")}
 
 Without an id, the command lists every template. With an id it prints the Dockerfile, and ${q("--apply")} saves it to the linked app.
 
@@ -1342,7 +1342,7 @@ Use Alembic for SQLAlchemy and ${q("manage.py migrate")} for Django. Commit migr
 
 ## Deploy
 
-${fence("npx ezhst build dockerfile template python --apply\nnpx ezhst deploy")}
+${fence("npx ezhst build dockerfile template fastapi --apply\nnpx ezhst deploy")}
 
 Each database allows 20 connections, so keep pools small. See the [Postgres product page](/products/postgres).`,
       [

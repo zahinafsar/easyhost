@@ -4,7 +4,7 @@ import { json, request, type App } from "../lib/api.js";
 import { resolveApp, type ProjectOption } from "../lib/project.js";
 import { fail, isInteractive, log, output } from "../lib/ui.js";
 
-type Template = { id: string; label: string; content: string };
+type Template = { id: string; group: string; label: string; content: string };
 
 const settingsOf = (project: App) => ({
   rootDir: project.rootDir,
@@ -90,9 +90,9 @@ export const setDockerfile = async (options: ProjectOption & { file: string }) =
 export const dockerfileTemplate = async (id: string | undefined, options: ProjectOption & { apply?: boolean }) => {
   const templates = await listTemplates();
   if (!id) {
-    output({ templates: templates.map((template) => ({ id: template.id, label: template.label })) }, () => {
+    output({ templates: templates.map((template) => ({ id: template.id, group: template.group, label: template.label })) }, () => {
       for (const template of templates) {
-        log.info(`${template.id.padEnd(8)} ${template.label}`);
+        log.info(`${template.id.padEnd(14)} ${template.group.padEnd(9)} ${template.label}`);
       }
     });
     return;
@@ -114,20 +114,31 @@ export const ensureDockerfile = async (project: App) => {
   if (project.dockerfile) {
     return project;
   }
-  const hint = "This app has no Dockerfile. Write one and run `ezhst build dockerfile set -f Dockerfile`, or start from a template with `ezhst build dockerfile template <id> --apply`.";
+  const hint = "This app has no Dockerfile. Pipe one in with `ezhst build dockerfile set -f -`, or start from a template with `ezhst build dockerfile template <id> --apply`.";
   if (!isInteractive()) {
     fail(hint);
   }
   const templates = await listTemplates();
-  const choice = await select({
+  const groups = [...new Set(templates.map((template) => template.group))];
+  const group = await select({
     message: "This app has no Dockerfile. Start from a template?",
-    choices: [...templates.map((template) => ({ name: template.label, value: template.id })), { name: "Cancel", value: "" }],
+    choices: [...groups.map((name) => ({ name, value: name })), { name: "Cancel", value: "" }],
   });
+  const options = templates.filter((item) => item.group === group);
+  let choice = "";
+  if (options.length === 1) {
+    choice = options[0].id;
+  } else if (options.length > 1) {
+    choice = await select({
+      message: "Which framework?",
+      choices: options.map((template) => ({ name: template.label, value: template.id })),
+    });
+  }
   const template = templates.find((item) => item.id === choice);
   if (!template) {
     return fail(hint);
   }
   const app = await saveSettings(project, { dockerfile: template.content });
-  log.success(`${template.label} Dockerfile saved. Edit it later with \`ezhst build dockerfile set -f <file>\`.`);
+  log.success(`${template.label} Dockerfile saved. Edit it later in the Build tab or with \`ezhst build dockerfile set -f -\`.`);
   return app;
 };

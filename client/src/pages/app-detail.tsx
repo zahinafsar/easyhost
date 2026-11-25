@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, ExternalLink, FileText, Globe, List as ListIcon, Play, Plus, RefreshCw, Rocket, Sparkles, Square, Trash2, X } from "lucide-react";
+import { CheckCircle2, ChevronDown, ExternalLink, FileText, Globe, List as ListIcon, Play, Plus, RefreshCw, Rocket, Sparkles, Square, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   Alert,
   Button,
@@ -12,6 +13,13 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
   EmptyState,
   Field,
   Form,
@@ -22,8 +30,6 @@ import {
   IconButton,
   Input,
   Link,
-  NativeSelect,
-  NativeSelectOption,
   Pre,
   SegmentedControl,
   Skeleton,
@@ -197,6 +203,29 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
   );
 };
 
+type Template = { id: string; group: string; label: string; content: string };
+
+const TEMPLATE_ICONS: Record<string, string> = {
+  node: "nodejs",
+  static: "html5",
+  "Node.js": "nodejs",
+  Bun: "bun",
+  Python: "python",
+  Ruby: "ruby",
+  PHP: "php",
+  Go: "go",
+  Rust: "rust",
+  Zig: "zig",
+  Static: "html5",
+};
+
+const DARK_ICONS = ["bun", "django", "elysia", "express", "fastify", "flask", "nextjs", "rust"];
+
+const TemplateIcon = ({ name }: { name: string }) => {
+  const icon = TEMPLATE_ICONS[name] ?? name;
+  return <img src={`/templates/${icon}.svg`} alt="" className={cn("size-4 shrink-0", DARK_ICONS.includes(icon) && "dark:invert")} />;
+};
+
 const BuildSettings = ({ appId, initial }: { appId: string; initial: { rootDir: string | null; dockerfile: string | null } }) => {
   const [rootDir, setRootDir] = useState(initial.rootDir ?? "");
   const [dockerfile, setDockerfile] = useState(initial.dockerfile ?? "");
@@ -210,11 +239,21 @@ const BuildSettings = ({ appId, initial }: { appId: string; initial: { rootDir: 
     success: "Build settings saved. Redeploy to apply.",
   });
 
-  const applyTemplate = (id: string) => {
-    const template = templates.data?.templates.find((item) => item.id === id);
-    if (template) {
-      setDockerfile(template.content);
+  const [selected, setSelected] = useState<Template | null>(null);
+
+  const groups: { name: string; items: Template[] }[] = [];
+  for (const template of templates.data?.templates ?? []) {
+    const group = groups.find((item) => item.name === template.group);
+    if (group) {
+      group.items.push(template);
+    } else {
+      groups.push({ name: template.group, items: [template] });
     }
+  }
+
+  const applyTemplate = (template: Template) => {
+    setDockerfile(template.content);
+    setSelected(template);
   };
 
   return (
@@ -234,14 +273,54 @@ const BuildSettings = ({ appId, initial }: { appId: string; initial: { rootDir: 
               <Input id="rootDir" className="font-mono" placeholder="/" value={rootDir} onChange={(event) => setRootDir(event.target.value)} spellCheck={false} />
             </Field>
             <Field label="Template" htmlFor="template">
-              <NativeSelect id="template" value="" onChange={(event) => applyTemplate(event.target.value)} disabled={!templates.data}>
-                <NativeSelectOption value="">Select</NativeSelectOption>
-                {templates.data?.templates.map((template) => (
-                  <NativeSelectOption key={template.id} value={template.id}>
-                    {template.label}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild disabled={!templates.data}>
+                  <button
+                    id="template"
+                    type="button"
+                    className="flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-input bg-surface px-3.5 text-sm text-foreground outline-none transition-[border-color,box-shadow] focus-visible:border-accent-green/60 focus-visible:ring-[3px] focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-surface-2"
+                  >
+                    {selected ? (
+                      <span className="flex items-center gap-2.5">
+                        <TemplateIcon name={selected.id} />
+                        {selected.label}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Select</span>
+                    )}
+                    <ChevronDown className="size-4 text-muted-foreground opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width)">
+                  {groups.map((group) => {
+                    if (group.items.length === 1) {
+                      const template = group.items[0];
+                      return (
+                        <DropdownMenuItem key={template.id} onSelect={() => applyTemplate(template)}>
+                          <TemplateIcon name={template.id} />
+                          {template.label}
+                        </DropdownMenuItem>
+                      );
+                    }
+                    return (
+                      <DropdownMenuSub key={group.name}>
+                        <DropdownMenuSubTrigger>
+                          <TemplateIcon name={group.name} />
+                          {group.name}
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          {group.items.map((template) => (
+                            <DropdownMenuItem key={template.id} onSelect={() => applyTemplate(template)}>
+                              <TemplateIcon name={template.id} />
+                              {template.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </Field>
           </Grid>
           <Field label="Dockerfile">
