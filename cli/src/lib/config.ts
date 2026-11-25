@@ -2,9 +2,9 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { homedir } from "node:os";
 import path from "node:path";
 
-const CONFIG_DIR = path.join(homedir(), ".easyhost");
+const CONFIG_DIR = path.join(homedir(), ".reverhost");
 const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
-const PROJECT_FILE = ".easyhost.json";
+const PROJECT_FILE = ".reverhost.json";
 
 const PRODUCTION_API_URL = "https://api.reverhost.com";
 

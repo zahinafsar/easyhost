@@ -104,7 +104,7 @@ export const appRoutes = new Hono<UserEnv>()
 
     const { hostname } = c.req.valid("json");
     if (isPlatformHostname(hostname)) {
-      return c.json({ error: `${hostname} is an Reverhost domain and can't be added` }, 400);
+      return c.json({ error: `${hostname} is a Reverhost domain and can't be added` }, 400);
     }
     const existing = await prisma.appDomain.findUnique({ where: { hostname } });
     if (existing) {

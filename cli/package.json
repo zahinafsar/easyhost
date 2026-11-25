@@ -1,6 +1,6 @@
 {
   "name": "ezhst",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Reverhost CLI: agent-first hosting for Node.js apps with storage and databases",
   "type": "module",
   "bin": {

@@ -692,7 +692,7 @@ export const PRODUCTS = [
   {
     id: "team-members",
     name: "Team members",
-    title: "Invite Your Team to an Reverhost Project",
+    title: "Invite Your Team to a Reverhost Project",
     summary: "Invite people to a project by email. Members manage everything in it; only the owner can invite, remove, rename or delete.",
     points: ["Email invites that work for people without an account", "Members manage apps, deploys, storage and database", "The owner can revoke invites and remove members at any time", "Members can leave a project themselves"],
     commands: "ezhst members invite teammate@example.com\nezhst members list\nezhst accept-invite <link-or-token>",

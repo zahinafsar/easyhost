@@ -26,7 +26,7 @@ const IGNORED_DIRS = new Set([
   ".zig-cache",
   "zig-cache",
 ]);
-const IGNORED_FILES = new Set([".DS_Store", ".easyhost.json"]);
+const IGNORED_FILES = new Set([".DS_Store", ".reverhost.json"]);
 
 const isIgnored = (entry: string) => {
   const parts = entry.replace(/^\.\//, "").split("/");
@@ -41,7 +41,7 @@ const isIgnored = (entry: string) => {
 };
 
 const packSource = async (cwd: string) => {
-  const stage = mkdtempSync(path.join(tmpdir(), "easyhost-"));
+  const stage = mkdtempSync(path.join(tmpdir(), "reverhost-"));
   const archive = path.join(stage, "app.tgz");
   await tar.create(
     { gzip: true, cwd, file: archive, portable: true, filter: (entry) => !isIgnored(entry) },

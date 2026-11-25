@@ -1,5 +1,5 @@
 ---
-name: easyhost
+name: reverhost
 description: Deploy and manage apps on Reverhost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship an app (any language, built from a Dockerfile) to Reverhost, or to manage its environment variables, build settings, logs, custom domains, S3 storage or Postgres database.
 ---
 
@@ -11,7 +11,7 @@ Reverhost is free hosting for apps in any language, built from a Dockerfile you 
 
 - Always pass `--json` and parse stdout. Progress and hints go to stderr. On failure the process exits with code 1 and prints `{"error": "..."}`.
 - The CLI never prompts without a TTY. Pass every value as a flag.
-- Commands that act on a project use the project linked in `.easyhost.json`, or `--project <slug>`. App commands also use `--app <slug-or-id>` or the linked app. With multiple apps, select one explicitly.
+- Commands that act on a project use the project linked in `.reverhost.json`, or `--project <slug>`. App commands also use `--app <slug-or-id>` or the linked app. With multiple apps, select one explicitly.
 - Destructive commands (`projects delete`, `apps delete`, `storage delete`, `db delete`) need `--yes`. Only run them when the user explicitly asks.
 - Never print secrets (passwords, S3 secret keys, connection strings) back to the user unless they ask. Put them in env vars with `ezhst env set` instead.
 - `.env` files are never uploaded. Environment variables must be set with `ezhst env set` or `ezhst env import .env`.

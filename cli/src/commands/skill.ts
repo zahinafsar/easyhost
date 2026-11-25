@@ -50,7 +50,7 @@ export const installSkill = async (options: { agent?: string; global?: boolean; 
   if (scope === "global") {
     base = homedir();
   }
-  const directory = path.join(base, agent.folder, "skills", "easyhost");
+  const directory = path.join(base, agent.folder, "skills", "reverhost");
   const target = path.join(directory, "SKILL.md");
   mkdirSync(directory, { recursive: true });
   copyFileSync(SKILL_SOURCE, target);

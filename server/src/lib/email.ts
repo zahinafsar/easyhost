@@ -84,7 +84,7 @@ export const sendProjectDeletedEmail = async (email: string, name: string, proje
     html: emailLayout(`
       <h1 style="margin: 0 0 8px; font-size: 20px; color: #111;">Your project was deleted</h1>
       <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
-        Hi ${escapeHtml(name)}, an Reverhost administrator deleted your project <strong>${escapeHtml(projectName)}</strong> (${escapeHtml(projectHost)}).
+        Hi ${escapeHtml(name)}, a Reverhost administrator deleted your project <strong>${escapeHtml(projectName)}</strong> (${escapeHtml(projectHost)}).
       </p>
       <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
         The app, its deployments, custom domains, storage bucket and database were removed and cannot be restored. Your account and other projects are not affected.

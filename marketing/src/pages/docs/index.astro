@@ -214,8 +214,8 @@ const prismaCode = `datasource db {
         <Text tone="muted">The skill is a single <InlineCode>SKILL.md</InlineCode> file that teaches your agent how to use Reverhost.</Text>
         <CommandList>
           <CommandRow command="ezhst skill install">Asks which agent (Claude Code, Codex or Cursor), then Global or Local.</CommandRow>
-          <CommandRow command="ezhst skill install --agent claude --global">Writes <InlineCode>~/.claude/skills/easyhost/SKILL.md</InlineCode> for use across projects.</CommandRow>
-          <CommandRow command="ezhst skill install --agent cursor --local">Writes <InlineCode>.cursor/skills/easyhost/SKILL.md</InlineCode> in the current project.</CommandRow>
+          <CommandRow command="ezhst skill install --agent claude --global">Writes <InlineCode>~/.claude/skills/reverhost/SKILL.md</InlineCode> for use across projects.</CommandRow>
+          <CommandRow command="ezhst skill install --agent cursor --local">Writes <InlineCode>.cursor/skills/reverhost/SKILL.md</InlineCode> in the current project.</CommandRow>
         </CommandList>
         <Text tone="muted">Claude Code uses <InlineCode>.claude/skills</InlineCode>, Codex uses <InlineCode>.agents/skills</InlineCode> and Cursor uses <InlineCode>.cursor/skills</InlineCode>, under your home folder for Global or the current directory for Local. Choose Local to check the skill into the repo for your team. For noninteractive use, including <InlineCode>--json</InlineCode>, pass <InlineCode>--agent &lt;claude|codex|cursor&gt;</InlineCode> and exactly one of <InlineCode>--global</InlineCode> or <InlineCode>--local</InlineCode>.</Text>
         <Text tone="muted">For other agents, ask them to read the raw file at <Link href="/skill.md">https://reverhost.com/skill.md</Link> before deploying.</Text>
@@ -235,7 +235,7 @@ const prismaCode = `datasource db {
           <CommandRow command={"ezhst forgot-password --email <email>"}>Send a password reset link.</CommandRow>
         </CommandList>
         <Text tone="muted">Verification is mandatory. Until you run <InlineCode>ezhst verify</InlineCode> with the code from your inbox, other commands are rejected. In the dashboard, the same code is entered on the screen shown after sign up.</Text>
-        <Text tone="muted"><InlineCode>login</InlineCode> and <InlineCode>register</InlineCode> save your token in <InlineCode>~/.easyhost/config.json</InlineCode>. In CI or agent sandboxes, provide the token with the <InlineCode>EZHST_TOKEN</InlineCode> environment variable instead.</Text>
+        <Text tone="muted"><InlineCode>login</InlineCode> and <InlineCode>register</InlineCode> save your token in <InlineCode>~/.reverhost/config.json</InlineCode>. In CI or agent sandboxes, provide the token with the <InlineCode>EZHST_TOKEN</InlineCode> environment variable instead.</Text>
         <CodeBlock code={"EZHST_TOKEN=<token> npx ezhst deploy --json"} />
         <Heading level={3} size="sm">Output and prompts</Heading>
         <List gap="sm">
@@ -255,9 +255,9 @@ const prismaCode = `datasource db {
           <CommandRow command="ezhst projects info">Project details and apps.</CommandRow>
           <CommandRow command={"ezhst projects rename <name>"}>Change the display name. The URL stays the same.</CommandRow>
           <CommandRow command="ezhst projects delete --yes">Delete all apps, deployments, storage and the database.</CommandRow>
-          <CommandRow command={"ezhst link [--project <slug>]"}>Link the current folder to a project (writes <InlineCode>.easyhost.json</InlineCode>).</CommandRow>
+          <CommandRow command={"ezhst link [--project <slug>]"}>Link the current folder to a project (writes <InlineCode>.reverhost.json</InlineCode>).</CommandRow>
         </CommandList>
-        <Text tone="muted">Project-scoped commands use the project linked in <InlineCode>.easyhost.json</InlineCode>. Pass <InlineCode>--project &lt;slug&gt;</InlineCode> to any of them to target another project.</Text>
+        <Text tone="muted">Project-scoped commands use the project linked in <InlineCode>.reverhost.json</InlineCode>. Pass <InlineCode>--project &lt;slug&gt;</InlineCode> to any of them to target another project.</Text>
         <CodeBlock code={projectsCode} />
       </Stack>
     </Box>

@@ -214,10 +214,10 @@ npx ezhst deploy --json`;
         <Heading level={2} size="lg">Deploy with Claude Code</Heading>
         <Text tone="muted">Install the Reverhost instructions, then ask Claude Code to read the installed file before deploying.</Text>
         <CodeBlock code="npx ezhst skill install" />
-        <Text tone="muted">Choose Local to create <InlineCode>.agents/skills/easyhost/SKILL.md</InlineCode> in the current project, or Global to create <InlineCode>~/.agents/skills/easyhost/SKILL.md</InlineCode>. Pass <InlineCode>--local</InlineCode> or <InlineCode>--global</InlineCode> to skip the prompt. You can commit a local install to share it with your team.</Text>
+        <Text tone="muted">Choose Local to create <InlineCode>.agents/skills/reverhost/SKILL.md</InlineCode> in the current project, or Global to create <InlineCode>~/.agents/skills/reverhost/SKILL.md</InlineCode>. Pass <InlineCode>--local</InlineCode> or <InlineCode>--global</InlineCode> to skip the prompt. You can commit a local install to share it with your team.</Text>
         <Text tone="muted">For a local install, ask:</Text>
-        <CodeBlock code="Read .agents/skills/easyhost/SKILL.md, then deploy this to Reverhost." wrap />
-        <Text tone="muted">For a global install, use <InlineCode>~/.agents/skills/easyhost/SKILL.md</InlineCode> in that prompt.</Text>
+        <CodeBlock code="Read .agents/skills/reverhost/SKILL.md, then deploy this to Reverhost." wrap />
+        <Text tone="muted">For a global install, use <InlineCode>~/.agents/skills/reverhost/SKILL.md</InlineCode> in that prompt.</Text>
       </Stack>
     </Box>
 
@@ -238,7 +238,7 @@ npx ezhst deploy --json`;
         <CodeBlock code={firstDeployCode} />
         <NumberedList layout="stack">
           <NumberedItem title="Check who is logged in"><Text tone="muted">If nobody is, the agent asks you for an email and password and registers or logs in. After registering, it asks for the 6-digit code emailed to you and runs <InlineCode>verify</InlineCode>, which is required before any other command.</Text></NumberedItem>
-          <NumberedItem title="Create and link a project"><Text tone="muted">Each app has its own subdomain within the project. A <InlineCode>.easyhost.json</InlineCode> file records the link.</Text></NumberedItem>
+          <NumberedItem title="Create and link a project"><Text tone="muted">Each app has its own subdomain within the project. A <InlineCode>.reverhost.json</InlineCode> file records the link.</Text></NumberedItem>
           <NumberedItem title="Import environment variables"><Text tone="muted"><InlineCode>.env</InlineCode> files are never uploaded, so the agent imports them explicitly.</Text></NumberedItem>
           <NumberedItem title="Set a Dockerfile"><Text tone="muted">The agent prints the Node.js template, changes the last line to <InlineCode>next start -H 0.0.0.0 -p $PORT</InlineCode> and saves it to the app. A Dockerfile in your repository is only used once it is uploaded this way.</Text></NumberedItem>
           <NumberedItem title="Deploy"><Text tone="muted">The CLI packages the source (without <InlineCode>node_modules</InlineCode>, <InlineCode>.next</InlineCode>, <InlineCode>.git</InlineCode> and <InlineCode>.env*</InlineCode>), uploads it, and Reverhost builds the stored Dockerfile and starts the app.</Text></NumberedItem>

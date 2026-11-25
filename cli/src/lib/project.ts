@@ -40,7 +40,7 @@ export const linkProject = async (slug?: string) => {
     return fail("Missing --project <slug>. List projects with `ezhst projects list`.");
   }
   writeLinkedProject({ projectId: project.id, slug: project.slug });
-  log.dim("Saved project link in .easyhost.json");
+  log.dim("Saved project link in .reverhost.json");
   return project;
 };
 

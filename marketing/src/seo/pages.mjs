@@ -163,7 +163,7 @@ ${fence("npx ezhst deployments log --json\nnpx ezhst logs --tail 200 --json")}
 
 If the build passes but nothing loads, see [why a ${framework.name} app is unreachable](/errors/${framework.id}-app-unreachable). ${frameworkLinks(framework)}`,
         faq: [
-          { q: `Can ${agent.name} create an Reverhost account for me?`, a: "Yes. The skill tells the agent to ask for your name, email and password and then register. You then give the agent the 6-digit verification code from your inbox, and it runs `ezhst verify <code>` before anything else." },
+          { q: `Can ${agent.name} create a Reverhost account for me?`, a: "Yes. The skill tells the agent to ask for your name, email and password and then register. You then give the agent the 6-digit verification code from your inbox, and it runs `ezhst verify <code>` before anything else." },
           { q: `Will ${agent.name} see my secrets?`, a: "The agent can read files and command output in its session. The skill tells it to put secrets in env vars and not to print them back unless you ask." },
         ],
       });
@@ -694,11 +694,11 @@ ${fence("npx ezhst db create main\nnpx ezhst db info --json")}
 
 Use client tools at least as new as the source server. Run this during a quiet period so no writes are lost.
 
-${fence('pg_dump --no-owner --no-acl --format=custom "$SOURCE_URL" -f backup.dump\npg_restore --no-owner --no-acl -d "$EASYHOST_URL" backup.dump')}
+${fence('pg_dump --no-owner --no-acl --format=custom "$SOURCE_URL" -f backup.dump\npg_restore --no-owner --no-acl -d "$REVERHOST_URL" backup.dump')}
 
 ## Check and switch
 
-${fence('npx ezhst db query "select count(*) from users"\nnpx ezhst env set DATABASE_URL="$EASYHOST_URL"\nnpx ezhst redeploy')}
+${fence('npx ezhst db query "select count(*) from users"\nnpx ezhst env set DATABASE_URL="$REVERHOST_URL"\nnpx ezhst redeploy')}
 
 Each database allows 20 connections and lives on a shared server, so check that your workload fits. Keep your own backups. See the [Postgres product page](/products/postgres).`,
       faq: [],
@@ -956,7 +956,7 @@ const conceptDescription = (text) => {
 };
 
 const conceptPages = () => {
-  return CONCEPTS.map(([id, title, text, onEasyHost, link]) => {
+  return CONCEPTS.map(([id, title, text, onReverhost, link]) => {
     const path = `/learn/${id}`;
     return {
       family: "learn",
@@ -972,7 +972,7 @@ ${text}
 
 ## On Reverhost
 
-${onEasyHost} [Learn more](${link}).`,
+${onReverhost} [Learn more](${link}).`,
       faq: [],
     };
   });

@@ -25,7 +25,7 @@ gcloud storage buckets update "gs://${BUCKET}" --lifecycle-file=lifecycle.json
 rm lifecycle.json
 
 if ! gcloud iam service-accounts describe "$SA" >/dev/null 2>&1; then
-  gcloud iam service-accounts create "$SA_NAME" --display-name="EasyHost builder"
+  gcloud iam service-accounts create "$SA_NAME" --display-name="Reverhost builder"
 fi
 
 gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:${SA}" --role=roles/cloudbuild.builds.editor --condition=None
