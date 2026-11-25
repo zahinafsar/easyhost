@@ -72,7 +72,7 @@ export const AppsPage = () => {
     <>
       <PageHeader
         title="Apps"
-        description="Deploy Node.js services with their own builds, environment, and domains."
+        description="Deploy any service from a Dockerfile, each with its own build, environment, and domains."
         action={
           <Button disabled={atLimit} onClick={() => setOpen(true)}>
             <Plus />
@@ -91,7 +91,7 @@ export const AppsPage = () => {
             <EmptyState
               icon={Boxes}
               title="No apps yet"
-              description="Create an app to deploy your first Node.js service."
+              description="Create an app to deploy your first service."
               action={
                 <Button disabled={atLimit} onClick={() => setOpen(true)}>
                   <Plus />
@@ -147,7 +147,7 @@ export const AppsPage = () => {
           <Form onSubmit={() => create.mutate(undefined)}>
             <DialogHeader>
               <DialogTitle>New app</DialogTitle>
-              <DialogDescription>Create a Node.js app in this project. You can deploy its source with the CLI.</DialogDescription>
+              <DialogDescription>Create an app in this project. You can deploy its source with the CLI.</DialogDescription>
             </DialogHeader>
             <Field label="App name" htmlFor="app-name">
               <Input id="app-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="My API" minLength={2} maxLength={40} required autoFocus />

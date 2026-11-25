@@ -9,7 +9,7 @@ import { List, ListItem } from "@/components/ui/list";
 import { Stack } from "@/components/ui/stack";
 import { Accent, Text } from "@/components/ui/text";
 
-const FACTS = ["Deploy any Node.js app with ezhst deploy", "A Postgres database for every project", "S3 compatible storage buckets", "Free plan with 3 projects and 2 apps each"];
+const FACTS = ["Deploy any app from a Dockerfile with ezhst deploy", "A Postgres database for every project", "S3 compatible storage buckets", "Free plan with 3 projects and 2 apps each"];
 
 export const AuthScreen = ({ children }: { children: React.ReactNode }) => {
   return (

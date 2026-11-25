@@ -173,11 +173,8 @@ model App {
   name            String
   slug            String            @unique
   env             Json              @default("{}")
-  nodeVersion     String?
   rootDir         String?
-  installCommand  String?
-  buildCommand    String?
-  startCommand    String?
+  dockerfile      String?           @db.Text
   status          AppStatus         @default(IDLE)
   containerId     String?
   createdAt       DateTime          @default(now())

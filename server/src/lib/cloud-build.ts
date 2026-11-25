@@ -1,6 +1,9 @@
+import path from "node:path";
 import { GoogleAuth } from "google-auth-library";
 import { env } from "./env.js";
 import { REGISTRY_USER } from "./registry.js";
+import { LIMITS } from "./limits.js";
+import { SOURCE_DIR } from "./docker.js";
 
 const REGION = "us-central1";
 const REGISTRY_SECRET = "registry-password";
@@ -55,16 +58,34 @@ export const removeSource = async (name: string) => {
   }
 };
 
-const buildScript = (tag: string) => {
+const quote = (value: string) => `'${value.replace(/'/g, "'\\''")}'`;
+
+const MB = 1024 * 1024;
+
+export type BuildRequest = {
+  tag: string;
+  rootDir: string;
+};
+
+const buildScript = ({ tag, rootDir }: BuildRequest) => {
+  const source = quote(path.posix.join(SOURCE_DIR, rootDir));
+  const maxMb = Math.floor(LIMITS.maxImageBytes / MB);
   return [
-    `echo "$$REGISTRY_PASSWORD" | docker login ${env.registry.host} -u ${REGISTRY_USER} --password-stdin`,
-    `docker buildx build --progress=plain --secret id=appenv,src=appenv -t ${tag} --push .`,
-  ].join(" && ");
+    "set -e",
+    `docker buildx build --progress=plain --load --secret id=appenv,src=appenv -f Dockerfile -t ${tag} ${source}`,
+    `SIZE=$(docker image inspect -f '{{.Size}}' ${tag})`,
+    `echo "Image size: $((SIZE / ${MB})) MB"`,
+    `if [ "$SIZE" -gt ${LIMITS.maxImageBytes} ]; then echo "Image is $((SIZE / ${MB})) MB, the limit is ${maxMb} MB. Use a smaller base image or a multi-stage build."; exit 1; fi`,
+    `echo "$REGISTRY_PASSWORD" | docker login ${env.registry.host} -u ${REGISTRY_USER} --password-stdin`,
+    `docker push ${tag}`,
+  ]
+    .join("\n")
+    .replaceAll("$", "$$$$");
 };
 
 export const sourceObjectName = (deploymentId: string) => `sources/${deploymentId}.tgz`;
 
-export const submitBuild = async (deploymentId: string, context: Buffer, tag: string) => {
+export const submitBuild = async (deploymentId: string, context: Buffer, build: BuildRequest) => {
   const source = sourceObjectName(deploymentId);
   await uploadSource(source, context);
 
@@ -77,7 +98,7 @@ export const submitBuild = async (deploymentId: string, context: Buffer, tag: st
         {
           name: BUILDER_IMAGE,
           entrypoint: "sh",
-          args: ["-c", buildScript(tag)],
+          args: ["-c", buildScript(build)],
           secretEnv: ["REGISTRY_PASSWORD"],
         },
       ],

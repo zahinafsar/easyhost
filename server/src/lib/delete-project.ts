@@ -59,7 +59,7 @@ export const deleteApp = async (app: Pick<App, "id" | "slug" | "parentProjectId"
         prisma.appDomain.deleteMany({ where: { appId: app.id } }),
         prisma.app.update({
           where: { id: app.id },
-          data: { appEnabled: false, deleting: false, status: "IDLE", containerId: null, appName: null, env: {}, nodeVersion: null, rootDir: null, installCommand: null, buildCommand: null, startCommand: null },
+          data: { appEnabled: false, deleting: false, status: "IDLE", containerId: null, appName: null, env: {}, rootDir: null, dockerfile: null },
         }),
       ]);
     }

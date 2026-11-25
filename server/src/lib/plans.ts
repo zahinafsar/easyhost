@@ -11,6 +11,7 @@ export type Plan = {
   dbBytes: number;
   storageBytes: number;
   monthlyTokens: number;
+  buildsPerDay: number;
 };
 
 export const FREE: Plan = {
@@ -22,6 +23,7 @@ export const FREE: Plan = {
   dbBytes: 128 * MB,
   storageBytes: 256 * MB,
   monthlyTokens: 0,
+  buildsPerDay: 10,
 };
 
 export const PRO: Plan = {
@@ -33,6 +35,7 @@ export const PRO: Plan = {
   dbBytes: 128 * MB,
   storageBytes: 256 * MB,
   monthlyTokens: 1000,
+  buildsPerDay: 50,
 };
 
 export const PLANS = [FREE, PRO];

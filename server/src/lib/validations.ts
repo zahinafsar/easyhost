@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { NODE_VERSIONS } from "./build-plan.js";
+import { env } from "./env.js";
 import { LIMITS } from "./limits.js";
 
 const resourceName = z
@@ -128,15 +128,20 @@ export const updateEnvSchema = z.object({
   env: z.record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "Invalid env var name"), z.string()),
 });
 
-const buildCommand = z
+const DOCKERFILE_MAX_BYTES = 20 * 1024;
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const dockerfileSchema = z
   .string()
-  .trim()
-  .max(500, "Command must be at most 500 characters")
-  .refine((value) => !/[\r\n]/.test(value), "Command must be a single line")
+  .refine((value) => Buffer.byteLength(value) <= DOCKERFILE_MAX_BYTES, "Dockerfile must be at most 20 KB")
+  .transform((value) => value.replace(/\r\n/g, "\n").trim())
+  .refine((value) => !value || /^\s*FROM\s+\S+/im.test(value), "Dockerfile needs a FROM instruction")
+  .refine((value) => !/^\s*#\s*syntax\s*=/im.test(value), "Custom BuildKit frontends (# syntax=) are not allowed")
+  .refine((value) => !new RegExp(escapeRegExp(env.registry.host), "i").test(value), "Dockerfile cannot reference the platform registry")
   .transform((value) => value || null);
 
 export const updateBuildSchema = z.object({
-  nodeVersion: z.enum(NODE_VERSIONS).nullable(),
   rootDir: z
     .string()
     .trim()
@@ -146,10 +151,8 @@ export const updateBuildSchema = z.object({
       "Use a relative path like apps/web",
     )
     .transform((value) => value || null),
-  installCommand: buildCommand,
-  buildCommand,
-  startCommand: buildCommand,
-});
+  dockerfile: dockerfileSchema,
+}).partial();
 
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

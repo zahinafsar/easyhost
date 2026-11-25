@@ -115,7 +115,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       default: {}
-      apps: {}
       proxy:
         aliases:
           - easyhost-api
@@ -127,8 +126,6 @@ volumes:
   registry_auth:
 
 networks:
-  apps:
-    name: easyhost
   proxy:
     name: ${PROXY_NETWORK:?Set PROXY_NETWORK in .env}
     external: true

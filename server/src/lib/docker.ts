@@ -1,44 +1,14 @@
 import Docker from "dockerode";
-import { pack } from "tar-stream";
+import { extract, pack } from "tar-stream";
 import path from "node:path";
-import { PassThrough } from "node:stream";
-import { createGzip } from "node:zlib";
-import type { BuildPlan } from "./build-plan.js";
+import { PassThrough, Readable } from "node:stream";
+import { createGunzip, createGzip } from "node:zlib";
+import { LIMITS } from "./limits.js";
 
 export const docker = new Docker();
 
 const DOCKER_NETWORK = "easyhost";
 export const APP_PORT = 3000;
-
-const ENV_SECRET = "/run/secrets/appenv";
-
-export const runWithEnv = (command: string) => {
-  return `RUN --mount=type=secret,id=appenv,target=${ENV_SECRET} set -a && . ${ENV_SECRET} && set +a && ${command}`;
-};
-
-const dockerfile = (plan: BuildPlan) => {
-  const installPath = path.posix.join("/app", plan.installDir);
-  const appPath = path.posix.join("/app", plan.appDir);
-  let build = "";
-  if (plan.build) {
-    build = runWithEnv(plan.build);
-  }
-  return `# syntax=docker/dockerfile:1
-FROM node:${plan.nodeVersion}-alpine
-RUN apk add --no-cache libc6-compat openssl
-WORKDIR /app
-ENV NEXT_TELEMETRY_DISABLED=1
-ADD app.tgz /app/
-WORKDIR ${installPath}
-${runWithEnv(plan.install)}
-WORKDIR ${appPath}
-ENV PATH=${appPath}/node_modules/.bin:/app/node_modules/.bin:$PATH
-${build}
-ENV NODE_ENV=production PORT=${APP_PORT} HOST=0.0.0.0 HOSTNAME=0.0.0.0
-EXPOSE ${APP_PORT}
-CMD ["sh", "-c", ${JSON.stringify(plan.start)}]
-`;
-};
 
 const envFile = (env: Record<string, string>) => {
   return Object.entries(env)
@@ -48,25 +18,75 @@ const envFile = (env: Record<string, string>) => {
 
 export const containerName = (slug: string) => `eh-app-${slug}`;
 
-export const buildContext = async (artifact: Buffer, plan: BuildPlan, env: Record<string, string>) => {
-  const tar = pack();
-  tar.entry({ name: "Dockerfile" }, dockerfile(plan));
-  tar.entry({ name: "appenv", mode: 0o600 }, envFile(env));
-  tar.entry({ name: "app.tgz" }, artifact);
-  tar.finalize();
+export const SOURCE_DIR = "src";
+
+const collect = async (stream: NodeJS.ReadableStream) => {
   const chunks: Buffer[] = [];
-  for await (const chunk of tar.pipe(createGzip())) {
+  for await (const chunk of stream) {
     chunks.push(chunk as Buffer);
   }
   return Buffer.concat(chunks);
 };
 
+const sourcePath = (name: string) => {
+  const normalized = path.posix.normalize(name).replace(/^(\.\/)+/, "");
+  if (normalized === "." || normalized.startsWith("..") || path.posix.isAbsolute(normalized)) {
+    return null;
+  }
+  return path.posix.join(SOURCE_DIR, normalized);
+};
+
+export const buildContext = async (artifact: Buffer, appEnv: Record<string, string>, dockerfile: string) => {
+  const tar = pack();
+  const output = collect(tar.pipe(createGzip()));
+  tar.entry({ name: "appenv", mode: 0o600 }, envFile({ ...appEnv, PORT: String(APP_PORT) }));
+  tar.entry({ name: "Dockerfile" }, dockerfile);
+
+  const source = extract();
+  const gunzip = createGunzip();
+  gunzip.on("error", (error) => source.destroy(error));
+  Readable.from([artifact]).pipe(gunzip).pipe(source);
+
+  for await (const entry of source) {
+    const name = sourcePath(entry.header.name);
+    if (!name || (entry.header.type !== "file" && entry.header.type !== "directory")) {
+      entry.resume();
+      continue;
+    }
+    const header = { ...entry.header, name };
+    if (header.type === "directory") {
+      tar.entry(header);
+      entry.resume();
+      continue;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const sink = tar.entry(header, (error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+      entry.pipe(sink);
+    });
+  }
+
+  tar.finalize();
+  return output;
+};
+
+const APPS_SUBNET = "172.30.0.0/16";
+
+const APPS_IP_RANGE = "172.30.0.0/17";
+
 const ensureNetwork = async () => {
   const networks = await docker.listNetworks({ filters: { name: [DOCKER_NETWORK] } });
   if (!networks.some((network) => network.Name === DOCKER_NETWORK)) {
-    await docker.createNetwork({ Name: DOCKER_NETWORK });
+    await docker.createNetwork({ Name: DOCKER_NETWORK, IPAM: { Driver: "default", Config: [{ Subnet: APPS_SUBNET, IPRange: APPS_IP_RANGE }] } });
   }
 };
+
+const LOG_CONFIG = { Type: "json-file", Config: { "max-size": "10m", "max-file": "3" } };
 
 export const removeContainer = async (name: string) => {
   const container = docker.getContainer(name);
@@ -90,8 +110,11 @@ export const runContainer = async (name: string, image: string, env: Record<stri
     HostConfig: {
       NetworkMode: DOCKER_NETWORK,
       RestartPolicy: { Name: "unless-stopped" },
-      Memory: 512 * 1024 * 1024,
-      NanoCpus: 1_000_000_000,
+      Memory: LIMITS.appMemoryBytes,
+      MemorySwap: LIMITS.appMemoryBytes,
+      NanoCpus: LIMITS.appNanoCpus,
+      PidsLimit: LIMITS.appPids,
+      LogConfig: LOG_CONFIG,
     },
     Labels: { "easyhost.app": name },
   });
@@ -132,8 +155,11 @@ export const runAiContainer = async (
   const hostConfig: Docker.HostConfig = {
     NetworkMode: DOCKER_NETWORK,
     RestartPolicy: { Name: "unless-stopped" },
-    Memory: 512 * 1024 * 1024,
-    NanoCpus: 1_000_000_000,
+    Memory: LIMITS.appMemoryBytes,
+    MemorySwap: LIMITS.appMemoryBytes,
+    NanoCpus: LIMITS.appNanoCpus,
+    PidsLimit: LIMITS.appPids,
+    LogConfig: LOG_CONFIG,
     Binds: [`${NPM_CACHE_VOLUME}:/root/.npm`],
   };
   let exposedPorts: Record<string, object> | undefined;

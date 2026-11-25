@@ -304,26 +304,28 @@ export const aiAppEnv = async (app: AiEnvApp) => {
 const READY_TIMEOUT_MS = 20_000;
 const READY_INTERVAL_MS = 300;
 
-const internalUrl = async (slug: string) => {
+const READY_PROBE = `fetch("http://127.0.0.1:${APP_PORT}").then(() => process.exit(0), () => process.exit(1))`;
+
+const answers = async (slug: string) => {
   if (env.isProduction) {
-    return `http://${containerName(slug)}:${APP_PORT}`;
+    const result = await execInContainer(containerName(slug), ["node", "-e", READY_PROBE], 3000).catch(() => null);
+    return result?.exitCode === 0;
   }
   const port = await publishedPort(containerName(slug));
   if (!port) {
-    return null;
+    return false;
   }
-  return `http://127.0.0.1:${port}`;
+  return fetch(`http://127.0.0.1:${port}`, { signal: AbortSignal.timeout(2000) }).then(
+    () => true,
+    () => false,
+  );
 };
 
 const waitUntilReady = async (slug: string) => {
   const deadline = Date.now() + READY_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const url = await internalUrl(slug);
-    if (url) {
-      const answered = await fetch(url, { signal: AbortSignal.timeout(2000) }).then(() => true, () => false);
-      if (answered) {
-        return true;
-      }
+    if (await answers(slug)) {
+      return true;
     }
     await new Promise((resolve) => setTimeout(resolve, READY_INTERVAL_MS));
   }

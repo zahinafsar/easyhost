@@ -8,4 +8,8 @@ export const LIMITS = {
   buckets: 10,
   databases: 10,
   concurrentBuilds: 5,
+  appMemoryBytes: 256 * 1024 * 1024,
+  appNanoCpus: 500_000_000,
+  appPids: 256,
+  maxImageBytes: 1024 * 1024 * 1024,
 } as const;

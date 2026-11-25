@@ -12,8 +12,9 @@ import { validate } from "../lib/validator.js";
 import { addDomainSchema, createAppSchema, logsQuerySchema, updateBuildSchema, updateEnvSchema, updateProjectSchema } from "../lib/validations.js";
 import { requireUser } from "../middleware/require-user.js";
 import type { UserEnv } from "../lib/types.js";
-import { SUSPENDED_ERROR, appLimitMessage, projectEntitlement } from "../lib/billing.js";
-import { NODE_VERSIONS } from "../lib/build-plan.js";
+import { SUSPENDED_ERROR, appLimitMessage, buildLimitError, projectEntitlement } from "../lib/billing.js";
+import { MISSING_DOCKERFILE_ERROR } from "../lib/deploy.js";
+import { DOCKERFILE_TEMPLATES } from "../lib/dockerfile-templates.js";
 import { startAiApp } from "../lib/ai-apps.js";
 
 const AI_APP_ERROR = "AI apps are changed from the Builder, not deployed.";
@@ -31,6 +32,9 @@ const deploymentSummary = {
 
 export const appRoutes = new Hono<UserEnv>()
   .use(requireUser)
+  .get("/dockerfile-templates", (c) => {
+    return c.json({ templates: DOCKERFILE_TEMPLATES });
+  })
   .use(requireProject)
   .get("/", async (c) => {
     const apps = await prisma.app.findMany({
@@ -90,7 +94,6 @@ export const appRoutes = new Hono<UserEnv>()
       deployments,
       domains,
       dnsTarget: { cname: appHost(app.slug), ip: env.publicIp },
-      nodeVersions: NODE_VERSIONS,
     });
   })
   .post("/:id/domains", validate("json", addDomainSchema), async (c) => {
@@ -201,6 +204,13 @@ export const appRoutes = new Hono<UserEnv>()
     if (app.suspended) {
       return c.json({ error: SUSPENDED_ERROR }, 402);
     }
+    if (!app.dockerfile) {
+      return c.json({ error: MISSING_DOCKERFILE_ERROR }, 400);
+    }
+    const limitError = await buildLimitError(c.get("projectId"));
+    if (limitError) {
+      return c.json({ error: limitError }, 429);
+    }
 
     const body = await c.req.parseBody();
     const file = body.file;
@@ -230,13 +240,20 @@ export const appRoutes = new Hono<UserEnv>()
     if (app.suspended) {
       return c.json({ error: SUSPENDED_ERROR }, 402);
     }
+    if (!app.dockerfile) {
+      return c.json({ error: MISSING_DOCKERFILE_ERROR }, 400);
+    }
+    const limitError = await buildLimitError(c.get("projectId"));
+    if (limitError) {
+      return c.json({ error: limitError }, 429);
+    }
 
     const latest = await prisma.deployment.findFirst({
-      where: { appId: app.id, status: { in: ["RUNNING", "SUPERSEDED"] } },
+      where: { appId: app.id },
       orderBy: { createdAt: "desc" },
     });
     if (!latest) {
-      return c.json({ error: "No successful deployment to redeploy" }, 400);
+      return c.json({ error: "Nothing to redeploy yet. Upload the source with ezhst deploy first." }, 400);
     }
 
     const deployment = await enqueueDeployment(app.id, latest.artifactKey);

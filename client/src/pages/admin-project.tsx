@@ -172,9 +172,9 @@ export const AdminProjectPage = () => {
                     {formatBytes(app.usage.memoryBytes)}, {app.usage.cpuPercent}% CPU
                   </Text>
                 )}
-                {app.nodeVersion && (
+                {app.kind !== "AI" && !app.hasDockerfile && (
                   <Text size="xs" tone="muted">
-                    Node {app.nodeVersion}
+                    No Dockerfile
                   </Text>
                 )}
               </Stack>

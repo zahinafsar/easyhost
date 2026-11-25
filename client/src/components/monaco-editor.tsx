@@ -47,6 +47,7 @@ const LANGUAGES: Record<string, string> = {
   yml: "yaml",
   yaml: "yaml",
   sh: "shell",
+  dockerfile: "dockerfile",
 };
 
 const languageFor = (path: string) => {

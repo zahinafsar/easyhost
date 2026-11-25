@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, openAsBlob, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, openAsBlob, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import * as tar from "tar";
@@ -7,8 +7,25 @@ import ora, { type Ora } from "ora";
 import { request, type Deployment, type DeploymentStep, type App } from "../lib/api.js";
 import { resolveApp, resolveAppDetail, type ProjectOption } from "../lib/project.js";
 import { fail, isJsonMode, log, output } from "../lib/ui.js";
+import { ensureDockerfile } from "./build.js";
 
-const IGNORED_DIRS = new Set(["node_modules", ".next", ".git", ".vercel", ".turbo", ".swc"]);
+const IGNORED_DIRS = new Set([
+  "node_modules",
+  ".next",
+  ".git",
+  ".vercel",
+  ".turbo",
+  ".swc",
+  "__pycache__",
+  ".venv",
+  "venv",
+  ".pytest_cache",
+  ".mypy_cache",
+  "target",
+  "zig-out",
+  ".zig-cache",
+  "zig-cache",
+]);
 const IGNORED_FILES = new Set([".DS_Store", ".easyhost.json"]);
 
 const isIgnored = (entry: string) => {
@@ -21,18 +38,6 @@ const isIgnored = (entry: string) => {
     return true;
   }
   return name.startsWith(".env") && name !== ".env.example";
-};
-
-const assertNodeProject = (cwd: string) => {
-  const pkgFile = path.join(cwd, "package.json");
-  if (!existsSync(pkgFile)) {
-    fail("No package.json found. Run this inside your Node.js app.");
-  }
-
-  const pkg = JSON.parse(readFileSync(pkgFile, "utf8"));
-  if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-    fail("package.json must contain a JSON object.");
-  }
 };
 
 const packSource = async (cwd: string) => {
@@ -187,9 +192,8 @@ const finish = (project: App, deploymentId: string, url: string, result: FollowR
 
 export const deploy = async (options: ProjectOption & { verbose?: boolean }) => {
   const cwd = process.cwd();
-  assertNodeProject(cwd);
 
-  const project = await resolveApp(options, true);
+  const project = await ensureDockerfile(await resolveApp(options, true));
   log.info(`\nDeploying ${pc.bold(project.name)}\n`);
 
   const { stage, archive } = await withSpinner("Packaging source", () => "Packaged source", () => packSource(cwd));

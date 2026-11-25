@@ -1,11 +1,11 @@
 ---
 name: easyhost
-description: Deploy and manage apps on Reverhost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship a Node.js app to Reverhost, or to manage its environment variables, build settings, logs, custom domains, S3 storage or Postgres database.
+description: Deploy and manage apps on Reverhost (free hosting) with the ezhst CLI. Use when the user asks to deploy, host, publish or ship an app (any language, built from a Dockerfile) to Reverhost, or to manage its environment variables, build settings, logs, custom domains, S3 storage or Postgres database.
 ---
 
 # Reverhost
 
-Reverhost is free hosting for Node.js apps with built-in S3 storage and Postgres. It is in beta. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
+Reverhost is free hosting for apps in any language, built from a Dockerfile you write, with built-in S3 storage and Postgres. It is in beta. Everything is done through the `ezhst` CLI. Run it with `npx ezhst <command>` (or `ezhst` if installed globally with `npm i -g ezhst`).
 
 ## Rules for agents
 
@@ -36,12 +36,19 @@ npx ezhst link --project <slug> --json
 
 ## 3. Deploy
 
-Run inside the Node.js app folder with a `package.json`. First create an app and link it (app slugs are returned by the create command). Build scripts are optional:
+Every app builds from a Dockerfile stored on the app (a Dockerfile in the repo is ignored, so upload it explicitly). Run inside the app folder:
+
+1. Inspect the repo and write a `Dockerfile` (start from `npx ezhst build dockerfile template <id>`; ids: node, bun, python, go, ruby, php, rust, zig).
+2. The app must listen on `0.0.0.0` and `$PORT` (3000).
+3. Env vars are runtime env. If the build step needs them, use `RUN --mount=type=secret,id=appenv,target=/run/secrets/appenv sh -c 'set -a; . /run/secrets/appenv; set +a; <build command>'`. Never put secrets in `ARG` or `ENV`.
+4. Keep the image under 1 GB (slim bases, multi-stage builds for compiled languages). Containers get 256 MB of memory and half a CPU.
+5. Do not use `# syntax=` lines or images from the Reverhost registry; they are rejected.
 
 ```
 npx ezhst apps create <name> --project <project-slug> --json
 npx ezhst link --project <project-slug> --app <app-slug> --json
 npx ezhst env import .env --json
+npx ezhst build dockerfile set -f Dockerfile --json
 npx ezhst deploy --json
 ```
 
@@ -55,7 +62,9 @@ Common fixes:
 - Missing env var at build time: `ezhst env set KEY=VALUE`, then `ezhst redeploy`.
 - `npm ci` says the lockfile is out of sync: delete `node_modules` and `package-lock.json`, run `npm install`, deploy again.
 - Monorepo: `ezhst build set --root-dir apps/web`.
-- Needs another Node version: `ezhst build set --node 22` (20, 22 or 24; default is `engines.node` or 24).
+- Build fails: fix the Dockerfile, `ezhst build dockerfile set -f Dockerfile`, then `ezhst redeploy` (rebuilds the last upload, even a failed one).
+- App starts but the URL fails: it is not listening on `0.0.0.0:$PORT`.
+- Daily build limit reached (10 per day on Free, 50 on Pro): wait or upgrade; do not loop deploys.
 
 After changing env vars or build settings, run `npx ezhst redeploy --json` (rebuilds the last upload). After changing code, run `deploy` again.
 
@@ -70,8 +79,8 @@ Projects and runtime:
 
 Environment and build:
 - `env list | set KEY=VALUE... | unset KEY... | import <file>`
-- `build show`, `build set [--node <v>] [--root-dir <dir>] [--install <cmd>] [--build <cmd>] [--start <cmd>]` (`""` resets a field to auto), `build reset`
-- The start command must listen on `0.0.0.0` and `$PORT`. Auto-detects `scripts.start`, Next.js, Nuxt, or a Node.js entry file. Runs the build script if present; skips building otherwise.
+- `build show`, `build set --root-dir <dir>` (build context, `""` for the project root), `build reset`
+- `build dockerfile show`, `build dockerfile set -f <file>` (`-` reads stdin), `build dockerfile template [id] [--apply]`
 
 Custom domains:
 - `domains list | add <hostname> | verify <hostname> | remove <hostname>`

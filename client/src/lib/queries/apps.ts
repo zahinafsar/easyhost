@@ -39,6 +39,13 @@ export const appsQuery = () => {
         },
       }),
 
+    dockerfileTemplates: () =>
+      queryOptions({
+        queryKey: createKey("apps", "dockerfile-templates"),
+        queryFn: () => unwrap(api.apps["dockerfile-templates"].$get()),
+        staleTime: Infinity,
+      }),
+
     logs: (id: string) =>
       queryOptions({
         queryKey: createKey(...query.all, "logs", id),

@@ -1,0 +1,138 @@
+const withEnv = (command: string) => {
+  return `RUN --mount=type=secret,id=appenv,target=/run/secrets/appenv sh -c 'set -a; . /run/secrets/appenv; set +a; ${command}'`;
+};
+
+const lines = (...items: string[]) => `${items.join("\n")}\n`;
+
+export const DOCKERFILE_TEMPLATES = [
+  {
+    id: "node",
+    label: "Node.js",
+    content: lines(
+      "FROM node:22-alpine",
+      "WORKDIR /app",
+      "COPY package*.json ./",
+      "RUN npm ci",
+      "COPY . .",
+      withEnv("npm run build --if-present"),
+      "ENV NODE_ENV=production PORT=3000",
+      "EXPOSE 3000",
+      'CMD ["npm", "start"]',
+    ),
+  },
+  {
+    id: "bun",
+    label: "Bun",
+    content: lines(
+      "FROM oven/bun:1-alpine",
+      "WORKDIR /app",
+      "COPY package.json bun.lock* ./",
+      "RUN bun install --frozen-lockfile",
+      "COPY . .",
+      withEnv("if grep -q \"\\\"build\\\"\" package.json; then bun run build; fi"),
+      "ENV NODE_ENV=production PORT=3000",
+      "EXPOSE 3000",
+      'CMD ["bun", "run", "start"]',
+    ),
+  },
+  {
+    id: "python",
+    label: "Python",
+    content: lines(
+      "FROM python:3.12-slim",
+      "WORKDIR /app",
+      "ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=3000",
+      "COPY requirements.txt ./",
+      "RUN pip install --no-cache-dir -r requirements.txt",
+      "COPY . .",
+      "EXPOSE 3000",
+      'CMD ["sh", "-c", "exec uvicorn main:app --host 0.0.0.0 --port $PORT"]',
+    ),
+  },
+  {
+    id: "go",
+    label: "Go",
+    content: lines(
+      "FROM golang:1.23-alpine AS build",
+      "WORKDIR /src",
+      "COPY go.mod go.sum* ./",
+      "RUN go mod download",
+      "COPY . .",
+      withEnv("CGO_ENABLED=0 go build -o /out/app ."),
+      "",
+      "FROM alpine:3.21",
+      "RUN apk add --no-cache ca-certificates",
+      "COPY --from=build /out/app /app/app",
+      "ENV PORT=3000",
+      "EXPOSE 3000",
+      'CMD ["/app/app"]',
+    ),
+  },
+  {
+    id: "ruby",
+    label: "Ruby",
+    content: lines(
+      "FROM ruby:3.3-slim",
+      "WORKDIR /app",
+      "RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*",
+      "COPY Gemfile Gemfile.lock* ./",
+      "RUN bundle config set without development:test && bundle install",
+      "COPY . .",
+      "ENV RACK_ENV=production PORT=3000",
+      "EXPOSE 3000",
+      'CMD ["sh", "-c", "exec bundle exec rackup -o 0.0.0.0 -p $PORT"]',
+    ),
+  },
+  {
+    id: "php",
+    label: "PHP",
+    content: lines(
+      "FROM php:8.3-cli",
+      "WORKDIR /app",
+      "RUN apt-get update && apt-get install -y --no-install-recommends unzip && rm -rf /var/lib/apt/lists/*",
+      "COPY --from=composer:2 /usr/bin/composer /usr/bin/composer",
+      "COPY composer.json composer.lock* ./",
+      "RUN composer install --no-dev --no-scripts --prefer-dist",
+      "COPY . .",
+      "ENV PORT=3000",
+      "EXPOSE 3000",
+      'CMD ["sh", "-c", "exec php -S 0.0.0.0:$PORT -t public"]',
+    ),
+  },
+  {
+    id: "rust",
+    label: "Rust",
+    content: lines(
+      "FROM rust:1.83-slim AS build",
+      "WORKDIR /src",
+      "COPY . .",
+      withEnv("cargo install --path . --root /out && mv /out/bin/* /out/app"),
+      "",
+      "FROM debian:bookworm-slim",
+      "RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*",
+      "COPY --from=build /out/app /app/app",
+      "ENV PORT=3000",
+      "EXPOSE 3000",
+      'CMD ["/app/app"]',
+    ),
+  },
+  {
+    id: "zig",
+    label: "Zig",
+    content: lines(
+      "FROM alpine:3.21 AS build",
+      "RUN apk add --no-cache zig",
+      "WORKDIR /src",
+      "COPY . .",
+      withEnv("zig build -Doptimize=ReleaseSafe && mkdir -p /out && mv zig-out/bin/* /out/app"),
+      "",
+      "FROM alpine:3.21",
+      "COPY --from=build /out/app /app/app",
+      "ENV PORT=3000",
+      "EXPOSE 3000",
+      'CMD ["/app/app"]',
+    ),
+  },
+] as const;
+
+export type DockerfileTemplateId = (typeof DOCKERFILE_TEMPLATES)[number]["id"];

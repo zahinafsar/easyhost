@@ -1,8 +1,7 @@
 import type { DeploymentStep } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { minio, DEPLOY_BUCKET } from "./minio.js";
-import { resolveBuildPlan, type BuildPlan } from "./build-plan.js";
-import { buildContext, containerName, runContainer, runWithEnv, APP_PORT } from "./docker.js";
+import { buildContext, containerName, runContainer, APP_PORT } from "./docker.js";
 import { imageTag, pullImage, removeAppImage } from "./registry.js";
 import { removeSource, sourceObjectName, submitBuild, watchBuild } from "./cloud-build.js";
 
@@ -42,28 +41,9 @@ const createLogger = (deploymentId: string) => {
   };
 };
 
-const stepFromBuildLine = (line: string, plan: BuildPlan): DeploymentStep | null => {
-  if (!/^#\d+ \[[^\]]+\] RUN /.test(line)) {
-    return null;
-  }
-  const instruction = line.slice(line.indexOf("] ") + 2);
-  if (plan.build && instruction === runWithEnv(plan.build)) {
-    return "BUILDING";
-  }
-  if (instruction === runWithEnv(plan.install)) {
-    return "INSTALLING";
-  }
-  return null;
-};
+const isBuildLine = (line: string) => /^#\d+ /.test(line);
 
-const describePlan = (plan: BuildPlan) => {
-  return [
-    `Node ${plan.nodeVersion}`,
-    `Install in /${plan.installDir}: ${plan.install}`,
-    `Build in /${plan.appDir}: ${plan.build ?? "No build script; skipped"}`,
-    `Start: ${plan.start}`,
-  ].join("\n");
-};
+export const MISSING_DOCKERFILE_ERROR = "This app has no Dockerfile. Set one in the Build tab or run `ezhst build dockerfile set -f Dockerfile`.";
 
 export const runDeployment = async (deploymentId: string) => {
   const deployment = await prisma.deployment.findUnique({
@@ -91,35 +71,37 @@ export const runDeployment = async (deploymentId: string) => {
     return stepUpdate;
   };
 
-  const onBuildLog = (plan: BuildPlan) => (line: string) => {
+  const onBuildLog = (line: string) => {
     logger.log(line);
-    const step = stepFromBuildLine(line, plan);
-    if (step) {
-      setStep(step);
+    if (isBuildLine(line)) {
+      setStep("BUILDING");
     }
   };
 
   try {
-    const artifact = await readObject(deployment.artifactKey);
     const appEnv = app.env as Record<string, string>;
-    const plan = await resolveBuildPlan(artifact, app);
     let buildId = deployment.cloudBuildId;
 
     if (!buildId) {
+      if (!app.dockerfile) {
+        throw new Error(MISSING_DOCKERFILE_ERROR);
+      }
+      const artifact = await readObject(deployment.artifactKey);
+      const rootDir = app.rootDir ?? "";
       await prisma.deployment.update({ where: { id: deploymentId }, data: { imageTag: tag } });
       await setStep("PREPARING");
       await prisma.app.update({ where: { id: app.id }, data: { status: "DEPLOYING" } });
-      logger.log(describePlan(plan));
+      logger.log(`Building with the app Dockerfile in /${rootDir}`);
       logger.log("Sending source to the build server");
-      const context = await buildContext(artifact, plan, appEnv);
-      buildId = await submitBuild(deploymentId, context, tag);
+      const context = await buildContext(artifact, appEnv, app.dockerfile);
+      buildId = await submitBuild(deploymentId, context, { tag, rootDir });
       await prisma.deployment.update({ where: { id: deploymentId }, data: { cloudBuildId: buildId } });
-      logger.log(`Installing dependencies and building ${tag}`);
+      logger.log(`Building ${tag}`);
     } else {
       logger.log("Server restarted, resuming the build");
     }
 
-    await watchBuild(buildId, onBuildLog(plan), resumed);
+    await watchBuild(buildId, onBuildLog, resumed);
     cleanupImage = true;
     await removeSource(sourceObjectName(deploymentId));
 

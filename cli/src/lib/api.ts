@@ -8,11 +8,8 @@ export type App = {
   status: string;
   url: string;
   env: Record<string, string>;
-  nodeVersion: string | null;
   rootDir: string | null;
-  installCommand: string | null;
-  buildCommand: string | null;
-  startCommand: string | null;
+  dockerfile: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -49,7 +46,6 @@ export type AppDetail = {
   deployments: Deployment[];
   domains: Domain[];
   dnsTarget: { cname: string; ip: string };
-  nodeVersions: string[];
 };
 
 export class ApiError extends Error {

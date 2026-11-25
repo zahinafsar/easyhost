@@ -567,7 +567,7 @@ export const adminRoutes = new Hono<UserEnv>()
         status: true,
         suspended: true,
         aiStatus: true,
-        nodeVersion: true,
+        dockerfile: true,
         createdAt: true,
         domains: { select: { id: true, hostname: true, status: true, error: true } },
         deployments: {
@@ -613,7 +613,7 @@ export const adminRoutes = new Hono<UserEnv>()
         status: app.status,
         suspended: app.suspended,
         aiStatus: app.aiStatus,
-        nodeVersion: app.nodeVersion,
+        hasDockerfile: Boolean(app.dockerfile),
         createdAt: app.createdAt,
         domains: app.domains,
         deployments: app.deployments,

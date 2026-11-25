@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import type { InferRequestType } from "hono/client";
 import { CheckCircle2, ExternalLink, FileText, Globe, List as ListIcon, Play, Plus, RefreshCw, Rocket, Sparkles, Square, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -45,6 +44,8 @@ import { StatusBadge } from "@/components/status-badge";
 import { ConfirmButton } from "@/components/confirm-button";
 import { CodeBlock } from "@/components/code-block";
 import { SelectableList, SelectableListItem } from "@/components/ui/selectable-list";
+import { Box } from "@/components/ui/box";
+import { MonacoEditor } from "@/components/monaco-editor";
 import { api, unwrap } from "@/lib/api";
 import { appsQuery, projectsQuery, userQuery } from "@/lib/queries";
 import { formatDate } from "@/lib/format";
@@ -201,104 +202,60 @@ const EnvEditor = ({ appId, initial }: { appId: string; initial: Record<string, 
   );
 };
 
-type BuildForm = {
-  nodeVersion: string;
-  rootDir: string;
-  installCommand: string;
-  buildCommand: string;
-  startCommand: string;
-};
-
-const BUILD_FIELDS: { key: Exclude<keyof BuildForm, "nodeVersion">; label: string; placeholder: string; hint: string }[] = [
-  {
-    key: "rootDir",
-    label: "Root directory",
-    placeholder: "Project root",
-    hint: "Folder with the app's package.json, e.g. apps/web. Dependencies install where the lockfile is.",
-  },
-  {
-    key: "installCommand",
-    label: "Install command",
-    placeholder: "Auto: from lockfile, e.g. npm ci",
-    hint: "Runs in the folder with the lockfile.",
-  },
-  {
-    key: "buildCommand",
-    label: "Build command",
-    placeholder: "Auto: build script, skipped if absent",
-    hint: "Runs in the root directory. Environment variables are available.",
-  },
-  {
-    key: "startCommand",
-    label: "Start command",
-    placeholder: "Auto: start script or Node.js entry file",
-    hint: "Must listen on 0.0.0.0 and $PORT (3000).",
-  },
+const BUILD_RULES = [
+  { title: "Listen on $PORT", body: "The app must listen on 0.0.0.0 and $PORT (3000)." },
+  { title: "Environment variables", body: "Available at runtime. During the build, mount them with RUN --mount=type=secret,id=appenv and source /run/secrets/appenv. Never put them in ARG." },
+  { title: "Build context", body: "The root directory of the uploaded source. A Dockerfile in your repo is ignored; only the one saved here is used." },
+  { title: "Limits", body: "Images up to 1 GB. Containers get 256 MB of memory and half a CPU." },
 ];
 
-type NodeVersion = NonNullable<InferRequestType<(typeof api.apps)[":id"]["build"]["$put"]>["json"]["nodeVersion"]>;
-
-const BuildSettings = ({
-  appId,
-  initial,
-  nodeVersions,
-}: {
-  appId: string;
-  initial: { [K in keyof BuildForm]: string | null };
-  nodeVersions: readonly NodeVersion[];
-}) => {
-  const [form, setForm] = useState<BuildForm>({
-    nodeVersion: initial.nodeVersion ?? "",
-    rootDir: initial.rootDir ?? "",
-    installCommand: initial.installCommand ?? "",
-    buildCommand: initial.buildCommand ?? "",
-    startCommand: initial.startCommand ?? "",
-  });
+const BuildSettings = ({ appId, initial }: { appId: string; initial: { rootDir: string | null; dockerfile: string | null } }) => {
+  const [rootDir, setRootDir] = useState(initial.rootDir ?? "");
+  const [dockerfile, setDockerfile] = useState(initial.dockerfile ?? "");
+  const templates = useQuery(appsQuery().dockerfileTemplates());
 
   const save = useApiMutation({
     mutationFn: () => {
-      return unwrap(
-        api.apps[":id"].build.$put({
-          param: { id: appId },
-          json: { ...form, nodeVersion: nodeVersions.find((version) => version === form.nodeVersion) ?? null },
-        }),
-      );
+      return unwrap(api.apps[":id"].build.$put({ param: { id: appId }, json: { rootDir, dockerfile } }));
     },
     invalidate: [appsQuery().all],
     success: "Build settings saved. Redeploy to apply.",
   });
+
+  const applyTemplate = (id: string) => {
+    const template = templates.data?.templates.find((item) => item.id === id);
+    if (template) {
+      setDockerfile(template.content);
+    }
+  };
 
   return (
     <Grid cols="sidebar" gap={6} align="start">
       <Card>
         <CardHeader>
           <CardTitle>Build settings</CardTitle>
-          <CardDescription>Leave a field empty to detect it automatically.</CardDescription>
+          <CardDescription>Every deploy builds your source with this Dockerfile.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form onSubmit={() => save.mutate(undefined)}>
-            <Field label="Node.js version" htmlFor="nodeVersion">
-              <NativeSelect id="nodeVersion" value={form.nodeVersion} onChange={(event) => setForm({ ...form, nodeVersion: event.target.value })}>
-                <NativeSelectOption value="">Auto: from engines.node, otherwise {nodeVersions[nodeVersions.length - 1]}</NativeSelectOption>
-                {nodeVersions.map((version) => (
-                  <NativeSelectOption key={version} value={version}>
-                    Node {version}
+            <Field label="Root directory" htmlFor="rootDir">
+              <Input id="rootDir" className="font-mono" placeholder="Project root" value={rootDir} onChange={(event) => setRootDir(event.target.value)} spellCheck={false} />
+            </Field>
+            <Field label="Start from a template" htmlFor="template">
+              <NativeSelect id="template" value="" onChange={(event) => applyTemplate(event.target.value)} disabled={!templates.data}>
+                <NativeSelectOption value="">Choose a language</NativeSelectOption>
+                {templates.data?.templates.map((template) => (
+                  <NativeSelectOption key={template.id} value={template.id}>
+                    {template.label}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
             </Field>
-            {BUILD_FIELDS.map((field) => (
-              <Field key={field.key} label={field.label} htmlFor={field.key}>
-                <Input
-                  id={field.key}
-                  className="font-mono"
-                  placeholder={field.placeholder}
-                  value={form[field.key]}
-                  onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
-                  spellCheck={false}
-                />
-              </Field>
-            ))}
+            <Field label="Dockerfile">
+              <Box className="h-[420px] overflow-hidden rounded-lg border border-input">
+                <MonacoEditor path="Dockerfile" value={dockerfile} readOnly={false} onChange={setDockerfile} onSave={() => save.mutate(undefined)} />
+              </Box>
+            </Field>
             <FormActions align="start">
               <Button type="submit" size="sm" loading={save.isPending}>
                 Save
@@ -309,18 +266,18 @@ const BuildSettings = ({
       </Card>
       <Card variant="inset">
         <CardHeader>
-          <CardTitle>How each step runs</CardTitle>
+          <CardTitle>How builds run</CardTitle>
         </CardHeader>
         <CardContent>
           <List variant="divided">
-            {BUILD_FIELDS.map((field) => (
-              <ListItem key={field.key}>
+            {BUILD_RULES.map((rule) => (
+              <ListItem key={rule.title}>
                 <Stack gap={1}>
                   <Text size="sm" weight="medium">
-                    {field.label}
+                    {rule.title}
                   </Text>
                   <Text size="sm" tone="muted">
-                    {field.hint}
+                    {rule.body}
                   </Text>
                 </Stack>
               </ListItem>
@@ -578,7 +535,7 @@ export const AppDetailPage = () => {
               <EmptyState
                 icon={Rocket}
                 title="No deployments yet"
-                description="From your Node.js app folder run:"
+                description={app.dockerfile ? "From your app folder run:" : "Save a Dockerfile in the Build tab, then from your app folder run:"}
                 action={<CodeBlock tone="terminal" className="w-full max-w-xl text-left" code={`npx ezhst deploy --project ${app.projectId} --app ${app.slug}`} />}
               />
             </Card>
@@ -621,7 +578,7 @@ export const AppDetailPage = () => {
           <EnvEditor key={app.id} appId={app.id} initial={app.env as Record<string, string>} />
         </TabsContent>
         <TabsContent value="build">
-          <BuildSettings key={app.id} appId={app.id} initial={app} nodeVersions={data.nodeVersions} />
+          <BuildSettings key={app.id} appId={app.id} initial={app} />
         </TabsContent>
         <TabsContent value="domains">
           <DomainsPanel appId={app.id} domains={data.domains} dnsTarget={data.dnsTarget} />

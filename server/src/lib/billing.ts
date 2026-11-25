@@ -59,6 +59,20 @@ export const projectEntitlement = async (projectId: string) => {
   return { plan, allowed, limits: { apps, dbBytes: plan.dbBytes, storageBytes: plan.storageBytes } };
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export const buildLimitError = async (projectId: string) => {
+  const project = await prisma.app.findUniqueOrThrow({ where: { id: projectId }, select: { userId: true } });
+  const plan = await userPlan(project.userId);
+  const used = await prisma.deployment.count({
+    where: { app: { userId: project.userId }, createdAt: { gte: new Date(Date.now() - DAY_MS) } },
+  });
+  if (used < plan.buildsPerDay) {
+    return null;
+  }
+  return `Daily build limit reached (${plan.buildsPerDay} per day on ${plan.name}). Try again later or upgrade.`;
+};
+
 export const projectLimitMessage = (plan: Plan) => {
   if (plan.id === "PRO") {
     return `You can have ${plan.projects} projects on the Pro plan.`;

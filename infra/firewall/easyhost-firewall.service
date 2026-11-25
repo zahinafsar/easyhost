@@ -1,0 +1,13 @@
+[Unit]
+Description=Reverhost app network firewall
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/easyhost-firewall.env
+ExecStart=/bin/sh -c 'exec "$EASYHOST_DIR/infra/firewall/apply.sh" "$NPM_CONTAINER"'
+
+[Install]
+WantedBy=multi-user.target

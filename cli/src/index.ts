@@ -6,7 +6,7 @@ import { createApp, deleteApp, listApps } from "./commands/apps.js";
 import { createProject, deleteProject, link, listProjects, logs, projectInfo, renameProject, start, stop } from "./commands/projects.js";
 import { deploy, deploymentLog, listDeployments, redeploy } from "./commands/deploy.js";
 import { importEnv, listEnv, setEnv, unsetEnv } from "./commands/env.js";
-import { resetBuild, setBuild, showBuild } from "./commands/build.js";
+import { dockerfileTemplate, resetBuild, setBuild, setDockerfile, showBuild, showDockerfile } from "./commands/build.js";
 import { addDomain, listDomains, removeDomain, verifyDomain } from "./commands/domains.js";
 import {
   createStorage,
@@ -79,7 +79,7 @@ scoped(projects.command("delete").description("Delete a project and everything i
 );
 appScoped(program.command("link").description("Link the current folder to a project")).action(link);
 
-appScoped(program.command("deploy").description("Upload and deploy the Node.js app in this folder").option("--verbose", "Stream the build log")).action(
+appScoped(program.command("deploy").description("Upload and deploy the app in this folder").option("--verbose", "Stream the build log")).action(
   deploy,
 );
 appScoped(program.command("redeploy").description("Rebuild the latest upload").option("--verbose", "Stream the build log")).action(redeploy);
@@ -97,19 +97,21 @@ appScoped(env.command("set").description("Set variables").argument("<pairs...>",
 appScoped(env.command("unset").description("Remove variables").argument("<keys...>")).action(unsetEnv);
 appScoped(env.command("import").description("Merge variables from a .env file").argument("<file>")).action(importEnv);
 
-const build = program.command("build").description("Build settings (empty means auto-detect)");
-appScoped(build.command("show").description("Show build settings")).action(showBuild);
+const build = program.command("build").description("Build settings: root directory and the Dockerfile every deploy builds with");
+appScoped(build.command("show").description("Show the root directory and Dockerfile")).action(showBuild);
+appScoped(build.command("set").description("Change the root directory (build context)").option("--root-dir <dir>", 'Folder with the app, relative to the project root ("" for the root)')).action(setBuild);
+appScoped(build.command("reset").description("Clear the root directory and Dockerfile")).action(resetBuild);
+
+const dockerfile = build.command("dockerfile").description("The Dockerfile stored on the app (a Dockerfile in your repo is ignored)");
+appScoped(dockerfile.command("show").description("Print the Dockerfile")).action(showDockerfile);
+appScoped(dockerfile.command("set").description("Save a Dockerfile").requiredOption("-f, --file <path>", 'Dockerfile to upload ("-" reads stdin)')).action(setDockerfile);
 appScoped(
-  build
-    .command("set")
-    .description('Change build settings (pass "" to reset one to auto)')
-    .option("--node <version>", "Node.js version: 20, 22 or 24")
-    .option("--root-dir <dir>", "Folder with the app's package.json")
-    .option("--install <command>", "Install command")
-    .option("--build <command>", "Build command")
-    .option("--start <command>", "Start command, must listen on $PORT"),
-).action(setBuild);
-appScoped(build.command("reset").description("Reset every build setting to auto")).action(resetBuild);
+  dockerfile
+    .command("template")
+    .description("List templates, print one, or save one with --apply")
+    .argument("[id]", "node, bun, python, go, ruby, php, rust or zig")
+    .option("--apply", "Save the template as the app's Dockerfile"),
+).action(dockerfileTemplate);
 
 const domains = program.command("domains").description("Custom domains");
 appScoped(domains.command("list").description("List domains and the DNS target")).action(listDomains);
