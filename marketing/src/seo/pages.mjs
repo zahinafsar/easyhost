@@ -1,5 +1,5 @@
-import { AGENTS, buildStep, COMPETITORS, DNS_PROVIDERS, FRAMEWORKS, LANGUAGES, MANAGERS, nodeDockerfile, ORMS, POSTGRES_SOURCES, PRODUCTS, S3_CLIENTS, SERVICE_ORM_PAGES, STACKS, STORAGE_SOURCES } from "./data.mjs";
-import { CLI_COMMANDS, CONCEPTS, ERRORS } from "./reference.mjs";
+import { buildStep, COMPETITORS, DNS_PROVIDERS, FRAMEWORKS, LANGUAGES, nodeDockerfile, ORMS, POSTGRES_SOURCES, PRODUCTS, SERVICE_ORM_PAGES, STACKS, STORAGE_SOURCES } from "./data.mjs";
+import { CLI_COMMANDS, ERRORS } from "./reference.mjs";
 import { slugify } from "./markdown.mjs";
 
 const HOME = { name: "Reverhost", path: "/" };
@@ -9,7 +9,6 @@ const MIGRATE = { name: "Migrate", path: "/migrate" };
 const LANGUAGES_HUB = { name: "Languages", path: "/languages" };
 const ALTERNATIVES = { name: "Alternatives", path: "/alternatives" };
 const ERRORS_HUB = { name: "Errors", path: "/errors" };
-const LEARN = { name: "Learn", path: "/learn" };
 const CLI = { name: "CLI reference", path: "/docs/cli" };
 const PRODUCTS_HUB = { name: "Products", path: "/products" };
 
@@ -102,7 +101,7 @@ Apps run in one region, with no edge network, preview deployments or Git integra
 
 ## Next steps
 
-${frameworkLinks(framework)} To let an agent do this for you, read [deploy ${framework.name} with Claude Code](/guides/deploy-${framework.id}-with-claude-code).`,
+${frameworkLinks(framework)} To let an agent do this for you, read [deploy with AI agents](/guides/deploy-nextjs-with-ai-agents).`,
       faq: [
         { q: `Is ${framework.name} hosting on Reverhost really free?`, a: "Yes. It costs $0 per month with no credit card and no trial period, within the published limits." },
         { q: `Does my ${framework.name} app sleep when idle?`, a: "No. Reverhost apps run in an always-on container and do not sleep when idle." },
@@ -110,115 +109,6 @@ ${frameworkLinks(framework)} To let an agent do this for you, read [deploy ${fra
       ],
     };
   });
-};
-
-const agentPages = () => {
-  const pages = [];
-  for (const framework of FRAMEWORKS) {
-    for (const agent of AGENTS) {
-      const special = framework.commands.map((command) => `- ${q(command)}`).join("\n");
-      let specialBlock = `The agent saves a Dockerfile based on the Node.js template, with ${framework.start} as the start command:\n\n${frameworkDockerfile(framework)}`;
-      if (special) {
-        specialBlock = `${specialBlock}\n\nThe skill tells the agent to read the build log and fix failures. For ${framework.name}, expect it to also run:\n\n${special}`;
-      }
-      pages.push({
-        family: "agent-guides",
-        path: `/guides/deploy-${framework.id}-with-${agent.id}`,
-        title: `Deploy ${framework.name} With ${agent.name} for Free | Reverhost`,
-        description: `Let ${agent.name} deploy your ${framework.name} app to Reverhost for free. Install the skill, give one instruction, and see each command the agent runs.`,
-        h1: `Deploy ${framework.name} with ${agent.name}`,
-        lead: `Install one skill, and ${agent.name} can create the project, set your variables and put your ${framework.name} app online. It costs $0, with no credit card.`,
-        crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: agent.name, path: `/guides/deploy-${framework.id}-with-${agent.id}` }],
-        body: `## Install the skill
-
-Run this in your project and choose Local or Global.
-
-${fence("npx ezhst skill install")}
-
-${agent.hint}
-
-If ${agent.name} does not discover the skill, ask it to read the installed ${q("SKILL.md")} or [skill.md](/skill.md) first.
-
-## Tell ${agent.name} to deploy
-
-${fence(`Deploy this ${framework.name} app to Reverhost. Read the Reverhost skill first. Report the live URL when it is running.`, "Prompt")}
-
-## What the agent runs
-
-${fence(deploySteps(framework))}
-
-${specialBlock}
-
-## ${framework.name} details to check
-
-${framework.setup}
-
-${framework.caveat}
-
-## If the deploy fails
-
-The agent should read the build log, fix the cause and deploy again. You can run the same commands yourself.
-
-${fence("npx ezhst deployments log --json\nnpx ezhst logs --tail 200 --json")}
-
-If the build passes but nothing loads, see [why a ${framework.name} app is unreachable](/errors/${framework.id}-app-unreachable). ${frameworkLinks(framework)}`,
-        faq: [
-          { q: `Can ${agent.name} create a Reverhost account for me?`, a: "Yes. The skill tells the agent to ask for your name, email and password and then register. You then give the agent the 6-digit verification code from your inbox, and it runs `ezhst verify <code>` before anything else." },
-          { q: `Will ${agent.name} see my secrets?`, a: "The agent can read files and command output in its session. The skill tells it to put secrets in env vars and not to print them back unless you ask." },
-        ],
-      });
-    }
-  }
-  return pages;
-};
-
-const managerPages = () => {
-  const pages = [];
-  for (const framework of FRAMEWORKS) {
-    for (const manager of MANAGERS) {
-      pages.push({
-        family: "package-manager-guides",
-        path: `/guides/deploy-${framework.id}-with-${manager.id}`,
-        title: `Deploy a ${framework.name} App With ${manager.name} | Reverhost`,
-        description: `The Dockerfile lines to install and build a ${framework.name} project that uses ${manager.name} on Reverhost: the lockfile to commit, the commands and common failures.`,
-        h1: `Deploy a ${framework.name} app that uses ${manager.name}`,
-        lead: `Reverhost builds every app from the Dockerfile stored on it, so you choose the install step. These are the lines to use for ${framework.name} with ${manager.name}.`,
-        crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: manager.name, path: `/guides/deploy-${framework.id}-with-${manager.id}` }],
-        body: `## What your Dockerfile runs
-
-| Step | Dockerfile line |
-| --- | --- |
-| Copy the manifests | ${q(manager.copy)} |
-| Install | ${q(manager.install)} |
-| Build | ${framework.build} |
-| Start | ${framework.start} |
-
-Run scripts with ${q(`${manager.run} <script>`)} if you prefer. Dev dependencies are installed before the build, and ${q("NODE_ENV=production")} is set only after it.
-
-${fence(nodeDockerfile({ ...framework.docker, copy: manager.copy, install: manager.install }), "Dockerfile")}
-
-## Deploy
-
-${framework.setup}
-
-${fence(deploySteps(framework))}
-
-## Things to watch with ${manager.name}
-
-${manager.note}
-
-Commit ${q(manager.lockfile)}, because a frozen install fails without it. To change the install step, edit the Dockerfile and upload it again with ${q("ezhst build dockerfile set -f Dockerfile")}.
-
-## Next steps
-
-${frameworkLinks(framework)}`,
-        faq: [
-          { q: `How do I change the ${manager.name} install command?`, a: "Edit the install line in your Dockerfile, upload it with `ezhst build dockerfile set -f Dockerfile`, then run `ezhst redeploy`." },
-        ],
-      });
-    }
-  }
-  return pages;
 };
 
 const ormImports = (framework, orm) => {
@@ -307,64 +197,6 @@ const databasePages = () => {
   return pages;
 };
 
-const storagePages = () => {
-  const pages = [];
-  for (const framework of FRAMEWORKS.filter((item) => !SERVICE_ORM_PAGES[item.id])) {
-    for (const client of S3_CLIENTS) {
-      const path = `/guides/${framework.id}-file-uploads-${client.id}`;
-      const route = makeRoute(framework, {
-        method: "POST",
-        path: "/api/uploads",
-        body: `const key = \`uploads/\${crypto.randomUUID()}\`;\n  ${client.body}`,
-        result: `{ url, publicUrl: \`https://storage.reverhost.com/\${process.env.S3_BUCKET}/\${key}\` }`,
-        imports: `${client.imports}import { s3 } from "${framework.dbImport.replace(/db(\.server)?$/, "s3$1")}";\n`,
-      });
-      pages.push({
-        family: "storage-guides",
-        path,
-        title: `${framework.name} File Uploads With the ${client.name} | Reverhost`,
-        description: `Add file uploads to ${framework.name} using the ${client.name} and free S3 compatible storage. Includes a presigned upload route and the required settings.`,
-        h1: `${framework.name} file uploads with the ${client.name}`,
-        lead: `Let the browser upload straight to a free S3 compatible bucket, using a short-lived URL from your ${framework.name} server. Your 256 MB container never holds the file.`,
-        crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: "File uploads", path }],
-        body: `## Create the bucket
-
-${fence("npx ezhst storage create files\nnpx ezhst storage info --json\nnpx ezhst env set S3_BUCKET=<bucket> S3_ACCESS_KEY_ID=<key> S3_SECRET_ACCESS_KEY=<secret>")}
-
-> Every file in the bucket is public by URL. Do not use it for private documents.
-
-## Create the client
-
-${fence(client.install)}
-
-${fence(client.setup, framework.dbFile.replace(/db(\.server)?\.ts$/, "s3$1.ts"))}
-
-${client.note}
-
-## Create the upload route
-
-${fence(route.code, route.label)}
-
-Add your own authentication and file type checks here, because anyone who can reach this route can upload.
-
-## Upload from the browser
-
-${fence('const { url, publicUrl } = await fetch("/api/uploads", { method: "POST" }).then((res) => res.json());\nawait fetch(url, { method: "PUT", body: file });')}
-
-## Deploy
-
-${fence("npx ezhst redeploy")}
-
-Local disk is lost on each deploy, which is why uploads belong in the bucket. ${frameworkLinks(framework)} See also the [storage product page](/products/storage).`,
-        faq: [
-          { q: "Does the bucket support private files?", a: "No. Files are public by URL. Use long random keys only for low-risk content, and keep private data elsewhere." },
-        ],
-      });
-    }
-  }
-  return pages;
-};
-
 const envPages = () => {
   return FRAMEWORKS.map((framework) => {
     const path = `/guides/${framework.id}-environment-variables`;
@@ -409,46 +241,6 @@ Never pass secrets with ${q("ARG")} or ${q("ENV")}, because they end up in the i
 ${frameworkLinks(framework)}`,
       faq: [
         { q: "Are my .env files uploaded?", a: "No. `ezhst deploy` skips every `.env*` file. Use `ezhst env set` or `ezhst env import`." },
-      ],
-    };
-  });
-};
-
-const monorepoPages = (limits) => {
-  return FRAMEWORKS.map((framework) => {
-    const path = `/guides/${framework.id}-monorepo`;
-    const workspaceDockerfile = nodeDockerfile({ ...framework.docker, copy: "", install: "RUN npm ci", build: `npx turbo run build --filter=./${framework.appDir}`, runDir: framework.appDir });
-    return {
-      family: "monorepo-guides",
-      path,
-      title: `Deploy ${framework.name} From a Monorepo | Reverhost`,
-      description: `Deploy a ${framework.name} app from a Turborepo, Nx or workspace monorepo. Choose the build context folder, and Reverhost builds your stored Dockerfile.`,
-      h1: `Deploy ${framework.name} from a monorepo`,
-      lead: `Run the deploy from your repository root. Reverhost builds the Dockerfile stored on your app, using either your ${framework.name} folder or the whole repository as the build context.`,
-      crumbs: [HOME, GUIDES, { name: framework.name, path: hubPath(framework) }, { name: "Monorepo", path }],
-      body: `## A self-contained app folder
-
-If ${q(framework.appDir)} has its own lockfile and no workspace dependencies, make it the build context.
-
-${fence(`npx ezhst link --project <project-slug> --app <app-slug>\nnpx ezhst build set --root-dir ${framework.appDir}\nnpx ezhst build dockerfile set -f ${framework.appDir}/Dockerfile\nnpx ezhst deploy`)}
-
-With a root directory set, the Dockerfile's ${q("COPY")} paths are relative to ${q(framework.appDir)}, so the [${framework.name} hosting Dockerfile](${hostingPath(framework)}) works as is.
-
-## An app that uses workspace packages
-
-Leave the root directory empty so the whole repository is the build context. Install at the root, build only your app, then start it from its folder.
-
-${fence(workspaceDockerfile, "Dockerfile")}
-
-Nx works the same way with ${q("npx nx build <project>")} as the build command.
-
-## Several apps, one project
-
-A project holds ${limits.apps} apps. Create one Reverhost app per deployable folder, each with its own Dockerfile and root directory. They share the project's database and bucket.
-
-${frameworkLinks(framework)}`,
-      faq: [
-        { q: "Where should I run ezhst deploy?", a: "From the repository root, so shared packages and the lockfile are included in the upload." },
       ],
     };
   });
@@ -586,7 +378,6 @@ const exportInstruction = (competitor) => {
 const migrationHubPages = () => {
   return COMPETITORS.map((competitor) => {
     const path = `/migrate/${competitor.id}`;
-    const links = FRAMEWORKS.map((framework) => `- [${framework.name}](/migrate/${competitor.id}/${framework.id})`).join("\n");
     return {
       family: "migration-guides",
       path,
@@ -607,10 +398,6 @@ const migrationHubPages = () => {
 
 ${competitor.name} runs your app on ${competitor.runtime}. Reverhost runs one always-on container per app, built from your Dockerfile, with 256 MB of RAM and 0.5 CPU, in one region.
 
-## Choose your framework
-
-${links}
-
 ## Move your data
 
 - [Move a Postgres database](/migrate/postgres)
@@ -618,59 +405,6 @@ ${links}
       faq: [],
     };
   });
-};
-
-const migrationPages = () => {
-  const pages = [];
-  for (const competitor of COMPETITORS) {
-    for (const framework of FRAMEWORKS) {
-      const path = `/migrate/${competitor.id}/${framework.id}`;
-      let exportLine = `${fence(competitor.envExport)}`;
-      if (exportIsManual(competitor)) {
-        exportLine = `${competitor.envExport}.`;
-      }
-      pages.push({
-        family: "migration-framework-guides",
-        path,
-        title: `Migrate ${framework.name} From ${competitor.name} | Reverhost`,
-        description: `Move a ${framework.name} app from ${competitor.name} to Reverhost: export variables, change the adapter if needed, deploy, test and switch your domain.`,
-        h1: `Migrate ${framework.name} from ${competitor.name} to Reverhost`,
-        lead: `Move your ${framework.name} app in four steps, and keep ${competitor.name} running until the new deployment works.`,
-        crumbs: [HOME, MIGRATE, { name: competitor.name, path: `/migrate/${competitor.id}` }, { name: framework.name, path }],
-        body: `## Export your variables
-
-${exportLine}
-
-Then import them into Reverhost.
-
-${fence("npx ezhst env import .env")}
-
-## Change the ${framework.name} setup
-
-${framework.adapterSwap}
-
-${q(competitor.configFile)} is not read by Reverhost, so its build and routing rules need moving into your app or into your Dockerfile.
-
-${framework.setup}
-
-${frameworkDockerfile(framework)}
-
-## Deploy and test
-
-${fence(deploySteps(framework))}
-
-Test your ${q("easyhost.fun")} URL before changing DNS. ${competitor.name} runs your app on ${competitor.runtime}, so check anything that depends on it, such as platform functions or cron configuration. Reverhost does not run scheduled jobs.
-
-## Switch your domain
-
-${fence("npx ezhst domains add www.example.com\nnpx ezhst domains list\nnpx ezhst domains verify www.example.com")}
-
-Follow the [custom domain guides](/guides) for your DNS provider. Keep ${competitor.name} running until traffic has moved. Also read [why ${framework.name} may be unreachable](/errors/${framework.id}-app-unreachable) and the [${competitor.name} overview](/migrate/${competitor.id}).`,
-        faq: [],
-      });
-    }
-  }
-  return pages;
 };
 
 const postgresMigrationPages = () => {
@@ -947,37 +681,6 @@ Read the [build log](/docs/cli/deployments-log) and [runtime logs](/docs/cli/log
   });
 };
 
-const conceptDescription = (text) => {
-  const sentence = `${text.split(". ")[0].replaceAll("`", "")}.`;
-  if (sentence.length > 120) {
-    return sentence;
-  }
-  return `${sentence} A short explanation for developers.`;
-};
-
-const conceptPages = () => {
-  return CONCEPTS.map(([id, title, text, onReverhost, link]) => {
-    const path = `/learn/${id}`;
-    return {
-      family: "learn",
-      path,
-      title: `${title} | Reverhost`,
-      description: conceptDescription(text),
-      h1: title,
-      lead: text.split(". ")[0] + ".",
-      crumbs: [HOME, LEARN, { name: title, path }],
-      body: `## The short version
-
-${text}
-
-## On Reverhost
-
-${onReverhost} [Learn more](${link}).`,
-      faq: [],
-    };
-  });
-};
-
 const frameworkHubPages = () => {
   return FRAMEWORKS.map((framework) => {
     const own = SERVICE_ORM_PAGES[framework.id];
@@ -987,19 +690,12 @@ const frameworkHubPages = () => {
     } else {
       databases = ORMS.map((orm) => `- [${orm.name}](/guides/${framework.id}-${orm.id}-postgres)`).join("\n");
     }
-    let storageBlock = "";
-    if (!own) {
-      const clients = S3_CLIENTS.map((client) => `- [${client.name}](/guides/${framework.id}-file-uploads-${client.id})`).join("\n");
-      storageBlock = `## File uploads\n\n${clients}\n\n`;
-    }
-    const agents = AGENTS.map((agent) => `- [${agent.name}](/guides/deploy-${framework.id}-with-${agent.id})`).join("\n");
-    const managers = MANAGERS.map((manager) => `- [${manager.name}](/guides/deploy-${framework.id}-with-${manager.id})`).join("\n");
-    const migrations = COMPETITORS.map((competitor) => `- [From ${competitor.name}](/migrate/${competitor.id}/${framework.id})`).join("\n");
+    const migrations = COMPETITORS.map((competitor) => `- [From ${competitor.name}](/migrate/${competitor.id})`).join("\n");
     return {
       family: "frameworks",
       path: hubPath(framework),
       title: `${framework.name} on Reverhost: Guides and Hosting`,
-      description: `Everything for running ${framework.name} on Reverhost: free hosting, AI agent deploys, Postgres, file uploads and migration guides.`,
+      description: `Everything for running ${framework.name} on Reverhost: free hosting, environment variables, Postgres with Prisma, storage and migration guides.`,
       h1: `${framework.name} on Reverhost`,
       lead: `${framework.name} is a ${framework.kind}. These guides cover hosting it for free and connecting it to Postgres and storage.`,
       crumbs: [HOME, FRAMEWORKS_HUB, { name: framework.name, path: hubPath(framework) }],
@@ -1007,22 +703,21 @@ const frameworkHubPages = () => {
 
 - [Free ${framework.name} hosting](${hostingPath(framework)})
 - [Environment variables](/guides/${framework.id}-environment-variables)
-- [Deploy from a monorepo](/guides/${framework.id}-monorepo)
 - [Fix an unreachable app](/errors/${framework.id}-app-unreachable)
 
 ## Deploy with an AI agent
 
-${agents}
-
-## Package managers
-
-${managers}
+- [Deploy with AI agents](/guides/deploy-nextjs-with-ai-agents)
 
 ## Postgres
 
 ${databases}
 
-${storageBlock}## Migrate
+## Storage
+
+- [S3 compatible storage](/products/storage)
+
+## Migrate
 
 ${migrations}`,
       faq: [],
@@ -1426,7 +1121,6 @@ const indexPages = (pages) => {
     },
     hub("/guides", "Reverhost Guides: Deploy, Database, Storage and Domains", "Step by step guides for deploying apps on Reverhost from a Dockerfile, connecting Postgres and S3 storage and adding custom domains.", "Guides", "Practical guides, grouped by framework.", `## Dockerfiles and languages\n\n${listFamily("dockerfile-guides")}\n- [All languages](/languages)\n\n## By framework\n\n${guideLinks}\n\n## Custom domains\n\n${listFamily("domain-guides")}\n\n## Migrate\n\n- [All migration guides](/migrate)\n- [Move a Postgres database](/migrate/postgres)\n- [Move S3 files](/migrate/storage)\n\n## Agents\n\n- [Deploy Next.js with AI agents](/guides/deploy-nextjs-with-ai-agents)`),
     hub("/errors", "Deployment Errors and Fixes | Reverhost", "Fixes for common deployment errors: missing Dockerfiles, failed installs, missing modules, memory limits, database connections, S3 signatures and domain verification.", "Deployment errors", "Find your error message, why it happens and the commands that fix it.", `## All errors\n\n${listFamily("errors")}`),
-    hub("/learn", "Learn Hosting Concepts for Developers | Reverhost", "Short, plain explanations of hosting concepts for developers: object storage, connection pooling, migrations, DNS records, cold starts and more.", "Learn", "Short explanations of the hosting concepts that come up when you deploy an app.", `## Concepts\n\n${listFamily("learn")}`),
     hub("/migrate", "Migrate to Reverhost From Other Hosts | Reverhost", "Move an app to Reverhost from Vercel, Render, Railway, Netlify, Fly.io, Heroku or Koyeb, along with your Postgres database and S3 files.", "Migrate to Reverhost", "Guides for moving your app and data.", `## Move your app\n\n${migrateLinks}\n\n## Move your data\n\n- [Postgres](/migrate/postgres)\n- [S3 files](/migrate/storage)`),
     hub("/alternatives", "Free Alternatives to Popular Hosting Platforms | Reverhost", "Honest comparisons between Reverhost and Vercel, Render, Railway, Netlify, Fly.io, Heroku and Koyeb, including what you give up by switching.", "Alternatives", "Honest comparisons, including when the other platform is the better choice.", `## Compare\n\n${competitorLinks}`),
     hub("/docs/cli", "ezhst CLI Reference: Every Command | Reverhost", "Reference for every ezhst command: account, deploy, env, build, domains, storage, database and members, with usage and JSON output notes.", "CLI reference", "One page per `ezhst` command. The [main docs](/docs) cover the same commands on a single page.", cliGroups),
@@ -1568,22 +1262,16 @@ export const buildPages = (limits, templates) => {
     ...legalPages(),
     ...hostingPages(limits),
     ...frameworkHubPages(),
-    ...agentPages(),
-    ...managerPages(),
     ...databasePages(),
-    ...storagePages(),
     ...envPages(),
-    ...monorepoPages(limits),
     ...dnsPages(),
     ...comparisonPages(),
     ...migrationHubPages(),
-    ...migrationPages(),
     ...postgresMigrationPages(),
     ...storageMigrationPages(),
     ...cliPages(),
     ...errorPages(),
     ...unreachablePages(),
-    ...conceptPages(),
   ];
   return [...pages, ...indexPages(pages)];
 };

@@ -8,16 +8,6 @@ export const SITE = "https://reverhost.com";
 export const UPDATED = "2026-11-25";
 export const UPDATED_LABEL = new Date(UPDATED).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
-export const HELD_BACK_FAMILIES = new Set([
-  "agent-guides",
-  "package-manager-guides",
-  "database-guides",
-  "storage-guides",
-  "env-guides",
-  "monorepo-guides",
-  "migration-framework-guides",
-]);
-
 export const FOOTER_COLUMNS = [
   {
     title: "Products",
@@ -96,7 +86,6 @@ export const FOOTER_COLUMNS = [
       ["/docs", "Documentation"],
       ["/docs/cli", "CLI reference"],
       ["/errors", "Deployment errors"],
-      ["/learn", "Learn hosting"],
       ["/skill.md", "skill.md"],
       ["/llms.txt", "llms.txt"],
     ],
@@ -163,8 +152,9 @@ const SITEMAP_RULES = {
   "cli-reference": { changefreq: "monthly", priority: 0.7 },
   "migration-guides": { changefreq: "yearly", priority: 0.7 },
   "domain-guides": { changefreq: "yearly", priority: 0.7 },
+  "database-guides": { changefreq: "monthly", priority: 0.6 },
+  "env-guides": { changefreq: "monthly", priority: 0.6 },
   errors: { changefreq: "yearly", priority: 0.6 },
-  learn: { changefreq: "yearly", priority: 0.6 },
   legal: { changefreq: "yearly", priority: 0.3 },
 };
 
@@ -304,7 +294,7 @@ const validate = (pages) => {
     if (page.description.length > 180) {
       problems.push(`${page.path} description is ${page.description.length} characters`);
     }
-    if (!HELD_BACK_FAMILIES.has(page.family) && !SITEMAP_RULES[page.family]) {
+    if (!SITEMAP_RULES[page.family]) {
       problems.push(`SITEMAP_RULES in marketing/src/seo/site.mjs has no entry for family ${page.family}`);
     }
   }
@@ -353,11 +343,9 @@ export const sitemapXml = () => {
       }
       return { path: pagePath, ...SITEMAP_RULES.core };
     }),
-    ...sitePages()
-      .filter((page) => !HELD_BACK_FAMILIES.has(page.family))
-      .map((page) => {
-        return { path: page.path, ...SITEMAP_RULES[page.family] };
-      }),
+    ...sitePages().map((page) => {
+      return { path: page.path, ...SITEMAP_RULES[page.family] };
+    }),
   ].sort((a, b) => b.priority - a.priority || a.path.localeCompare(b.path));
   const urls = entries
     .map((item) => `  <url><loc>${absolute(item.path)}</loc><lastmod>${UPDATED}</lastmod><changefreq>${item.changefreq}</changefreq><priority>${item.priority.toFixed(1)}</priority></url>`)
@@ -389,6 +377,5 @@ Every generated page has a Markdown copy at the same path with \`.md\` appended.
 - [CLI reference](${SITE}/docs/cli): One page per command
 - [Deployment errors](${SITE}/errors): Error messages and fixes
 - [Migration guides](${SITE}/migrate): Moving apps and data to Reverhost
-- [Concepts](${SITE}/learn): Short explanations
 `;
 };

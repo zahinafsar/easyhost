@@ -17,7 +17,7 @@ import NavLink from "../components/ui/NavLink.astro";
 import Grid from "../components/ui/Grid.astro";
 import LogoTile from "../components/ui/LogoTile.astro";
 import { inline, renderMarkdown } from "../seo/markdown.mjs";
-import { absolute, HELD_BACK_FAMILIES, jsonLd, SITE, sitePages, UPDATED_LABEL } from "../seo/site.mjs";
+import { absolute, jsonLd, SITE, sitePages, UPDATED_LABEL } from "../seo/site.mjs";
 
 export const getStaticPaths = () => {
   return sitePages().map((page) => {
@@ -28,10 +28,7 @@ export const getStaticPaths = () => {
 const { page } = Astro.props;
 const { html, toc } = renderMarkdown(page.body);
 const url = absolute(page.path);
-let robots = "index, follow, max-image-preview:large, max-snippet:-1";
-if (HELD_BACK_FAMILIES.has(page.family)) {
-  robots = "noindex, follow";
-}
+const robots = "index, follow, max-image-preview:large, max-snippet:-1";
 const tocItems = toc.map((item) => {
   return { href: `#${item.id}`, html: inline(item.title) };
 });

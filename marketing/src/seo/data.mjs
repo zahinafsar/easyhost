@@ -373,19 +373,6 @@ export const FRAMEWORKS = [
   },
 ];
 
-export const AGENTS = [
-  { id: "claude-code", name: "Claude Code", launch: "claude", hint: "Claude Code runs in your terminal, so it can run `ezhst` directly and read the JSON output." },
-  { id: "cursor", name: "Cursor", launch: "Cursor's agent chat", hint: "Use Cursor's agent mode with terminal access, so it can run `ezhst` commands in your project." },
-  { id: "codex", name: "Codex", launch: "codex", hint: "Run Codex in your project folder with network access enabled, because `ezhst` must reach the Reverhost API." },
-];
-
-export const MANAGERS = [
-  { id: "npm", name: "npm", lockfile: "package-lock.json", copy: "COPY package*.json ./", install: "RUN npm ci", run: "npm run", note: "`npm ci` fails if the lockfile and `package.json` disagree. Run `npm install` locally and deploy again. npm 11 lockfiles may need a newer base image, such as `node:24-alpine`." },
-  { id: "pnpm", name: "pnpm", lockfile: "pnpm-lock.yaml", copy: "COPY package.json pnpm-lock.yaml ./", install: "RUN corepack enable pnpm && pnpm install --frozen-lockfile", run: "pnpm run", note: "Corepack uses the version in the `packageManager` field when you set one. A stale lockfile fails `--frozen-lockfile`." },
-  { id: "yarn", name: "Yarn", lockfile: "yarn.lock", copy: "COPY package.json yarn.lock ./", install: "RUN corepack enable yarn && yarn install --frozen-lockfile", run: "yarn run", note: "Set `packageManager` in `package.json` to pin your Yarn version. Yarn Berry needs `--immutable` instead of `--frozen-lockfile`, so change that line in your Dockerfile." },
-  { id: "bun", name: "Bun", lockfile: "bun.lock or bun.lockb", copy: "COPY package.json bun.lock* ./", install: "RUN npm install -g bun && bun install --frozen-lockfile", run: "bun run", note: "These lines install Bun on the Node.js base image, so your app still runs on Node. To run on the Bun runtime, start from `ezhst build dockerfile template bun` instead." },
-];
-
 export const ORMS = [
   {
     id: "prisma",
@@ -396,116 +383,6 @@ export const ORMS = [
     migrate: "npx prisma migrate dev --name init\nnpx prisma migrate deploy",
     build: "npx prisma generate && npm run build",
     note: "`prisma migrate dev` needs a shadow database. Set `SHADOW_DATABASE_URL` locally to `shadowConnectionString` from `ezhst db info --json`. These steps use the schema-based Prisma setup, so check the Prisma docs if your major version configures its datasource elsewhere.",
-  },
-  {
-    id: "drizzle",
-    name: "Drizzle",
-    install: "npm i drizzle-orm pg\nnpm i -D drizzle-kit @types/pg",
-    setup: `import { drizzle } from "drizzle-orm/node-postgres";\nimport { users } from "./schema";\n\nexport const db = drizzle(process.env.DATABASE_URL!);\nexport { users };`,
-    body: "const rows = await db.select().from(users).limit(20);",
-    migrate: "npx drizzle-kit generate\nnpx drizzle-kit migrate",
-    build: "",
-    note: "Run `drizzle-kit migrate` from your machine with `DATABASE_URL` set to the Reverhost connection string. Import `db` and `users` together in your route.",
-    result: "rows",
-    extraImport: "users",
-  },
-  {
-    id: "typeorm",
-    name: "TypeORM",
-    install: "npm i typeorm pg reflect-metadata",
-    setup: `import "reflect-metadata";\nimport { DataSource } from "typeorm";\n\nexport const db = new DataSource({\n  type: "postgres",\n  url: process.env.DATABASE_URL,\n  entities: [],\n});\n\nawait db.initialize();`,
-    body: 'const rows = await db.query("select id, email from users limit 20");',
-    migrate: "npx typeorm migration:run -d dist/data-source.js",
-    build: "",
-    note: "Keep `synchronize` off in production, and run migrations from your machine against the connection string. Register your entities in the `entities` array.",
-    result: "rows",
-  },
-  {
-    id: "kysely",
-    name: "Kysely",
-    install: "npm i kysely pg\nnpm i -D @types/pg",
-    setup: `import { Kysely, PostgresDialect } from "kysely";\nimport { Pool } from "pg";\n\nexport const db = new Kysely<Database>({\n  dialect: new PostgresDialect({\n    pool: new Pool({ connectionString: process.env.DATABASE_URL, max: 5 }),\n  }),\n});`,
-    body: 'const rows = await db.selectFrom("users").selectAll().limit(20).execute();',
-    migrate: "npx kysely migrate:latest",
-    build: "",
-    note: "Define the `Database` interface yourself or generate it with `kysely-codegen`. A pool of 5 leaves room within the limit of 20 connections per database.",
-    result: "rows",
-  },
-  {
-    id: "sequelize",
-    name: "Sequelize",
-    install: "npm i sequelize pg pg-hstore",
-    setup: `import pg from "pg";\nimport { Sequelize } from "sequelize";\n\nexport const db = new Sequelize(process.env.DATABASE_URL!, {\n  dialect: "postgres",\n  dialectModule: pg,\n  pool: { max: 5 },\n});`,
-    body: 'const [rows] = await db.query("select id, email from users limit 20");',
-    migrate: "npx sequelize-cli db:migrate",
-    build: "",
-    note: "`dialectModule: pg` avoids dynamic require errors in bundled frameworks. A pool of 5 leaves room within the limit of 20 connections.",
-    result: "rows",
-  },
-  {
-    id: "knex",
-    name: "Knex",
-    install: "npm i knex pg",
-    setup: `import knex from "knex";\n\nexport const db = knex({\n  client: "pg",\n  connection: process.env.DATABASE_URL,\n  pool: { min: 0, max: 5 },\n});`,
-    body: 'const rows = await db("users").select("id", "email").limit(20);',
-    migrate: "npx knex migrate:latest",
-    build: "",
-    note: "Run `knex migrate:latest` from your machine with `DATABASE_URL` pointing at Reverhost. Pool settings count against the limit of 20 connections.",
-    result: "rows",
-  },
-  {
-    id: "mikro-orm",
-    name: "MikroORM",
-    install: "npm i @mikro-orm/core @mikro-orm/postgresql",
-    setup: `import { MikroORM } from "@mikro-orm/postgresql";\n\nconst orm = await MikroORM.init({\n  clientUrl: process.env.DATABASE_URL,\n  entities: [],\n});\n\nexport const db = orm.em.fork();`,
-    body: 'const rows = await db.getConnection().execute("select id, email from users limit 20");',
-    migrate: "npx mikro-orm migration:up",
-    build: "",
-    note: "Register your entities in the `entities` array and fork the entity manager for each request in real handlers.",
-    result: "rows",
-  },
-  {
-    id: "pg",
-    name: "node-postgres (pg)",
-    install: "npm i pg\nnpm i -D @types/pg",
-    setup: `import { Pool } from "pg";\n\nexport const db = new Pool({\n  connectionString: process.env.DATABASE_URL,\n  max: 5,\n});`,
-    body: 'const { rows } = await db.query("select id, email from users limit 20");',
-    migrate: 'ezhst db query --file schema.sql',
-    build: "",
-    note: "With no ORM, keep your schema in SQL files and apply them with `ezhst db query --file`. That command times out after 15 seconds, so use `psql` for long migrations.",
-    result: "rows",
-  },
-  {
-    id: "postgres-js",
-    name: "Postgres.js",
-    install: "npm i postgres",
-    setup: `import postgres from "postgres";\n\nexport const db = postgres(process.env.DATABASE_URL!, { max: 5 });`,
-    body: "const rows = await db`select id, email from users limit 20`;",
-    migrate: 'ezhst db query --file schema.sql',
-    build: "",
-    note: "Postgres.js reads `sslmode` from the connection string. `max: 5` leaves room within the limit of 20 connections.",
-    result: "rows",
-  },
-];
-
-export const S3_CLIENTS = [
-  {
-    id: "aws-sdk",
-    name: "AWS SDK v3",
-    install: "npm i @aws-sdk/client-s3 @aws-sdk/s3-request-presigner",
-    setup: `import { S3Client } from "@aws-sdk/client-s3";\n\nexport const s3 = new S3Client({\n  endpoint: "https://storage.reverhost.com",\n  region: "us-east-1",\n  forcePathStyle: true,\n  credentials: {\n    accessKeyId: process.env.S3_ACCESS_KEY_ID!,\n    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,\n  },\n});`,
-    imports: `import { PutObjectCommand } from "@aws-sdk/client-s3";\nimport { getSignedUrl } from "@aws-sdk/s3-request-presigner";\n`,
-    body: 'const url = await getSignedUrl(\n    s3,\n    new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key }),\n    { expiresIn: 300 },\n  );',
-    note: "`forcePathStyle: true` is required. Without it the SDK puts the bucket in the hostname, and the request fails.",
-  },
-  {
-    id: "minio",
-    name: "MinIO JavaScript client",
-    install: "npm i minio",
-    setup: `import { Client } from "minio";\n\nexport const s3 = new Client({\n  endPoint: "storage.reverhost.com",\n  useSSL: true,\n  region: "us-east-1",\n  pathStyle: true,\n  accessKey: process.env.S3_ACCESS_KEY_ID!,\n  secretKey: process.env.S3_SECRET_ACCESS_KEY!,\n});`,
-    imports: "",
-    body: "const url = await s3.presignedPutObject(process.env.S3_BUCKET!, key, 300);",
-    note: "Pass the hostname without `https://` as `endPoint`. The client uses path-style URLs when `pathStyle` is true.",
   },
 ];
 
