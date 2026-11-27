@@ -1221,13 +1221,20 @@ To keep Reverhost secure and reliable for everyone, we may review projects, logs
 Please do not use Reverhost to:
 
 - host phishing, malware, scams, spam or illegal content
+- run VPN, proxy or tunnel servers (for example Xray, V2Ray, VLESS, VMess, Trojan, Shadowsocks, sing-box, Hysteria or WireGuard) or relay traffic for other people
 - attack or overload other systems, or mine cryptocurrency
-- get around the limits, for example with many accounts
+- run bots that send bulk or unsolicited messages on WhatsApp, Telegram, Discord, social networks or email
+- get around the limits, for example with many accounts or disposable email addresses
+- sign up with fake details or automated scripts
 - harm other customers or the platform
+
+## Removal for abuse
+
+Breaking the fair use rules above leads to removal without notice. We block the account and permanently delete every project it owns, including apps, databases, storage and custom domains. Data deleted this way cannot be recovered. We also block every other account we link to the same person, and we may block the email domain used to sign up. Anyone removed for abuse may not create a new account.
 
 ## If something goes wrong
 
-If a project breaks these terms or puts the platform at risk, we may pause or remove it. We will try to contact you first, unless there is an urgent risk to others.
+If a project breaks these terms in a smaller way or puts the platform at risk by accident, we may pause it. We will try to contact you first, unless there is an urgent risk to others.
 
 ## Pro subscription
 

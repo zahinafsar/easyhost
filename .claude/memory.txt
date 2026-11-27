@@ -207,3 +207,8 @@
 - Services: AI no longer connects database/storage unless the plan or request needs them
 - Pro monthly tokens lowered to 500 (2026-11-26): PRO.monthlyTokens, out-of-tokens message, builder banner, marketing, docs, llms.md, SKILL.md
 - 2026-11-26: HELD_BACK_FAMILIES removed (user never asked for it). Then cut templated combination pages for SEO quality (about 309 pages, no redirects): agent guides, package manager guides, storage (file upload) guides, monorepo guides, /migrate/<host>/<framework>, /learn glossary and its hub; database guides reduced to Prisma per framework (ORMS holds only Prisma, plus SERVICE_ORM_PAGES). AGENTS, MANAGERS, S3_CLIENTS, CONCEPTS deleted from data. About 232 generated pages remain, all indexable and in sitemap.xml; each family needs a SITEMAP_RULES entry in marketing/src/seo/site.mjs. Never noindex or bulk-add templated pages without the user asking
+
+## Abuse cleanup (2026-11-27)
+- Terms (/terms in marketing/src/seo/pages.mjs) now ban VPN/proxy/tunnel servers (Xray, V2Ray, VLESS, sing-box...), bulk messaging bots, multi-accounting, disposable emails and fake/scripted signups, with a "Removal for abuse" section: block + permanent deletion of all projects without notice
+- 38 accounts blocked and all their projects deleted in production (run inside easyhost-api-1 with deleteProject, audited as admin@easyhost.fun): Xray/VLESS node runners (signature: Dockerfile with xray/sing-box or env UUID + WS_PATH), likely proxy nodes, and test/disposable signups. Disposable email domains were NOT added to BlockedDomain (user chose not to)
+- Not removed, left for review: chandra WhatsApp bot trio (chandrakwijaya.3, chandra.wijaya91.cw, drajaya0), DeepShen pair, nusarastudios and jhojanrios39 WA bots, ultrablitz1 x-hot-bot
